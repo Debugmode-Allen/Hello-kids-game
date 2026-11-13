@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hello World | 学习小游戏</title>
+    <style>
+      :root {
+        color: #20304a;
+        background: #f2f8ff;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      main {
+        width: min(88vw, 540px);
+        box-sizing: border-box;
+        padding: 48px 28px;
+        text-align: center;
+        background: white;
+        border-radius: 28px;
+        box-shadow: 0 14px 38px rgba(31, 87, 151, 0.18);
+      }
+
+      .icon { font-size: 70px; }
+      h1 { margin: 18px 0 10px; font-size: clamp(2rem, 8vw, 3.5rem); }
+      p { font-size: 1.2rem; line-height: 1.7; }
+      button {
+        padding: 14px 24px;
+        border: 0;
+        border-radius: 999px;
+        background: #4d86f7;
+        color: white;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:hover { background: #326fe6; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="icon" aria-hidden="true">🌟</div>
+      <h1>Hello World!</h1>
+      <p>欢迎来到我的学习小游戏。</p>
+      <button type="button" id="helloButton">点我打招呼</button>
+      <p id="message" aria-live="polite"></p>
+    </main>
+    <script>
+      document.querySelector("#helloButton").addEventListener("click", () => {
+        document.querySelector("#message").textContent = "你好，小小学习者！🎉";
+      });
+    </script>
+  </body>
+</html>
