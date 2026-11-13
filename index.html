@@ -83,15 +83,31 @@
         catch { loginNotice.textContent = "账户或密码不正确。请再试一次。"; }
       });
       onAuthStateChanged(auth, async (user) => {
-        if (!user) { loginView.classList.remove("hidden"); appView.classList.add("hidden"); currentProfile = null; return; }
-        const profileSnapshot = await getDoc(doc(db, "users", user.uid));
-        if (!profileSnapshot.exists()) { await signOut(auth); loginNotice.textContent = "该账户尚未完成管理员设置。"; return; }
-        currentProfile = profileSnapshot.data();
-        loginView.classList.add("hidden"); appView.classList.remove("hidden");
-        document.querySelector("#welcomeName").textContent = currentProfile.name;
-        const isAdmin = currentProfile.role === "admin";
-        document.querySelector("#roleMessage").textContent = isAdmin ? "你可以管理游戏设置。" : "准备好开始今天的学习了吗？";
-        adminPanel.classList.toggle("hidden", !isAdmin); childHome.classList.toggle("hidden", isAdmin);
+        if (!user) {
+          loginView.classList.remove("hidden");
+          appView.classList.add("hidden");
+          currentProfile = null;
+          loginNotice.textContent = "";
+          return;
+        }
+        try {
+          const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+          if (!profileSnapshot.exists()) {
+            loginNotice.textContent = "该账户尚未完成管理员设置。";
+            return;
+          }
+          currentProfile = profileSnapshot.data();
+          loginNotice.textContent = "";
+          loginView.classList.add("hidden"); appView.classList.remove("hidden");
+          document.querySelector("#welcomeName").textContent = currentProfile.name;
+          const isAdmin = currentProfile.role === "admin";
+          document.querySelector("#roleMessage").textContent = isAdmin ? "你可以管理游戏设置。" : "准备好开始今天的学习了吗？";
+          adminPanel.classList.toggle("hidden", !isAdmin); childHome.classList.toggle("hidden", isAdmin);
+        } catch (error) {
+          loginView.classList.remove("hidden");
+          appView.classList.add("hidden");
+          loginNotice.textContent = "无法读取账户资料，请稍后重试。";
+        }
       });
       document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = "太棒了！下一步我们会在这里加入动物认知游戏。"; });
       document.querySelector("#saveSettings").addEventListener("click", async () => {
