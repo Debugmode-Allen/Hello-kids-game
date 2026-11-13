@@ -88,6 +88,8 @@
           appView.classList.add("hidden");
           currentProfile = null;
           loginNotice.textContent = "";
+          document.querySelector("#gameMessage").textContent = "";
+          document.querySelector("#settingsNotice").textContent = "";
           return;
         }
         try {
@@ -98,6 +100,8 @@
           }
           currentProfile = profileSnapshot.data();
           loginNotice.textContent = "";
+          document.querySelector("#gameMessage").textContent = "";
+          document.querySelector("#settingsNotice").textContent = "";
           loginView.classList.add("hidden"); appView.classList.remove("hidden");
           document.querySelector("#welcomeName").textContent = currentProfile.name;
           const isAdmin = currentProfile.role === "admin";
