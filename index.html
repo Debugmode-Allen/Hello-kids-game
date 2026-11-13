@@ -3,59 +3,103 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello World | 学习小游戏</title>
+    <title>小小学习家</title>
     <style>
-      :root {
-        color: #20304a;
-        background: #f2f8ff;
-        font-family: "Microsoft YaHei", system-ui, sans-serif;
-      }
-
-      body {
-        min-height: 100vh;
-        margin: 0;
-        display: grid;
-        place-items: center;
-      }
-
-      main {
-        width: min(88vw, 540px);
-        box-sizing: border-box;
-        padding: 48px 28px;
-        text-align: center;
-        background: white;
-        border-radius: 28px;
-        box-shadow: 0 14px 38px rgba(31, 87, 151, 0.18);
-      }
-
-      .icon { font-size: 70px; }
-      h1 { margin: 18px 0 10px; font-size: clamp(2rem, 8vw, 3.5rem); }
-      p { font-size: 1.2rem; line-height: 1.7; }
-      button {
-        padding: 14px 24px;
-        border: 0;
-        border-radius: 999px;
-        background: #4d86f7;
-        color: white;
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-      }
+      :root { font-family: "Microsoft YaHei", system-ui, sans-serif; color: #24324a; background: #eef7ff; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+      .card { width: min(94vw, 560px); background: white; border-radius: 28px; padding: 36px 28px; box-shadow: 0 14px 38px #1f57972e; text-align: center; }
+      h1 { margin: 8px 0; font-size: clamp(2rem, 7vw, 3rem); }
+      p { line-height: 1.6; }
+      .emoji { font-size: 58px; }
+      form { display: grid; gap: 14px; margin: 26px 0 8px; text-align: left; }
+      label { font-weight: 700; }
+      select, input, button { min-height: 50px; border-radius: 14px; font: inherit; }
+      select, input { width: 100%; border: 2px solid #cbdcf6; padding: 10px 14px; background: #fff; }
+      button { border: 0; padding: 10px 20px; cursor: pointer; background: #4d86f7; color: white; font-weight: 700; }
       button:hover { background: #326fe6; }
+      button.secondary { background: #e8effd; color: #274a85; }
+      .hidden { display: none !important; }
+      .notice { min-height: 25px; color: #b42318; font-weight: 700; }
+      .success { color: #147a3f; }
+      .settings { margin-top: 22px; padding: 18px; border-radius: 18px; background: #f2f7ff; text-align: left; }
+      .settings label { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+      .settings input { width: auto; min-height: auto; }
+      #welcomeName { color: #4d86f7; }
     </style>
   </head>
   <body>
-    <main>
-      <div class="icon" aria-hidden="true">🌟</div>
-      <h1>Hello World!</h1>
-      <p>欢迎来到我的学习小游戏。</p>
-      <button type="button" id="helloButton">点我打招呼</button>
-      <p id="message" aria-live="polite"></p>
+    <main class="card">
+      <section id="loginView">
+        <div class="emoji" aria-hidden="true">🌟</div>
+        <h1>小小学习家</h1>
+        <p>请选择你的账户，然后输入密码。</p>
+        <form id="loginForm">
+          <label>账户<select id="account" required><option value="admin">管理员</option><option value="amy">Amy</option><option value="shirlyn">Shirlyn</option></select></label>
+          <label>密码<input id="password" type="password" autocomplete="current-password" required /></label>
+          <button type="submit">进入学习世界</button>
+        </form>
+        <p id="loginNotice" class="notice" aria-live="polite"></p>
+      </section>
+      <section id="appView" class="hidden">
+        <div class="emoji" aria-hidden="true">🎈</div>
+        <h1>你好，<span id="welcomeName"></span>！</h1>
+        <p id="roleMessage"></p>
+        <div id="childHome" class="hidden"><button id="startGame" type="button">开始今天的学习</button><p id="gameMessage" class="notice success"></p></div>
+        <div id="adminPanel" class="settings hidden">
+          <h2>游戏设置</h2>
+          <label><input id="soundEnabled" type="checkbox" checked /> 开启答题音效</label>
+          <label><input id="easyMode" type="checkbox" checked /> 使用简单难度</label>
+          <button id="saveSettings" type="button">保存设置</button><p id="settingsNotice" class="notice success"></p>
+        </div>
+        <p><button id="logoutButton" type="button" class="secondary">退出账户</button></p>
+      </section>
     </main>
-    <script>
-      document.querySelector("#helloButton").addEventListener("click", () => {
-        document.querySelector("#message").textContent = "你好，小小学习者Amy和Shirlyn！🎉";
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+      import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
+
+      const firebaseConfig = { apiKey: "AIzaSyDLPgb-YFTaKl1asAU2oiZxdD2_6M_wOE0", authDomain: "kids-learning-game-655c6.firebaseapp.com", projectId: "kids-learning-game-655c6", storageBucket: "kids-learning-game-655c6.firebasestorage.app", messagingSenderId: "583705940703", appId: "1:583705940703:web:4bb77d4040f88311a40f6a" };
+      const auth = getAuth(initializeApp(firebaseConfig));
+      const db = getFirestore();
+      const accounts = {
+        admin: { email: "wang.yilun.allen@gmail.com", name: "管理员" },
+        amy: { email: "wang.yilun.allen+amy@gmail.com", name: "Amy" },
+        shirlyn: { email: "wang.yilun.allen+shirlyn@gmail.com", name: "Shirlyn" }
+      };
+      let currentProfile = null;
+      const loginView = document.querySelector("#loginView");
+      const appView = document.querySelector("#appView");
+      const loginNotice = document.querySelector("#loginNotice");
+      const adminPanel = document.querySelector("#adminPanel");
+      const childHome = document.querySelector("#childHome");
+
+      document.querySelector("#loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const account = accounts[document.querySelector("#account").value];
+        loginNotice.textContent = "正在验证…";
+        try { await signInWithEmailAndPassword(auth, account.email, document.querySelector("#password").value); document.querySelector("#password").value = ""; }
+        catch { loginNotice.textContent = "账户或密码不正确。请再试一次。"; }
       });
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) { loginView.classList.remove("hidden"); appView.classList.add("hidden"); currentProfile = null; return; }
+        const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+        if (!profileSnapshot.exists()) { await signOut(auth); loginNotice.textContent = "该账户尚未完成管理员设置。"; return; }
+        currentProfile = profileSnapshot.data();
+        loginView.classList.add("hidden"); appView.classList.remove("hidden");
+        document.querySelector("#welcomeName").textContent = currentProfile.name;
+        const isAdmin = currentProfile.role === "admin";
+        document.querySelector("#roleMessage").textContent = isAdmin ? "你可以管理游戏设置。" : "准备好开始今天的学习了吗？";
+        adminPanel.classList.toggle("hidden", !isAdmin); childHome.classList.toggle("hidden", isAdmin);
+      });
+      document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = "太棒了！下一步我们会在这里加入动物认知游戏。"; });
+      document.querySelector("#saveSettings").addEventListener("click", async () => {
+        if (!currentProfile || currentProfile.role !== "admin") return;
+        await setDoc(doc(db, "gameSettings", "current"), { soundEnabled: document.querySelector("#soundEnabled").checked, easyMode: document.querySelector("#easyMode").checked });
+        document.querySelector("#settingsNotice").textContent = "设置已保存。";
+      });
+      document.querySelector("#logoutButton").addEventListener("click", () => signOut(auth));
     </script>
   </body>
 </html>
