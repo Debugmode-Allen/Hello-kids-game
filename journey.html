@@ -64,6 +64,8 @@ import{eggImages,lock}
 from"./js/hatching.js";
 import{reserveDragonAndSaveAssessment}
 from"./js/progress-store.js";
+import{showDragonHome}
+from"./js/journey-home-link.js";
 const $=x=>document.querySelector(x),story=await fetch("content/story.zh-CN.json").then(r=>r.json()),dragons=await fetch("assets/dragons/dragon-library.json").then(r=>r.json());
 let user,egg,qs=[],i=0,answers=[];
 const show=x=>["story","eggs","quiz","hatch"].forEach(k=>$("#"+k).classList.toggle("hidden",k!==x));
@@ -117,7 +119,8 @@ $("#dragon").textContent=dragon.name;
 $("#info").textContent=`职业：${dragon.profession}
 。${dragon.description}
 `;
-$("#message").textContent="已保存学习记录！"}
+$("#message").textContent="已保存学习记录！";
+showDragonHome($("#message"))}
 catch(e){
 console.error("Firebase 保存失败：", e);
 $("#message").textContent=`保存失败：${e.code || "unknown"} — ${e.message || "未知错误"}`;
