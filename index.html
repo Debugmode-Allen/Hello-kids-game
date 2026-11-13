@@ -83,7 +83,12 @@
           const profileSnapshot = await getDoc(doc(db, "users", user.uid));
           if (!profileSnapshot.exists()) { loginNotice.textContent = t("login.profileMissing"); return; }
           currentProfile = profileSnapshot.data(); loginNotice.textContent = ""; document.querySelector("#gameMessage").textContent = ""; document.querySelector("#settingsNotice").textContent = "";
-          window.location.replace(currentProfile.role === "admin" ? "admin.html" : "journey.html");
+          if (currentProfile.role === "admin") {
+            window.location.replace("admin.html");
+          } else {
+            const dragon = await getDoc(doc(db, "users", user.uid, "dragon", "current"));
+            window.location.replace(dragon.exists() ? "home.html" : "journey.html");
+          }
         } catch { loginView.classList.remove("hidden"); appView.classList.add("hidden"); loginNotice.textContent = t("login.profileError"); }
       });
       document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = t("home.comingSoon"); });
