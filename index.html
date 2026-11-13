@@ -35,7 +35,7 @@
         <h1>小小学习家</h1>
         <p>请选择你的账户，然后输入密码。</p>
         <form id="loginForm">
-          <label>账户<select id="account" required><option value="admin">管理员</option><option value="amy">Amy</option><option value="shirlyn">Shirlyn</option></select></label>
+          <label>账户<select id="account" required><option value="admin">Allen</option><option value="amy">Amy</option><option value="shirlyn">Shirlyn</option></select></label>
           <label>密码<input id="password" type="password" autocomplete="current-password" required /></label>
           <button type="submit">进入学习世界</button>
         </form>
@@ -64,7 +64,7 @@
       const auth = getAuth(initializeApp(firebaseConfig));
       const db = getFirestore();
       const accounts = {
-        admin: { email: "wang.yilun.allen@gmail.com", name: "管理员" },
+        admin: { email: "wang.yilun.allen@gmail.com", name: "Allen" },
         amy: { email: "wang.yilun.allen+amy@gmail.com", name: "Amy" },
         shirlyn: { email: "wang.yilun.allen+shirlyn@gmail.com", name: "Shirlyn" }
       };
