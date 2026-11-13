@@ -2,7 +2,7 @@
   "app.title": "小小学习家",
   "login.icon": "🌟",
   "login.title": "小小学习家",
-  "login.subtitle": "请选择你的账户，然后输入密码。",
+  "login.subtitle": "请选择你的账户，然后输入密码！",
   "login.accountLabel": "账户",
   "login.passwordLabel": "密码",
   "login.submit": "进入学习世界",
