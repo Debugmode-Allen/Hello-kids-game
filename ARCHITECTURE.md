@@ -25,6 +25,7 @@
 - `users/{uid}/progress/summary`：各学科等级、经验与答题汇总。
 - `users/{uid}/attempts/{attemptId}`：每次测试的题目结果与推荐等级。
 - `gameSettings/current`：Allen 的全局游戏设置。
+- `dragonAssignments/{speciesId}`：全局唯一的小龙占用登记；确保不同账户不会孵化同一只龙。
 
 ## 当前开发顺序
 

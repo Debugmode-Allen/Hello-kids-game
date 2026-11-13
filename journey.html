@@ -60,9 +60,9 @@ import{auth,signOut,onAuthStateChanged}
 from"./js/firebase.js";
 import{createAssessment,calculateLevels}
 from"./js/assessment.js";
-import{eggImages,pickDragon,lock}
+import{eggImages,lock}
 from"./js/hatching.js";
-import{saveAssessment}
+import{reserveDragonAndSaveAssessment}
 from"./js/progress-store.js";
 const $=x=>document.querySelector(x),story=await fetch("content/story.zh-CN.json").then(r=>r.json()),dragons=await fetch("assets/dragons/dragon-library.json").then(r=>r.json());
 let user,egg,qs=[],i=0,answers=[];
@@ -108,8 +108,8 @@ $("#image").className="pulse";
 show("hatch")}
 ;
 $("#open").onclick=async()=>{if(!lock($("#open")))return;
-try{const dragon=pickDragon(egg,dragons),levels=calculateLevels(answers);
-await saveAssessment(user.uid,egg,dragon,answers,levels);
+try{const levels=calculateLevels(answers);
+const dragon=await reserveDragonAndSaveAssessment(user.uid,egg,dragons,answers,levels);
 $("#image").className="";
 $("#image").src=dragon.image;
 $("#heading").textContent=story["hatching.title"];
