@@ -13,4 +13,16 @@ export async function saveAssessment(userId, eggId, dragon, answers, levels) {
   await setDoc(doc(db, "users", userId, "attempts", `initial-${Date.now()}`), {
     type: "initial-assessment", eggId, score, answers, levels, createdAt: new Date().toISOString()
   });
+
+  setTimeout(() => {
+    const result = document.querySelector("#message");
+    if (result && !document.querySelector("#dragonHomeButton")) {
+      const button = document.createElement("button");
+      button.id = "dragonHomeButton";
+      button.type = "button";
+      button.textContent = "看看我的小龙";
+      button.addEventListener("click", () => window.location.assign("home.html"));
+      result.append(document.createElement("br"), button);
+    }
+  });
 }
