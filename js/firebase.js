@@ -7,3 +7,7 @@ const app = initializeApp(config);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export { onAuthStateChanged, signOut, doc, getDoc, getDocs, collection, setDoc, deleteDoc, runTransaction };
+
+if (!location.pathname.endsWith("index.html") && location.pathname !== "/") {
+  import("./account-bar.js").then(({ mountAccountBar }) => mountAccountBar());
+}
