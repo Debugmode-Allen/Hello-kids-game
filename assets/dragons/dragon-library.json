@@ -1,0 +1,82 @@
+[
+  {
+    "id": "red-fire",
+    "name": "焰心",
+    "element": "火焰",
+    "profession": "勇气守卫",
+    "description": "热情又勇敢，最擅长在伙伴遇到困难时点亮前路。",
+    "image": "assets/dragons/red-fire-dragon.png"
+  },
+  {
+    "id": "green-forest",
+    "name": "叶风",
+    "element": "森林",
+    "profession": "林地探险家",
+    "description": "爱观察每一片叶子，也总能在森林里找到新朋友。",
+    "image": "assets/dragons/green-forest-dragon.png"
+  },
+  {
+    "id": "blue-water",
+    "name": "澜歌",
+    "element": "海浪",
+    "profession": "潮汐绘图师",
+    "description": "安静又好奇，会把看到的每一条河流画进地图。",
+    "image": "assets/dragons/blue-water-dragon.png"
+  },
+  {
+    "id": "gold-sun",
+    "name": "曜阳",
+    "element": "阳光",
+    "profession": "小小学者",
+    "description": "喜欢提问和读书，相信每个答案都会带来新的光。",
+    "image": "assets/dragons/gold-sun-dragon.png"
+  },
+  {
+    "id": "purple-moon",
+    "name": "月墨",
+    "element": "月影",
+    "profession": "故事守护者",
+    "description": "有一点害羞，却收藏着许多奇妙的睡前故事。",
+    "image": "assets/dragons/purple-moon-dragon.png"
+  },
+  {
+    "id": "white-frost",
+    "name": "霜铃",
+    "element": "冰晶",
+    "profession": "雪原医师",
+    "description": "温柔又细心，总会第一个发现朋友需要帮助。",
+    "image": "assets/dragons/white-frost-dragon.png"
+  },
+  {
+    "id": "orange-desert",
+    "name": "砂跃",
+    "element": "沙丘",
+    "profession": "宝石寻路者",
+    "description": "精力满满，最喜欢寻找闪闪发亮的新发现。",
+    "image": "assets/dragons/orange-desert-dragon.png"
+  },
+  {
+    "id": "pink-garden",
+    "name": "花语",
+    "element": "花园",
+    "profession": "花园培育师",
+    "description": "善良又爱分享，会把每一朵花的故事讲给朋友听。",
+    "image": "assets/dragons/pink-garden-dragon.png"
+  },
+  {
+    "id": "gray-rock",
+    "name": "岩芽",
+    "element": "岩石",
+    "profession": "城堡建造师",
+    "description": "踏实可靠，喜欢把好点子变成坚固又漂亮的作品。",
+    "image": "assets/dragons/gray-rock-dragon.png"
+  },
+  {
+    "id": "indigo-star",
+    "name": "星遥",
+    "element": "星空",
+    "profession": "星图观察员",
+    "description": "充满想象力，会用星星拼出属于自己的冒险地图。",
+    "image": "assets/dragons/indigo-star-dragon.png"
+  }
+]

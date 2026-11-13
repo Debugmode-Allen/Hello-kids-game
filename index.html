@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>小小学习家</title>
+    <title data-i18n="app.title">小小学习家</title>
     <style>
       :root { font-family: "Microsoft YaHei", system-ui, sans-serif; color: #24324a; background: #eef7ff; }
       * { box-sizing: border-box; }
@@ -31,94 +31,64 @@
   <body>
     <main class="card">
       <section id="loginView">
-        <div class="emoji" aria-hidden="true">🌟</div>
-        <h1>小小学习家</h1>
-        <p>请选择你的账户，然后输入密码。</p>
+        <div class="emoji" aria-hidden="true" data-i18n="login.icon">🌟</div>
+        <h1 data-i18n="login.title">小小学习家</h1>
+        <p data-i18n="login.subtitle">请选择你的账户，然后输入密码。</p>
         <form id="loginForm">
-          <label>账户<select id="account" required><option value="admin">Allen</option><option value="amy">Amy</option><option value="shirlyn">Shirlyn</option></select></label>
-          <label>密码<input id="password" type="password" autocomplete="current-password" required /></label>
-          <button type="submit">进入学习世界</button>
+          <label><span data-i18n="login.accountLabel">账户</span><select id="account" required><option value="admin" data-i18n="account.allen">Allen</option><option value="amy" data-i18n="account.amy">Amy</option><option value="shirlyn" data-i18n="account.shirlyn">Shirlyn</option></select></label>
+          <label><span data-i18n="login.passwordLabel">密码</span><input id="password" type="password" autocomplete="current-password" required /></label>
+          <button type="submit" data-i18n="login.submit">进入学习世界</button>
         </form>
         <p id="loginNotice" class="notice" aria-live="polite"></p>
       </section>
       <section id="appView" class="hidden">
-        <div class="emoji" aria-hidden="true">🎈</div>
-        <h1>你好，<span id="welcomeName"></span>！</h1>
+        <div class="emoji" aria-hidden="true" data-i18n="home.icon">🎈</div>
+        <h1 id="welcomeName"></h1>
         <p id="roleMessage"></p>
-        <div id="childHome" class="hidden"><button id="startGame" type="button">开始今天的学习</button><p id="gameMessage" class="notice success"></p></div>
+        <div id="childHome" class="hidden"><button id="startGame" type="button" data-i18n="home.start">开始今天的学习</button><p id="gameMessage" class="notice success"></p></div>
         <div id="adminPanel" class="settings hidden">
-          <h2>游戏设置</h2>
-          <label><input id="soundEnabled" type="checkbox" checked /> 开启答题音效</label>
-          <label><input id="easyMode" type="checkbox" checked /> 使用简单难度</label>
-          <button id="saveSettings" type="button">保存设置</button><p id="settingsNotice" class="notice success"></p>
+          <h2 data-i18n="admin.title">游戏设置</h2>
+          <label><input id="soundEnabled" type="checkbox" checked /><span data-i18n="admin.sound">开启答题音效</span></label>
+          <label><input id="easyMode" type="checkbox" checked /><span data-i18n="admin.easy">使用简单难度</span></label>
+          <button id="saveSettings" type="button" data-i18n="admin.save">保存设置</button><p id="settingsNotice" class="notice success"></p>
         </div>
-        <p><button id="logoutButton" type="button" class="secondary">退出账户</button></p>
+        <p><button id="logoutButton" type="button" class="secondary" data-i18n="home.logout">退出账户</button></p>
       </section>
     </main>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
       import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
-
+      const uiText = await fetch("content/ui.zh-CN.json").then((response) => response.json());
+      const t = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replace(`{${name}}`, value), uiText[key] ?? key);
+      document.querySelectorAll("[data-i18n]").forEach((element) => { element.textContent = t(element.dataset.i18n); });
       const firebaseConfig = { apiKey: "AIzaSyDLPgb-YFTaKl1asAU2oiZxdD2_6M_wOE0", authDomain: "kids-learning-game-655c6.firebaseapp.com", projectId: "kids-learning-game-655c6", storageBucket: "kids-learning-game-655c6.firebasestorage.app", messagingSenderId: "583705940703", appId: "1:583705940703:web:4bb77d4040f88311a40f6a" };
       const auth = getAuth(initializeApp(firebaseConfig));
       const db = getFirestore();
-      const accounts = {
-        admin: { email: "wang.yilun.allen@gmail.com", name: "Allen" },
-        amy: { email: "wang.yilun.allen+amy@gmail.com", name: "Amy" },
-        shirlyn: { email: "wang.yilun.allen+shirlyn@gmail.com", name: "Shirlyn" }
-      };
+      const accounts = { admin: { email: "wang.yilun.allen@gmail.com", name: "Allen" }, amy: { email: "wang.yilun.allen+amy@gmail.com", name: "Amy" }, shirlyn: { email: "wang.yilun.allen+shirlyn@gmail.com", name: "Shirlyn" } };
       let currentProfile = null;
       const loginView = document.querySelector("#loginView");
       const appView = document.querySelector("#appView");
       const loginNotice = document.querySelector("#loginNotice");
       const adminPanel = document.querySelector("#adminPanel");
       const childHome = document.querySelector("#childHome");
-
       document.querySelector("#loginForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const account = accounts[document.querySelector("#account").value];
-        loginNotice.textContent = "正在验证…";
+        event.preventDefault(); const account = accounts[document.querySelector("#account").value]; loginNotice.textContent = t("login.verifying");
         try { await signInWithEmailAndPassword(auth, account.email, document.querySelector("#password").value); document.querySelector("#password").value = ""; }
-        catch { loginNotice.textContent = "账户或密码不正确。请再试一次。"; }
+        catch { loginNotice.textContent = t("login.invalid"); }
       });
       onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          loginView.classList.remove("hidden");
-          appView.classList.add("hidden");
-          currentProfile = null;
-          loginNotice.textContent = "";
-          document.querySelector("#gameMessage").textContent = "";
-          document.querySelector("#settingsNotice").textContent = "";
-          return;
-        }
+        if (!user) { loginView.classList.remove("hidden"); appView.classList.add("hidden"); currentProfile = null; loginNotice.textContent = ""; document.querySelector("#gameMessage").textContent = ""; document.querySelector("#settingsNotice").textContent = ""; return; }
         try {
           const profileSnapshot = await getDoc(doc(db, "users", user.uid));
-          if (!profileSnapshot.exists()) {
-            loginNotice.textContent = "该账户尚未完成管理员设置。";
-            return;
-          }
-          currentProfile = profileSnapshot.data();
-          loginNotice.textContent = "";
-          document.querySelector("#gameMessage").textContent = "";
-          document.querySelector("#settingsNotice").textContent = "";
-          loginView.classList.add("hidden"); appView.classList.remove("hidden");
-          document.querySelector("#welcomeName").textContent = currentProfile.name;
-          const isAdmin = currentProfile.role === "admin";
-          document.querySelector("#roleMessage").textContent = isAdmin ? "你可以管理游戏设置。" : "准备好开始今天的学习了吗？";
-          adminPanel.classList.toggle("hidden", !isAdmin); childHome.classList.toggle("hidden", isAdmin);
-        } catch (error) {
-          loginView.classList.remove("hidden");
-          appView.classList.add("hidden");
-          loginNotice.textContent = "无法读取账户资料，请稍后重试。";
-        }
+          if (!profileSnapshot.exists()) { loginNotice.textContent = t("login.profileMissing"); return; }
+          currentProfile = profileSnapshot.data(); loginNotice.textContent = ""; document.querySelector("#gameMessage").textContent = ""; document.querySelector("#settingsNotice").textContent = "";
+          loginView.classList.add("hidden"); appView.classList.remove("hidden"); document.querySelector("#welcomeName").textContent = t("home.greeting", { name: currentProfile.name });
+          const isAdmin = currentProfile.role === "admin"; document.querySelector("#roleMessage").textContent = t(isAdmin ? "admin.prompt" : "home.childPrompt"); adminPanel.classList.toggle("hidden", !isAdmin); childHome.classList.toggle("hidden", isAdmin);
+        } catch { loginView.classList.remove("hidden"); appView.classList.add("hidden"); loginNotice.textContent = t("login.profileError"); }
       });
-      document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = "太棒了！下一步我们会在这里加入动物认知游戏。"; });
-      document.querySelector("#saveSettings").addEventListener("click", async () => {
-        if (!currentProfile || currentProfile.role !== "admin") return;
-        await setDoc(doc(db, "gameSettings", "current"), { soundEnabled: document.querySelector("#soundEnabled").checked, easyMode: document.querySelector("#easyMode").checked });
-        document.querySelector("#settingsNotice").textContent = "设置已保存。";
-      });
+      document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = t("home.comingSoon"); });
+      document.querySelector("#saveSettings").addEventListener("click", async () => { if (!currentProfile || currentProfile.role !== "admin") return; await setDoc(doc(db, "gameSettings", "current"), { soundEnabled: document.querySelector("#soundEnabled").checked, easyMode: document.querySelector("#easyMode").checked }); document.querySelector("#settingsNotice").textContent = t("admin.saved"); });
       document.querySelector("#logoutButton").addEventListener("click", () => signOut(auth));
     </script>
   </body>
