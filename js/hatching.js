@@ -9,11 +9,11 @@ export function pickDragon(egg, dragons) {
   if (dragons.length > 0) return dragons[0];
   throw new Error(`No dragon assets are available for egg: ${egg}`);
 }
-export function lock(button) {
+export function lock(button, label) {
   if (button.dataset.locked) return false;
   button.dataset.locked = "true";
   button.disabled = true;
-  button.textContent = "正在孵化…";
+  button.textContent = label;
   button.classList.add("hidden");
   return true;
 }

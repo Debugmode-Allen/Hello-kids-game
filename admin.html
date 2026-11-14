@@ -1,1 +1,148 @@
-<!doctype html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Allen 的管理中心</title><style>body{font-family:"Microsoft YaHei";background:#eef7ff;padding:24px}.card{max-width:720px;margin:auto;background:#fff;padding:28px;border-radius:24px}.child{background:#f3f7ff;padding:16px;margin:14px 0;border-radius:14px}.dragon{background:#b45309}.history{background:#b42318}button{padding:9px;border:0;border-radius:9px;color:#fff;margin:3px}</style><main class="card"><h1>Allen 的管理中心</h1><div id="children">正在读取…</div><p><button id="logout">退出账户</button></p></main><script type="module">import{auth,db,onAuthStateChanged,signOut,doc,getDoc,getDocs,collection}from"./js/firebase.js";import{resetDragon,resetLearningHistory}from"./js/admin-dashboard.js";const box=document.querySelector("#children");onAuthStateChanged(auth,async u=>{if(!u)return location.replace("index.html");const me=await getDoc(doc(db,"users",u.uid));if(me.data().role!=="admin")return location.replace("journey.html");const people=await getDocs(collection(db,"users")),rows=[];for(const p of people.docs){if(p.data().role!=="child")continue;const[d,g,a]=await Promise.all([getDoc(doc(db,"users",p.id,"dragon","current")),getDoc(doc(db,"users",p.id,"progress","summary")),getDocs(collection(db,"users",p.id,"attempts"))]);rows.push({id:p.id,name:p.data().name,d:d.data(),g:g.data(),n:a.size})}box.innerHTML=rows.map(x=>`<section class="child"><h2>${x.name}</h2><p>小龙：${x.d?.customName||"尚未孵化"}</p><p>等级：中文 ${x.g?.chineseLevel??"-"} · 英文 ${x.g?.englishLevel??"-"} · 数学 ${x.g?.mathLevel??"-"}</p><p>历史测试：${x.n} 次</p><button class="dragon" data-id="${x.id}" data-name="${x.name}">重新孵化小龙</button><button class="history" data-id="${x.id}" data-name="${x.name}">清除学习与测试记录</button></section>`).join("");document.querySelectorAll(".dragon").forEach(b=>b.onclick=async()=>{if(confirm(`确认删除 ${b.dataset.name} 的小龙？下次登录需重新选蛋和测试。`)){await resetDragon(b.dataset.id);location.reload()}});document.querySelectorAll(".history").forEach(b=>b.onclick=async()=>{if(confirm(`确认清除 ${b.dataset.name} 的学习汇总和全部测试历史？小龙将保留。`)){await resetLearningHistory(b.dataset.id);location.reload()}})});document.querySelector("#logout").onclick=()=>signOut(auth);</script></html>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      :root { color: #172554; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 76px 20px 32px; background: linear-gradient(160deg, #e0f2fe, #f5f3ff); }
+      .admin-card { width: min(100%, 760px); margin: 0 auto; padding: 32px 28px; background: rgba(255,255,255,.96); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
+      h1 { margin: 0 0 8px; text-align: center; font-size: clamp(1.7rem, 5vw, 2.3rem); }
+      .intro { margin: 0 0 24px; text-align: center; color: #475569; }
+      .child-card { margin: 14px 0; padding: 20px; border-radius: 18px; background: #eff6ff; }
+      .child-card h2 { margin: 0 0 12px; color: #1e3a8a; font-size: 1.25rem; }
+      .child-card p { margin: 7px 0; color: #334155; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 17px; }
+      button { min-height: 40px; padding: 9px 14px; border: 0; border-radius: 10px; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+      .reset-dragon { background: #b45309; }
+      .reset-history { background: #b42318; }
+      button:disabled { cursor: wait; opacity: .65; }
+      #status { min-height: 1.5em; margin: 16px 0 0; text-align: center; color: #64748b; }
+      @media (max-width: 430px) { body { padding: 68px 12px 20px; } .admin-card { padding: 27px 16px; } .actions button { width: 100%; } }
+    </style>
+  </head>
+  <body>
+    <main class="admin-card" aria-live="polite">
+      <h1 id="pageTitle"></h1>
+      <p id="intro" class="intro"></p>
+      <section id="children"></section>
+      <p id="status"></p>
+    </main>
+
+    <script type="module">
+      import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection } from "./js/firebase.js";
+      import { resetDragon, resetLearningHistory } from "./js/admin-dashboard.js";
+      import { loadUI, t } from "./js/i18n.js";
+
+      const $ = (selector) => document.querySelector(selector);
+
+      function paragraph(text) {
+        const element = document.createElement("p");
+        element.textContent = text;
+        return element;
+      }
+
+      function createResetButton(className, label, onClick) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = className;
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        return button;
+      }
+
+      async function runReset(button, confirmMessage, reset) {
+        if (!confirm(confirmMessage)) return;
+        button.disabled = true;
+        try {
+          await reset();
+          location.reload();
+        } catch (error) {
+          console.error("Admin reset failed", error);
+          $("#status").textContent = t("admin.resetError");
+          button.disabled = false;
+        }
+      }
+
+      function renderChild(child) {
+        const card = document.createElement("article");
+        card.className = "child-card";
+        const heading = document.createElement("h2");
+        heading.textContent = child.name;
+        card.append(heading);
+        card.append(paragraph(t("admin.dragon", { name: child.dragon?.customName || t("admin.noDragon") })));
+        card.append(paragraph(t("admin.learningLevels", {
+          chinese: child.progress?.chineseLevel ?? "-",
+          english: child.progress?.englishLevel ?? "-",
+          math: child.progress?.mathLevel ?? "-"
+        })));
+        card.append(paragraph(t("admin.attemptCount", { count: child.attemptCount })));
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        actions.append(createResetButton("reset-dragon", t("admin.rehatch"), (event) => {
+          const message = t("admin.confirmDragonReset", { name: child.name });
+          runReset(event.currentTarget, message, () => resetDragon(child.id));
+        }));
+        actions.append(createResetButton("reset-history", t("admin.clearHistory"), (event) => {
+          const message = t("admin.confirmHistoryReset", { name: child.name });
+          runReset(event.currentTarget, message, () => resetLearningHistory(child.id));
+        }));
+        card.append(actions);
+        return card;
+      }
+
+      async function loadChildren() {
+        const people = await getDocs(collection(db, "users"));
+        const children = await Promise.all(people.docs
+          .filter((person) => person.data().role === "child")
+          .map(async (person) => {
+            const [dragonSnapshot, progressSnapshot, attemptsSnapshot] = await Promise.all([
+              getDoc(doc(db, "users", person.id, "dragon", "current")),
+              getDoc(doc(db, "users", person.id, "progress", "summary")),
+              getDocs(collection(db, "users", person.id, "attempts"))
+            ]);
+            return {
+              id: person.id,
+              name: person.data().name,
+              dragon: dragonSnapshot.exists() ? dragonSnapshot.data() : null,
+              progress: progressSnapshot.exists() ? progressSnapshot.data() : null,
+              attemptCount: attemptsSnapshot.size
+            };
+          }));
+
+        const container = $("#children");
+        container.replaceChildren();
+        if (!children.length) {
+          container.append(paragraph(t("admin.noChildren")));
+          return;
+        }
+        children.forEach((child) => container.append(renderChild(child)));
+      }
+
+      await loadUI();
+      document.title = t("admin.pageTitle");
+      $("#pageTitle").textContent = t("admin.pageTitle");
+      $("#intro").textContent = t("admin.prompt");
+      $("#status").textContent = t("admin.loading");
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) { location.replace("index.html"); return; }
+        try {
+          const profile = await getDoc(doc(db, "users", user.uid));
+          if (!profile.exists() || profile.data().role !== "admin") {
+            location.replace("journey.html");
+            return;
+          }
+          await loadChildren();
+          $("#status").textContent = "";
+        } catch (error) {
+          console.error("Unable to load admin dashboard", error);
+          $("#status").textContent = t("admin.loadError");
+        }
+      });
+    </script>
+  </body>
+</html>

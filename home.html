@@ -1,1 +1,103 @@
-<!doctype html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>我的小龙</title><style>body{font-family:"Microsoft YaHei";background:#eef7ff;padding:24px}.card{position:relative;max-width:620px;margin:auto;background:#fff;border-radius:24px;padding:40px 28px;text-align:center}.logout{position:absolute;right:14px;top:14px;background:#eef2f8;color:#52617a;font-size:12px}.dragon{max-height:250px;max-width:100%}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f3f7ff;padding:12px;border-radius:12px}button{padding:10px;border:0;border-radius:10px;background:#4d86f7;color:#fff}</style><main class="card"><button id="logout" class="logout">退出账户</button><h1 id="title">我的小龙</h1><img id="image" class="dragon"><h2 id="name"></h2><p id="job"></p><div class="stats"><div class="stat">等级<br><b id="level"></b></div><div class="stat">经验<br><b id="xp"></b></div><div class="stat">阶段<br><b id="stage"></b></div></div><h3>学习能力</h3><p id="learning"></p></main><script type="module">import{auth,db,onAuthStateChanged,signOut,doc,getDoc}from"./js/firebase.js";const $=x=>document.querySelector(x);onAuthStateChanged(auth,async u=>{if(!u)return location.replace("index.html");const d=await getDoc(doc(db,"users",u.uid,"dragon","current"));if(!d.exists())return location.replace("journey.html");const p=await getDoc(doc(db,"users",u.uid,"progress","summary")),x=d.data(),r=p.data();const lib=await fetch("assets/dragons/dragon-library.json").then(a=>a.json()),base=lib.find(a=>a.id===x.speciesId);$("#image").src=base.image;$("#name").textContent=x.customName||base.name;$("#job").textContent=x.profession;$("#level").textContent=x.level;$("#xp").textContent=x.xp;$("#stage").textContent=x.stage;$("#learning").textContent=`中文 ${r.chineseLevel} · 英文 ${r.englishLevel} · 数学 ${r.mathLevel}`});$("#logout").onclick=()=>signOut(auth);</script></html>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      :root { color: #172554; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 76px 20px 32px; background: linear-gradient(160deg, #e0f2fe, #f5f3ff); }
+      .dragon-home { width: min(100%, 680px); margin: 0 auto; padding: 34px 28px; text-align: center; background: rgba(255,255,255,.95); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
+      h1 { margin: 0 0 12px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
+      .dragon-image { display: block; width: min(100%, 310px); height: 260px; margin: 6px auto 12px; object-fit: contain; }
+      #dragonName { margin: 0; font-size: 1.7rem; color: #7c3aed; }
+      #dragonProfession { min-height: 1.5em; margin: 8px 0 26px; color: #475569; }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .stat { padding: 14px 8px; border-radius: 16px; background: #eff6ff; }
+      .stat-label { display: block; color: #475569; font-size: .88rem; }
+      .stat-value { display: block; margin-top: 6px; font-size: 1.15rem; color: #1d4ed8; }
+      .learning { margin-top: 24px; padding: 17px; border-radius: 16px; background: #f5f3ff; }
+      .learning h2 { margin: 0 0 9px; font-size: 1.05rem; }
+      .learning p { margin: 0; color: #475569; }
+      #status { min-height: 1.5em; margin: 16px 0 0; color: #64748b; }
+      .hidden { display: none; }
+      @media (max-width: 430px) { body { padding: 68px 12px 20px; } .dragon-home { padding: 28px 16px; } }
+    </style>
+  </head>
+  <body>
+    <main class="dragon-home" aria-live="polite">
+      <h1 id="pageTitle"></h1>
+      <section id="dragonPanel" class="hidden">
+        <img id="dragonImage" class="dragon-image" alt="" />
+        <h2 id="dragonName"></h2>
+        <p id="dragonProfession"></p>
+        <div class="stats">
+          <div class="stat"><span id="levelLabel" class="stat-label"></span><strong id="levelValue" class="stat-value"></strong></div>
+          <div class="stat"><span id="xpLabel" class="stat-label"></span><strong id="xpValue" class="stat-value"></strong></div>
+          <div class="stat"><span id="stageLabel" class="stat-label"></span><strong id="stageValue" class="stat-value"></strong></div>
+        </div>
+        <section class="learning"><h2 id="learningLabel"></h2><p id="learningValues"></p></section>
+      </section>
+      <p id="status"></p>
+    </main>
+
+    <script type="module">
+      import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
+      import { loadUI, t } from "./js/i18n.js";
+
+      const $ = (selector) => document.querySelector(selector);
+
+      async function loadDragonLibrary() {
+        const response = await fetch("assets/dragons/dragon-library.json");
+        if (!response.ok) throw new Error(`Dragon library: ${response.status}`);
+        return response.json();
+      }
+
+      function showDragon(dragon, progress, species) {
+        $("#dragonImage").src = species.image;
+        $("#dragonImage").alt = dragon.customName || species.name;
+        $("#dragonName").textContent = dragon.customName || species.name;
+        $("#dragonProfession").textContent = species.profession || dragon.profession || "";
+        $("#levelValue").textContent = dragon.level ?? 1;
+        $("#xpValue").textContent = dragon.xp ?? 0;
+        $("#stageValue").textContent = dragon.stage ?? 1;
+        $("#learningValues").textContent = t("home.learningValues", {
+          chinese: progress?.chineseLevel ?? 1,
+          english: progress?.englishLevel ?? 1,
+          math: progress?.mathLevel ?? 1
+        });
+        $("#dragonPanel").classList.remove("hidden");
+      }
+
+      await loadUI();
+      document.title = t("home.title");
+      $("#pageTitle").textContent = t("home.title");
+      $("#levelLabel").textContent = t("home.level");
+      $("#xpLabel").textContent = t("home.xp");
+      $("#stageLabel").textContent = t("home.stage");
+      $("#learningLabel").textContent = t("home.learning");
+      $("#status").textContent = t("home.loading");
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) { location.replace("index.html"); return; }
+        try {
+          const [dragonSnapshot, progressSnapshot, library] = await Promise.all([
+            getDoc(doc(db, "users", user.uid, "dragon", "current")),
+            getDoc(doc(db, "users", user.uid, "progress", "summary")),
+            loadDragonLibrary()
+          ]);
+          if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
+          const dragon = dragonSnapshot.data();
+          const species = library.find((item) => item.id === dragon.speciesId);
+          if (!species) throw new Error("Missing dragon species");
+          showDragon(dragon, progressSnapshot.exists() ? progressSnapshot.data() : null, species);
+          $("#status").textContent = "";
+        } catch (error) {
+          console.error("Unable to load dragon home", error);
+          $("#status").textContent = t("home.loadError");
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -23,9 +23,12 @@ export function createAssessment() {
 
 export function calculateLevels(answers) {
   const correct = (subject) => answers.filter((answer) => answer.subject === subject && answer.correct).length;
+  const subjectNames = Object.fromEntries(
+    Object.entries(questionBank).map(([key, grades]) => [key, Object.values(grades)[0][0].subject])
+  );
   return {
-    chinese: Math.min(3, 1 + Math.floor(correct("中文") / 2)),
-    english: Math.min(5, 3 + Math.floor(correct("English") / 2)),
-    math: Math.min(5, 3 + Math.floor(correct("数学") / 2))
+    chinese: Math.min(3, 1 + Math.floor(correct(subjectNames.chinese) / 2)),
+    english: Math.min(5, 3 + Math.floor(correct(subjectNames.english) / 2)),
+    math: Math.min(5, 3 + Math.floor(correct(subjectNames.math) / 2))
   };
 }

@@ -3,97 +3,97 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="app.title">小小学习家</title>
+    <title></title>
     <style>
       :root { font-family: "Microsoft YaHei", system-ui, sans-serif; color: #24324a; background: #eef7ff; }
       * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
-      .card { width: min(94vw, 560px); background: white; border-radius: 28px; padding: 36px 28px; box-shadow: 0 14px 38px #1f57972e; text-align: center; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; }
+      .card { width: min(94vw, 560px); padding: 36px 28px; text-align: center; background: #fff; border-radius: 28px; box-shadow: 0 14px 38px #1f57972e; }
       h1 { margin: 8px 0; font-size: clamp(2rem, 7vw, 3rem); }
       p { line-height: 1.6; }
-      .emoji { font-size: 58px; }
+      .icon { font-size: 58px; }
       form { display: grid; gap: 14px; margin: 26px 0 8px; text-align: left; }
       label { font-weight: 700; }
       select, input, button { min-height: 50px; border-radius: 14px; font: inherit; }
-      select, input { width: 100%; border: 2px solid #cbdcf6; padding: 10px 14px; background: #fff; }
-      button { border: 0; padding: 10px 20px; cursor: pointer; background: #4d86f7; color: white; font-weight: 700; }
-      button:hover { background: #326fe6; }
-      button.secondary { background: #e8effd; color: #274a85; }
-      .hidden { display: none !important; }
+      select, input { width: 100%; padding: 10px 14px; border: 2px solid #cbdcf6; background: #fff; }
+      button { padding: 10px 20px; border: 0; background: #4d86f7; color: #fff; font-weight: 700; cursor: pointer; }
+      button:disabled { cursor: wait; opacity: .7; }
       .notice { min-height: 25px; color: #b42318; font-weight: 700; }
-      .success { color: #147a3f; }
-      .settings { margin-top: 22px; padding: 18px; border-radius: 18px; background: #f2f7ff; text-align: left; }
-      .settings label { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
-      .settings input { width: auto; min-height: auto; }
-      #welcomeName { color: #4d86f7; }
     </style>
   </head>
   <body>
     <main class="card">
-      <section id="loginView">
-        <div class="emoji" aria-hidden="true" data-i18n="login.icon">🌟</div>
-        <h1 data-i18n="login.title">小小学习家</h1>
-        <p data-i18n="login.subtitle">请选择你的账户，然后输入密码。</p>
-        <form id="loginForm">
-          <label><span data-i18n="login.accountLabel">账户</span><select id="account" required><option value="admin" data-i18n="account.allen">Allen</option><option value="amy" data-i18n="account.amy">Amy</option><option value="shirlyn" data-i18n="account.shirlyn">Shirlyn</option></select></label>
-          <label><span data-i18n="login.passwordLabel">密码</span><input id="password" type="password" autocomplete="current-password" required /></label>
-          <button type="submit" data-i18n="login.submit">进入学习世界</button>
-        </form>
-        <p id="loginNotice" class="notice" aria-live="polite"></p>
-      </section>
-      <section id="appView" class="hidden">
-        <div class="emoji" aria-hidden="true" data-i18n="home.icon">🎈</div>
-        <h1 id="welcomeName"></h1>
-        <p id="roleMessage"></p>
-        <div id="childHome" class="hidden"><button id="startGame" type="button" data-i18n="home.start">开始今天的学习</button><p id="gameMessage" class="notice success"></p></div>
-        <div id="adminPanel" class="settings hidden">
-          <h2 data-i18n="admin.title">游戏设置</h2>
-          <label><input id="soundEnabled" type="checkbox" checked /><span data-i18n="admin.sound">开启答题音效</span></label>
-          <label><input id="easyMode" type="checkbox" checked /><span data-i18n="admin.easy">使用简单难度</span></label>
-          <button id="saveSettings" type="button" data-i18n="admin.save">保存设置</button><p id="settingsNotice" class="notice success"></p>
-        </div>
-        <p><button id="logoutButton" type="button" class="secondary" data-i18n="home.logout">退出账户</button></p>
-      </section>
+      <div id="icon" class="icon" aria-hidden="true"></div>
+      <h1 id="title"></h1>
+      <p id="subtitle"></p>
+      <form id="loginForm">
+        <label><span id="accountLabel"></span><select id="account" required>
+          <option value="admin" data-label="account.allen"></option>
+          <option value="amy" data-label="account.amy"></option>
+          <option value="shirlyn" data-label="account.shirlyn"></option>
+        </select></label>
+        <label><span id="passwordLabel"></span><input id="password" type="password" autocomplete="current-password" required /></label>
+        <button id="submit" type="submit"></button>
+      </form>
+      <p id="loginNotice" class="notice" aria-live="polite"></p>
     </main>
+
     <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
-      import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
-      const uiText = await fetch("content/ui.zh-CN.json").then((response) => response.json());
-      const t = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replace(`{${name}}`, value), uiText[key] ?? key);
-      document.querySelectorAll("[data-i18n]").forEach((element) => { element.textContent = t(element.dataset.i18n); });
-      const firebaseConfig = { apiKey: "AIzaSyDLPgb-YFTaKl1asAU2oiZxdD2_6M_wOE0", authDomain: "kids-learning-game-655c6.firebaseapp.com", projectId: "kids-learning-game-655c6", storageBucket: "kids-learning-game-655c6.firebasestorage.app", messagingSenderId: "583705940703", appId: "1:583705940703:web:4bb77d4040f88311a40f6a" };
-      const auth = getAuth(initializeApp(firebaseConfig));
-      const db = getFirestore();
-      const accounts = { admin: { email: "wang.yilun.allen@gmail.com", name: "Allen" }, amy: { email: "wang.yilun.allen+amy@gmail.com", name: "Amy" }, shirlyn: { email: "wang.yilun.allen+shirlyn@gmail.com", name: "Shirlyn" } };
-      let currentProfile = null;
-      const loginView = document.querySelector("#loginView");
-      const appView = document.querySelector("#appView");
-      const loginNotice = document.querySelector("#loginNotice");
-      const adminPanel = document.querySelector("#adminPanel");
-      const childHome = document.querySelector("#childHome");
-      document.querySelector("#loginForm").addEventListener("submit", async (event) => {
-        event.preventDefault(); const account = accounts[document.querySelector("#account").value]; loginNotice.textContent = t("login.verifying");
-        try { await signInWithEmailAndPassword(auth, account.email, document.querySelector("#password").value); document.querySelector("#password").value = ""; }
-        catch { loginNotice.textContent = t("login.invalid"); }
-      });
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) { loginView.classList.remove("hidden"); appView.classList.add("hidden"); currentProfile = null; loginNotice.textContent = ""; document.querySelector("#gameMessage").textContent = ""; document.querySelector("#settingsNotice").textContent = ""; return; }
+      import { auth, db, signInWithEmailAndPassword, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
+      import { loadUI, t } from "./js/i18n.js";
+
+      const $ = (selector) => document.querySelector(selector);
+      const accounts = {
+        admin: "wang.yilun.allen@gmail.com",
+        amy: "wang.yilun.allen+amy@gmail.com",
+        shirlyn: "wang.yilun.allen+shirlyn@gmail.com"
+      };
+
+      await loadUI();
+      document.title = t("app.title");
+      $("#icon").textContent = t("login.icon");
+      $("#title").textContent = t("login.title");
+      $("#subtitle").textContent = t("login.subtitle");
+      $("#accountLabel").textContent = t("login.accountLabel");
+      $("#passwordLabel").textContent = t("login.passwordLabel");
+      $("#submit").textContent = t("login.submit");
+      document.querySelectorAll("[data-label]").forEach((option) => { option.textContent = t(option.dataset.label); });
+
+      $("#loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = accounts[$("#account").value];
+        $("#submit").disabled = true;
+        $("#loginNotice").textContent = t("login.verifying");
         try {
-          const profileSnapshot = await getDoc(doc(db, "users", user.uid));
-          if (!profileSnapshot.exists()) { loginNotice.textContent = t("login.profileMissing"); return; }
-          currentProfile = profileSnapshot.data(); loginNotice.textContent = ""; document.querySelector("#gameMessage").textContent = ""; document.querySelector("#settingsNotice").textContent = "";
-          if (currentProfile.role === "admin") {
-            window.location.replace("admin.html");
-          } else {
-            const dragon = await getDoc(doc(db, "users", user.uid, "dragon", "current"));
-            window.location.replace(dragon.exists() ? "home.html" : "journey.html");
-          }
-        } catch { loginView.classList.remove("hidden"); appView.classList.add("hidden"); loginNotice.textContent = t("login.profileError"); }
+          await signInWithEmailAndPassword(auth, email, $("#password").value);
+          $("#password").value = "";
+        } catch {
+          $("#loginNotice").textContent = t("login.invalid");
+          $("#submit").disabled = false;
+        }
       });
-      document.querySelector("#startGame").addEventListener("click", () => { document.querySelector("#gameMessage").textContent = t("home.comingSoon"); });
-      document.querySelector("#saveSettings").addEventListener("click", async () => { if (!currentProfile || currentProfile.role !== "admin") return; await setDoc(doc(db, "gameSettings", "current"), { soundEnabled: document.querySelector("#soundEnabled").checked, easyMode: document.querySelector("#easyMode").checked }); document.querySelector("#settingsNotice").textContent = t("admin.saved"); });
-      document.querySelector("#logoutButton").addEventListener("click", () => signOut(auth));
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
+        try {
+          const profile = await getDoc(doc(db, "users", user.uid));
+          if (!profile.exists()) {
+            $("#loginNotice").textContent = t("login.profileMissing");
+            $("#submit").disabled = false;
+            return;
+          }
+          if (profile.data().role === "admin") {
+            location.replace("admin.html");
+            return;
+          }
+          const dragon = await getDoc(doc(db, "users", user.uid, "dragon", "current"));
+          location.replace(dragon.exists() ? "home.html" : "journey.html");
+        } catch (error) {
+          console.error("Unable to route signed-in user", error);
+          $("#loginNotice").textContent = t("login.profileError");
+          $("#submit").disabled = false;
+        }
+      });
     </script>
   </body>
 </html>
