@@ -49,7 +49,7 @@
       const $ = (selector) => document.querySelector(selector);
 
       async function loadDragonLibrary() {
-        const response = await fetch("assets/dragons/dragon-library.json");
+        const response = await fetch("assets/dragons/dragon-library.json", { cache: "no-store" });
         if (!response.ok) throw new Error(`Dragon library: ${response.status}`);
         return response.json();
       }

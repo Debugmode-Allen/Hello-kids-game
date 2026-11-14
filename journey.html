@@ -70,7 +70,7 @@
       const $ = (selector) => document.querySelector(selector);
       const show = (section) => ["story", "eggs", "quiz", "hatch"].forEach((name) => $("#" + name).classList.toggle("hidden", name !== section));
       const loadJson = async (path) => {
-        const response = await fetch(path);
+        const response = await fetch(path, { cache: "no-store" });
         if (!response.ok) throw new Error(`${path}: ${response.status}`);
         return response.json();
       };

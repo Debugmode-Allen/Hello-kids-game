@@ -1,7 +1,11 @@
 let messages = null;
 
 export async function loadUI() {
-  if (!messages) messages = await fetch("content/ui.zh-CN.json").then((response) => response.json());
+  if (!messages) {
+    const response = await fetch("content/ui.zh-CN.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Unable to load UI content: ${response.status}`);
+    messages = await response.json();
+  }
   return messages;
 }
 
