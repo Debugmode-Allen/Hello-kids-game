@@ -22,11 +22,14 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前已发布版本为 `v1.0.4`：练习战包含开场透明标题、HP/血条、爪击命中与扣血演出、结算总结和自动返回。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
+当前已发布版本为 `v1.0.5`，练习战已接入火焰龙和月龙的技能一。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
 
 ## 在家继续：本次战斗验收
 
 启动本地服务后，从 `http://localhost:8000/index.html` 登录孩子账户，并从小龙主页进入“练习”。检查开场战斗名、HP 数字、爪击扣血动画，以及胜利、失败、逃跑后三秒返回主页。练习战不保存奖励或属性，因此可重复测试，不会改变 Firebase 中的小龙资料。
+
+- Amy 的火焰龙：点击火焰喷吐，再选择可攻击的怪物。检查火焰是否从龙嘴连续延伸到目标，以及灼烧和扣血演出。
+- Shirlyn 的月龙：点击黑暗术。检查每只怪物是否出现黑雾、本体变暗和血条下的「黑暗 · 1回合」标签。每只怪物的下一次攻击应该显示 MISS、保持目标 HP，并在结算后移除自己的黑暗效果。
 
 ## 日常工作方式
 

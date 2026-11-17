@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
+    <link rel="stylesheet" href="css/battle-effects.css" />
     <style>
       :root { font-family: Georgia, "STKaiti", "KaiTi", serif; color: #172554; }
       * { box-sizing: border-box; }
@@ -126,14 +127,16 @@
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
       import { loadUI, t } from "./js/i18n.js";
-      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDamageSkill, validTargets } from "./js/battle-engine.js";
+      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js";
 
       const $ = (selector) => document.querySelector(selector);
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
-      let targeting = false;
+      let targeting = null;
+      let skillOne = null;
       let busy = false;
       let impactImagePath = "";
+      const spellTextures = new Map();
 
       async function loadJson(path) {
         const response = await fetch(path, { cache: "no-store" });
@@ -177,6 +180,16 @@
         if (!attackerSlot || !targetSlot) return;
         attackerSlot.classList.add(attacker.side === "player" ? "attack-right" : "attack-left");
         await wait(270);
+        if (attacker.darknessTurns > 0) {
+          const miss = document.createElement("strong");
+          miss.className = "damage-number miss-label";
+          miss.textContent = t("battle.miss");
+          targetSlot.append(miss);
+          await wait(980);
+          miss.remove();
+          attackerSlot.classList.remove("attack-right", "attack-left");
+          return;
+        }
         targetSlot.classList.add("hit-shake");
         const impact = document.createElement("img");
         impact.className = "impact-mark";
@@ -191,6 +204,65 @@
         damageNumber.remove();
         attackerSlot.classList.remove("attack-right", "attack-left");
         targetSlot.classList.remove("hit-shake");
+      }
+
+      function spellEffect(className, skillId, container) {
+        const effect = document.createElement("span");
+        effect.className = className;
+        effect.style.setProperty("--spell-texture", `url("${spellTextures.get(skillId)}")`);
+        effect.setAttribute("aria-hidden", "true");
+        container.append(effect);
+        return effect;
+      }
+
+      async function playSpellAnimation(attacker, target, skillId, damage) {
+        const field = $(".battlefield");
+        const fieldRect = field.getBoundingClientRect();
+        const sprite = slots.get(attacker.slot).querySelector(".unit-button img").getBoundingClientRect();
+        const targetSlot = slots.get(target.slot);
+        const destination = targetSlot.getBoundingClientRect();
+        const fire = skillId === "fire-breath";
+        const originX = sprite.left + sprite.width * (fire ? .73 : .78);
+        const originY = sprite.top + sprite.height * (fire ? .34 : .48);
+        const dx = destination.left + destination.width * .5 - originX;
+        const dy = destination.top + destination.height * .52 - originY;
+        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        let plume;
+        if (!reducedMotion) {
+          plume = spellEffect(fire ? "fire-stream" : "shadow-flight", skillId, field);
+          plume.style.left = `${originX - fieldRect.left - field.clientLeft}px`;
+          plume.style.top = `${originY - fieldRect.top - field.clientTop}px`;
+          if (fire) {
+            plume.style.width = `${Math.hypot(dx, dy) + destination.width * .23}px`;
+            plume.style.height = `${destination.height * .85}px`;
+            plume.style.rotate = `${Math.atan2(dy, dx)}rad`;
+            await wait(240);
+          } else {
+            const flight = plume.animate([
+              { transform: "translate(-50%, -50%) scale(.48)", opacity: .3 },
+              { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.25)`, opacity: .88 }
+            ], { duration: 510, easing: "ease-out", fill: "forwards" });
+            await flight.finished;
+            plume.remove();
+          }
+        }
+
+        const impact = spellEffect(fire ? "flame-burn" : "shadow-arrival", skillId, targetSlot);
+        if (fire) {
+          targetSlot.classList.add("hit-shake", "spell-shake");
+          const number = document.createElement("strong");
+          number.className = "damage-number";
+          number.textContent = `-${damage}`;
+          targetSlot.append(number);
+          await wait(reducedMotion ? 650 : 1060);
+          plume?.remove();
+          number.remove();
+          targetSlot.classList.remove("hit-shake", "spell-shake");
+        } else {
+          await wait(reducedMotion ? 160 : 440);
+        }
+        impact.remove();
       }
 
       function currentUnit() { return unitById(state, state?.activeUnitId); }
@@ -230,7 +302,7 @@
 
       function renderUnits() {
         const validIds = targeting && isPlayerTurn()
-          ? new Set(validTargets(state, currentUnit().id, "claw").map((unit) => unit.id))
+          ? new Set(validTargets(state, currentUnit().id, targeting).map((unit) => unit.id))
           : new Set();
         slots.forEach((slot, slotId) => {
           const unit = state.units.find((candidate) => candidate.slot === slotId && candidate.alive);
@@ -241,13 +313,16 @@
           slot.classList.add("actor");
           if (unit.side === "enemy") slot.classList.add("enemy");
           const canTarget = validIds.has(unit.id);
-          const protectedTarget = targeting && unit.side === "enemy" && isProtected(state, unit);
+          const protectedTarget = targeting && state.skills[targeting].obeysFrontlineProtection && unit.side === "enemy" && isProtected(state, unit);
           slot.classList.toggle("targetable", canTarget);
           slot.classList.toggle("protected", protectedTarget);
           const button = document.createElement("button");
           button.type = "button";
           button.className = "unit-button";
-          button.setAttribute("aria-label", unit.name);
+          const status = unit.darknessTurns > 0
+            ? t("battle.darkMagicRemaining", { turns: unit.darknessTurns }) : "";
+          button.setAttribute("aria-label", status ? `${unit.name}?${status}` : unit.name);
+          if (status) button.title = status;
           const image = document.createElement("img");
           image.src = unit.image;
           image.alt = "";
@@ -265,6 +340,15 @@
           button.addEventListener("mouseleave", () => setHighlight(unit.id, false));
           button.addEventListener("click", () => onUnitClick(unit));
           slot.append(button);
+          if (status) {
+            image.classList.add("darkened-sprite");
+            const badge = document.createElement("span");
+            badge.className = "darkness-turns";
+            badge.setAttribute("aria-hidden", "true");
+            badge.textContent = t("battle.darkMagicBadge", { turns: unit.darknessTurns });
+            button.append(badge);
+            spellEffect("darkness-aura", "dark-magic", slot);
+          }
         });
       }
 
@@ -272,7 +356,7 @@
         const playerTurn = isPlayerTurn();
         $("#claw").disabled = !playerTurn || busy;
         $("#skip").disabled = !playerTurn || busy;
-        $("#skillOne").disabled = true;
+        $("#skillOne").disabled = !skillOne || !playerTurn || busy;
         $("#flee").disabled = state?.status !== "playing" || busy;
         $("#returnHome").classList.remove("visible");
       }
@@ -301,7 +385,9 @@
           const damage = calculateDamage(state, active, target, active.skillId, () => roll);
           await playAttackAnimation(active, target, damage);
           const result = useDamageSkill(state, active.id, target.id, active.skillId, () => roll);
-          setNotice("battle.enemyTurn", { name: active.name, skill: result.skill.nameKey ? t(result.skill.nameKey) : "", damage: result.damage });
+          setNotice(result.missed ? "battle.darkMagicMiss" : "battle.enemyTurn", {
+            name: active.name, skill: t(result.skill.nameKey), damage: result.damage
+          });
           render();
           if (result.outcome !== "playing") { showBattleResult(); return; }
         }
@@ -310,7 +396,8 @@
       async function onUnitClick(unit) {
         if (busy || !targeting || !isPlayerTurn() || unit.side !== "enemy") return;
         const active = currentUnit();
-        const valid = validTargets(state, active.id, "claw");
+        const skillId = targeting;
+        const valid = validTargets(state, active.id, skillId);
         if (!valid.some((candidate) => candidate.id === unit.id)) {
           setNotice(isProtected(state, unit) ? "battle.protected" : "battle.chooseTarget");
           return;
@@ -318,11 +405,12 @@
         busy = true;
         renderControls();
         const roll = Math.random();
-        const damage = calculateDamage(state, active, unit, "claw", () => roll);
-        await playAttackAnimation(active, unit, damage);
-        const result = useDamageSkill(state, active.id, unit.id, "claw", () => roll);
-        targeting = false;
-        setNotice("battle.playerAttack", { name: active.name, skill: t("battle.claw"), target: unit.name, damage: result.damage });
+        const damage = calculateDamage(state, active, unit, skillId, () => roll);
+        if (skillId === "claw") await playAttackAnimation(active, unit, damage);
+        else await playSpellAnimation(active, unit, skillId, damage);
+        const result = useDamageSkill(state, active.id, unit.id, skillId, () => roll);
+        targeting = null;
+        setNotice("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: result.damage });
         render();
         if (result.outcome !== "playing") { showBattleResult(); return; }
         await runEnemyTurns();
@@ -341,16 +429,36 @@
         $("#returnHome").textContent = t("battle.returnHome");
         $("#claw").addEventListener("click", () => {
           if (busy || !isPlayerTurn()) return;
-          targeting = true;
+          targeting = "claw";
           setNotice("battle.chooseTarget");
           render();
+        });
+        $("#skillOne").addEventListener("click", async () => {
+          if (!skillOne || busy || !isPlayerTurn()) return;
+          if (skillOne.target === "singleEnemy") {
+            targeting = skillOne.id;
+            setNotice("battle.chooseTarget");
+            render();
+            return;
+          }
+          const active = currentUnit();
+          const targets = validTargets(state, active.id, skillOne.id);
+          if (!targets.length) return;
+          busy = true;
+          targeting = null;
+          render();
+          await Promise.all(targets.map((target) => playSpellAnimation(active, target, skillOne.id)));
+          useDarkMagic(state, active.id);
+          setNotice("battle.darkMagicCast", { name: active.name });
+          render();
+          await runEnemyTurns();
         });
         $("#skip").addEventListener("click", async () => {
           if (busy || !isPlayerTurn()) return;
           busy = true;
           const active = currentUnit();
           skipTurn(state, active.id);
-          targeting = false;
+          targeting = null;
           setNotice("battle.skipNotice", { name: active.name });
           render();
           await runEnemyTurns();
@@ -359,7 +467,7 @@
           if (busy) return;
           busy = true;
           fleeBattle(state);
-          targeting = false;
+          targeting = null;
           setNotice("battle.fleeNotice");
           render();
           showBattleResult();
@@ -394,6 +502,9 @@
           $("#battleName").textContent = battleContent[battle.nameKey];
           $("#battleName").title = battleContent[battle.descriptionKey];
           impactImagePath = battleAssets.actions.find((item) => item.id === "claw-impact")?.path || "";
+          for (const effect of battleAssets.effects) {
+            spellTextures.set(effect.skillId, new URL(effect.path, document.baseURI).href);
+          }
           state = createBattle({
             dragon: {
               name: dragonData.customName || species.name,
@@ -410,6 +521,20 @@
             balance,
             skills: skillData.skills
           });
+          skillOne = state.skills[skillData.skillOneBySpecies?.[species.id]];
+          if (skillOne) {
+            const texture = new Image();
+            texture.src = spellTextures.get(skillOne.id);
+            await texture.decode();
+            const button = $("#skillOne");
+            const icon = document.createElement("img");
+            icon.src = battleAssets.actions.find((action) => action.id === skillOne.id).path;
+            icon.alt = "";
+            button.replaceChildren(icon);
+            button.classList.remove("skill-placeholder");
+            button.title = t(`${skillOne.nameKey}Description`, { turns: skillOne.durationTurns });
+            button.setAttribute("aria-label", button.title);
+          }
           render();
           showBattleIntro(battleContent[battle.nameKey]);
         } catch (error) {

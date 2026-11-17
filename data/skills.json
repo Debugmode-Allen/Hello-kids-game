@@ -1,5 +1,25 @@
 {
+  "skillOneBySpecies": {
+    "red-fire": "fire-breath",
+    "purple-moon": "dark-magic"
+  },
   "skills": [
+    {
+      "id": "fire-breath",
+      "nameKey": "battle.fireBreath",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": true,
+      "powerRatio": 0.32
+    },
+    {
+      "id": "dark-magic",
+      "nameKey": "battle.darkMagic",
+      "type": "status",
+      "target": "allEnemies",
+      "obeysFrontlineProtection": false,
+      "durationTurns": 1
+    },
     {
       "id": "claw",
       "nameKey": "battle.claw",

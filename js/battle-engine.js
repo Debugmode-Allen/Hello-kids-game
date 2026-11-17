@@ -109,6 +109,7 @@ function damageMultiplier(attacker, defender, damageConfig) {
 export function calculateDamage(state, attacker, defender, skillId, random = Math.random) {
   const skill = state.skills[skillId];
   if (!skill) throw new Error(`Unknown skill: ${skillId}`);
+  if (attacker.darknessTurns > 0) return 0;
   const ratio = attacker.powerRatio ?? skill.powerRatio;
   const basePower = skill.fixedPower ?? attacker.maxHp * ratio;
   const config = state.balance.damage;
@@ -117,6 +118,7 @@ export function calculateDamage(state, attacker, defender, skillId, random = Mat
 }
 
 function finishTurn(state, unit) {
+  if (unit.darknessTurns > 0) unit.darknessTurns -= 1;
   state.clock = unit.nextActionAt;
   unit.nextActionAt += actionInterval(unit, state.balance.speed);
   state.activeUnitId = null;
@@ -142,15 +144,28 @@ export function useDamageSkill(state, attackerId, targetId, skillId = "claw", ra
   if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !target?.alive) {
     throw new Error("Invalid action");
   }
-  if (!validTargets(state, attackerId, skillId).some((candidate) => candidate.id === targetId)) {
+  if (state.skills[skillId]?.type !== "damage" || !validTargets(state, attackerId, skillId).some((candidate) => candidate.id === targetId)) {
     throw new Error("Protected target");
   }
+  const missed = attacker.darknessTurns > 0;
   const damage = calculateDamage(state, attacker, target, skillId, random);
   target.hp = Math.max(0, target.hp - damage);
   target.alive = target.hp > 0;
   finishTurn(state, attacker);
   updateOutcome(state);
-  return { attacker, target, skill: state.skills[skillId], damage, outcome: state.status };
+  return { attacker, target, skill: state.skills[skillId], damage, missed, outcome: state.status };
+}
+
+export function useDarkMagic(state, attackerId) {
+  const attacker = unitById(state, attackerId);
+  const skill = state.skills["dark-magic"];
+  const targets = validTargets(state, attackerId, "dark-magic");
+  if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !targets.length) {
+    throw new Error("Invalid dark magic action");
+  }
+  for (const target of targets) target.darknessTurns = skill.durationTurns;
+  finishTurn(state, attacker);
+  return { targets, skill };
 }
 
 export function skipTurn(state, unitId) {

@@ -28,6 +28,16 @@
       "usage": "基础夜系敌人；右侧敌方阵位。浅色基础款；高等级可加深紫色。"
     }
   ],
+  "effects": [
+    {
+      "skillId": "fire-breath",
+      "path": "assets/battle/effects/fire-breath-stream.png"
+    },
+    {
+      "skillId": "dark-magic",
+      "path": "assets/battle/effects/dark-magic-mist.png"
+    }
+  ],
   "actions": [
     {
       "id": "claw-swipe",
@@ -52,6 +62,18 @@
       "name": "爪击命中血痕",
       "path": "assets/battle/actions/claw-impact.png",
       "usage": "爪击命中时短暂显示在受击角色身上的红橙色爪痕；透明背景。"
+    },
+    {
+      "id": "fire-breath",
+      "name": "火焰喷吐",
+      "path": "assets/battle/actions/fire-breath.png",
+      "usage": "火焰龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "dark-magic",
+      "name": "黑暗术",
+      "path": "assets/battle/actions/dark-magic.png",
+      "usage": "月龙技能一的圆形战斗按钮图标。"
     }
   ]
 }
