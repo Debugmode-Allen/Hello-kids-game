@@ -46,6 +46,12 @@
       "name": "逃跑",
       "path": "assets/battle/actions/flee-dash.png",
       "usage": "战斗操作区的圆形逃跑按钮图标；使用小龙冲向出口表示离开战斗。"
+    },
+    {
+      "id": "claw-impact",
+      "name": "爪击命中血痕",
+      "path": "assets/battle/actions/claw-impact.png",
+      "usage": "爪击命中时短暂显示在受击角色身上的红橙色爪痕；透明背景。"
     }
   ]
 }

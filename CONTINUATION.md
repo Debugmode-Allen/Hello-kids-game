@@ -22,7 +22,11 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前发布版本为 `v1.0.3`：小龙主页、练习战 UI 与可玩基础规则已通过本地测试并已推送到 GitHub。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
+当前已发布版本为 `v1.0.4`：练习战包含开场透明标题、HP/血条、爪击命中与扣血演出、结算总结和自动返回。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
+
+## 在家继续：本次战斗验收
+
+启动本地服务后，从 `http://localhost:8000/index.html` 登录孩子账户，并从小龙主页进入“练习”。检查开场战斗名、HP 数字、爪击扣血动画，以及胜利、失败、逃跑后三秒返回主页。练习战不保存奖励或属性，因此可重复测试，不会改变 Firebase 中的小龙资料。
 
 ## 日常工作方式
 

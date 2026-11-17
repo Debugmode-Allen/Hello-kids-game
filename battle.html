@@ -36,12 +36,23 @@
       .actor.targetable::after { border-color: #fef08a; background: rgba(254,240,138,.25); opacity: 1; }
       .actor.protected { filter: brightness(.72) saturate(.7); }
       .actor.protected::before { position: absolute; top: 25%; left: 50%; z-index: 3; content: "🛡"; transform: translate(-50%, -50%); font-size: clamp(1rem, 2vw, 1.8rem); text-shadow: 0 1px 3px #fff; }
+      .slot.attack-right { z-index: 8; animation: lunge-right .62s ease-in-out both; }
+      .slot.attack-left { z-index: 8; animation: lunge-left .62s ease-in-out both; }
+      .slot.hit-shake { z-index: 7; animation: hit-shake .42s ease-in-out both; }
+      .impact-mark { position: absolute; top: 18%; left: 5%; z-index: 9; width: 92%; height: 70%; object-fit: contain; pointer-events: none; animation: impact-flash .46s ease-out both; }
+      .damage-number { position: absolute; top: 14%; left: 50%; z-index: 10; color: #fee2e2; font-family: Georgia, "Microsoft YaHei", sans-serif; font-size: clamp(1.3rem, 3.2vw, 2.3rem); font-weight: 900; line-height: 1; pointer-events: none; text-shadow: -2px -2px 0 #991b1b, 2px -2px 0 #991b1b, -2px 2px 0 #991b1b, 2px 2px 0 #991b1b, 0 3px 5px rgba(0,0,0,.5); animation: damage-pop 1.02s ease-out both; }
+      @keyframes lunge-right { 0%,100% { transform: translate(-50%,-50%); } 28% { transform: translate(-50%,-50%) translateX(24px) rotate(-3deg); } 50% { transform: translate(-50%,-50%) translateX(48px) rotate(4deg) scale(1.07); } 70% { transform: translate(-50%,-50%) translateX(17px) rotate(-2deg); } }
+      @keyframes lunge-left { 0%,100% { transform: translate(-50%,-50%); } 28% { transform: translate(-50%,-50%) translateX(-24px) rotate(3deg); } 50% { transform: translate(-50%,-50%) translateX(-48px) rotate(-4deg) scale(1.07); } 70% { transform: translate(-50%,-50%) translateX(-17px) rotate(2deg); } }
+      @keyframes hit-shake { 0%,100% { transform: translate(-50%,-50%); } 18% { transform: translate(-50%,-50%) translateX(-8px) rotate(-4deg); } 36% { transform: translate(-50%,-50%) translateX(9px) rotate(4deg); } 55% { transform: translate(-50%,-50%) translateX(-6px) rotate(-2deg); } 75% { transform: translate(-50%,-50%) translateX(4px) rotate(1deg); } }
+      @keyframes impact-flash { 0% { opacity: 0; transform: scale(.45) rotate(-18deg); } 35% { opacity: 1; transform: scale(1.08) rotate(-8deg); } 100% { opacity: 0; transform: scale(1.2) rotate(5deg); } }
+      @keyframes damage-pop { 0% { opacity: 0; transform: translate(-50%, 16px) scale(.45); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.2); } 70% { opacity: 1; transform: translate(-50%, -28px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -44px) scale(.9); } }
       .actor img { z-index: 1; width: 96%; height: 96%; object-fit: contain; }
       .unit-button { width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: inherit; }
       .unit-button:focus-visible { outline: 3px solid #fef08a; border-radius: 50%; }
-      .health { position: absolute; top: -12px; left: 50%; z-index: 2; width: 86%; height: 11px; overflow: hidden; border: 2px solid #fff; border-radius: 99px; background: #1e293b; transform: translateX(-50%); box-shadow: 0 2px 5px rgba(15,23,42,.28); }
-      .health span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #16a34a, #86efac); }
-      .enemy .health span { background: linear-gradient(90deg, #dc2626, #fca5a5); }
+      .health { position: absolute; top: -15px; left: 50%; z-index: 2; width: 92%; height: 15px; overflow: hidden; border: 2px solid #fff; border-radius: 99px; background: #1e293b; transform: translateX(-50%); box-shadow: 0 2px 5px rgba(15,23,42,.38); }
+      .health .health-fill { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #15803d, #86efac); transition: width .3s ease; }
+      .enemy .health .health-fill { background: linear-gradient(90deg, #b91c1c, #fca5a5); }
+      .hp-readout { position: absolute; top: -37px; left: 50%; z-index: 3; min-width: max-content; padding: 2px 6px; border: 1px solid rgba(255,255,255,.9); border-radius: 999px; background: rgba(15,23,42,.78); color: #fff; font-family: "Microsoft YaHei", sans-serif; font-size: clamp(.58rem, 1.15vw, .78rem); font-weight: 800; line-height: 1.25; text-shadow: 0 1px 1px #000; transform: translateX(-50%); box-shadow: 0 1px 4px rgba(15,23,42,.4); }
       .controls { position: absolute; z-index: 6; bottom: 16px; display: flex; align-items: end; gap: 10px; }
       .player-controls { left: 16px; } .enemy-controls { right: 16px; }
       .round-action { display: grid; width: 70px; height: 70px; place-items: center; padding: 0; overflow: hidden; border: 3px solid rgba(255,255,255,.92); border-radius: 50%; background: #1e3a8a; cursor: pointer; box-shadow: 0 6px 13px rgba(15,23,42,.3); }
@@ -55,6 +66,16 @@
       .round-action:disabled { cursor: not-allowed; filter: grayscale(.8) opacity(.55); transform: none; }
       #returnHome { display: none; margin: 14px auto 0; padding: 10px 16px; border: 0; border-radius: 12px; background: #2563eb; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
       #returnHome.visible { display: block; }
+      .battle-intro, .battle-result { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; text-align: center; }
+      .battle-intro { background: transparent; pointer-events: auto; }
+      .battle-intro.hidden, .battle-result.hidden { display: none; }
+      .battle-intro-title { position: absolute; top: 50%; left: 50%; width: min(86%, 520px); margin: 0; padding: 20px 28px; border: 3px solid rgba(255,255,255,.85); border-radius: 22px; background: linear-gradient(145deg, rgba(255,255,255,.95), rgba(254,242,242,.9)); color: #991b1b; font-size: clamp(2rem, 6vw, 4.2rem); letter-spacing: .12em; text-shadow: 0 2px 0 #fff; transform: translate(-50%,-50%) scale(1); box-shadow: 0 12px 30px rgba(127,29,29,.26); transition: top .68s ease-in, left .68s ease-in, transform .68s ease-in, opacity .55s ease-in; }
+      .battle-intro.leaving { pointer-events: none; }
+      .battle-intro.leaving .battle-intro-title { top: 45px; left: calc(100% - 92px); opacity: 0; transform: translate(-50%,-50%) scale(.28); }
+      .battle-result { z-index: 21; background: rgba(15,23,42,.66); backdrop-filter: blur(2px); color: #fff; }
+      .result-card { width: min(84%, 470px); padding: 28px 24px; border: 3px solid rgba(255,255,255,.82); border-radius: 24px; background: linear-gradient(155deg, rgba(30,58,138,.96), rgba(91,33,182,.94)); box-shadow: 0 16px 42px rgba(0,0,0,.35); }
+      .result-card h2 { margin: 0 0 12px; font-size: clamp(1.7rem, 5vw, 2.7rem); }
+      .result-card p { margin: 8px 0; font-family: "Microsoft YaHei", sans-serif; }
       button:hover { filter: brightness(1.1); transform: translateY(-2px); } button:focus-visible { outline: 3px solid #fef08a; outline-offset: 2px; }
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
@@ -72,6 +93,8 @@
   <body>
     <main class="battle-page">
       <section class="battlefield" aria-label="battlefield">
+        <div id="battleIntro" class="battle-intro hidden" aria-live="polite"><h1 id="battleIntroTitle" class="battle-intro-title"></h1></div>
+        <div id="battleResult" class="battle-result hidden" aria-live="polite"><section class="result-card"><h2 id="resultTitle"></h2><p id="resultSummary"></p><p id="resultReturning"></p></section></div>
         <div class="battle-context">
           <span id="sceneName" class="context-name"></span>
           <div class="queue-wrap"><div id="turnQueue" class="turn-queue"></div></div>
@@ -103,12 +126,14 @@
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
       import { loadUI, t } from "./js/i18n.js";
-      import { beginNextTurn, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDamageSkill, validTargets } from "./js/battle-engine.js";
+      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDamageSkill, validTargets } from "./js/battle-engine.js";
 
       const $ = (selector) => document.querySelector(selector);
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
       let targeting = false;
+      let busy = false;
+      let impactImagePath = "";
 
       async function loadJson(path) {
         const response = await fetch(path, { cache: "no-store" });
@@ -117,6 +142,56 @@
       }
 
       function setNotice(key, values = {}) { $("#notice").textContent = t(key, values); }
+
+      const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+      function showBattleIntro(battleName) {
+        const intro = $("#battleIntro");
+        $("#battleIntroTitle").textContent = battleName;
+        intro.classList.remove("hidden", "leaving");
+        setTimeout(() => intro.classList.add("leaving"), 3000);
+        setTimeout(() => {
+          intro.classList.add("hidden");
+          runEnemyTurns();
+        }, 3750);
+      }
+
+      function showBattleResult() {
+        const result = $("#battleResult");
+        const titleKey = state.status === "victory" ? "battle.resultVictoryTitle"
+          : state.status === "defeat" ? "battle.resultDefeatTitle"
+            : "battle.resultFledTitle";
+        const summaryKey = state.status === "victory" ? "battle.resultVictorySummary"
+          : state.status === "defeat" ? "battle.resultDefeatSummary"
+            : "battle.resultFledSummary";
+        $("#resultTitle").textContent = t(titleKey);
+        $("#resultSummary").textContent = t(summaryKey);
+        $("#resultReturning").textContent = t("battle.resultReturning");
+        result.classList.remove("hidden");
+        setTimeout(() => location.assign("home.html"), 3000);
+      }
+
+      async function playAttackAnimation(attacker, target, damage) {
+        const attackerSlot = slots.get(attacker.slot);
+        const targetSlot = slots.get(target.slot);
+        if (!attackerSlot || !targetSlot) return;
+        attackerSlot.classList.add(attacker.side === "player" ? "attack-right" : "attack-left");
+        await wait(270);
+        targetSlot.classList.add("hit-shake");
+        const impact = document.createElement("img");
+        impact.className = "impact-mark";
+        impact.src = impactImagePath;
+        impact.alt = "";
+        const damageNumber = document.createElement("strong");
+        damageNumber.className = "damage-number";
+        damageNumber.textContent = `-${damage}`;
+        targetSlot.append(impact, damageNumber);
+        await wait(980);
+        impact.remove();
+        damageNumber.remove();
+        attackerSlot.classList.remove("attack-right", "attack-left");
+        targetSlot.classList.remove("hit-shake");
+      }
 
       function currentUnit() { return unitById(state, state?.activeUnitId); }
 
@@ -179,9 +254,13 @@
           const health = document.createElement("span");
           health.className = "health";
           const healthFill = document.createElement("span");
+          healthFill.className = "health-fill";
           healthFill.style.width = `${Math.max(0, unit.hp / unit.maxHp * 100)}%`;
           health.append(healthFill);
-          button.append(image, health);
+          const hpReadout = document.createElement("strong");
+          hpReadout.className = "hp-readout";
+          hpReadout.textContent = t("battle.hpValue", { current: unit.hp, max: unit.maxHp });
+          button.append(image, health, hpReadout);
           button.addEventListener("mouseenter", () => setHighlight(unit.id, true));
           button.addEventListener("mouseleave", () => setHighlight(unit.id, false));
           button.addEventListener("click", () => onUnitClick(unit));
@@ -191,11 +270,11 @@
 
       function renderControls() {
         const playerTurn = isPlayerTurn();
-        $("#claw").disabled = !playerTurn;
-        $("#skip").disabled = !playerTurn;
+        $("#claw").disabled = !playerTurn || busy;
+        $("#skip").disabled = !playerTurn || busy;
         $("#skillOne").disabled = true;
-        $("#flee").disabled = state?.status !== "playing";
-        $("#returnHome").classList.toggle("visible", ["victory", "defeat", "fled"].includes(state?.status));
+        $("#flee").disabled = state?.status !== "playing" || busy;
+        $("#returnHome").classList.remove("visible");
       }
 
       function render() {
@@ -205,42 +284,48 @@
         renderControls();
       }
 
-      function endMessage() {
-        if (state.status === "victory") setNotice("battle.victory");
-        if (state.status === "defeat") setNotice("battle.defeat");
-      }
-
-      function runEnemyTurns() {
+      async function runEnemyTurns() {
+        busy = true;
         while (state.status === "playing") {
           const active = beginNextTurn(state);
           if (!active) return;
           if (active.side === "player") {
+            busy = false;
             setNotice("battle.playerTurn", { name: active.name });
             render();
             return;
           }
           const target = validTargets(state, active.id, active.skillId)[0];
           if (!target) return;
-          const result = useDamageSkill(state, active.id, target.id, active.skillId);
+          const roll = Math.random();
+          const damage = calculateDamage(state, active, target, active.skillId, () => roll);
+          await playAttackAnimation(active, target, damage);
+          const result = useDamageSkill(state, active.id, target.id, active.skillId, () => roll);
           setNotice("battle.enemyTurn", { name: active.name, skill: result.skill.nameKey ? t(result.skill.nameKey) : "", damage: result.damage });
-          if (result.outcome !== "playing") { endMessage(); render(); return; }
+          render();
+          if (result.outcome !== "playing") { showBattleResult(); return; }
         }
       }
 
-      function onUnitClick(unit) {
-        if (!targeting || !isPlayerTurn() || unit.side !== "enemy") return;
+      async function onUnitClick(unit) {
+        if (busy || !targeting || !isPlayerTurn() || unit.side !== "enemy") return;
         const active = currentUnit();
         const valid = validTargets(state, active.id, "claw");
         if (!valid.some((candidate) => candidate.id === unit.id)) {
           setNotice(isProtected(state, unit) ? "battle.protected" : "battle.chooseTarget");
           return;
         }
-        const result = useDamageSkill(state, active.id, unit.id, "claw");
+        busy = true;
+        renderControls();
+        const roll = Math.random();
+        const damage = calculateDamage(state, active, unit, "claw", () => roll);
+        await playAttackAnimation(active, unit, damage);
+        const result = useDamageSkill(state, active.id, unit.id, "claw", () => roll);
         targeting = false;
         setNotice("battle.playerAttack", { name: active.name, skill: t("battle.claw"), target: unit.name, damage: result.damage });
         render();
-        if (result.outcome !== "playing") { endMessage(); return; }
-        runEnemyTurns();
+        if (result.outcome !== "playing") { showBattleResult(); return; }
+        await runEnemyTurns();
       }
 
       function configureButtons() {
@@ -255,25 +340,29 @@
         $("#flee").setAttribute("aria-label", t("battle.flee"));
         $("#returnHome").textContent = t("battle.returnHome");
         $("#claw").addEventListener("click", () => {
-          if (!isPlayerTurn()) return;
+          if (busy || !isPlayerTurn()) return;
           targeting = true;
           setNotice("battle.chooseTarget");
           render();
         });
-        $("#skip").addEventListener("click", () => {
-          if (!isPlayerTurn()) return;
+        $("#skip").addEventListener("click", async () => {
+          if (busy || !isPlayerTurn()) return;
+          busy = true;
           const active = currentUnit();
           skipTurn(state, active.id);
           targeting = false;
           setNotice("battle.skipNotice", { name: active.name });
           render();
-          runEnemyTurns();
+          await runEnemyTurns();
         });
         $("#flee").addEventListener("click", () => {
+          if (busy) return;
+          busy = true;
           fleeBattle(state);
           targeting = false;
           setNotice("battle.fleeNotice");
           render();
+          showBattleResult();
         });
         $("#returnHome").addEventListener("click", () => location.assign("home.html"));
       }
@@ -304,6 +393,7 @@
           $("#sceneName").textContent = battleContent[battle.sceneNameKey];
           $("#battleName").textContent = battleContent[battle.nameKey];
           $("#battleName").title = battleContent[battle.descriptionKey];
+          impactImagePath = battleAssets.actions.find((item) => item.id === "claw-impact")?.path || "";
           state = createBattle({
             dragon: {
               name: dragonData.customName || species.name,
@@ -320,7 +410,8 @@
             balance,
             skills: skillData.skills
           });
-          runEnemyTurns();
+          render();
+          showBattleIntro(battleContent[battle.nameKey]);
         } catch (error) {
           console.error("Unable to start battle", error);
           setNotice("battle.loadError");
