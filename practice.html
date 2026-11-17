@@ -14,6 +14,7 @@
           <h1 data-copy="home.practice"></h1>
           <p id="dragonName" class="dragon-name" hidden></p>
           <p id="dragonLevel" class="dragon-level" hidden></p>
+          <p id="dragonXp" class="dragon-level" hidden></p>
           <p id="status" role="status"></p>
         </div>
         <img id="dragonImage" class="hero-dragon" alt="" hidden />
@@ -28,20 +29,20 @@
           </span>
           <span class="simulation-arrow" aria-hidden="true">→</span>
         </a>
-        <article class="practice-card extracurricular">
+        <a class="practice-card extracurricular" href="activities.html">
           <span class="practice-icon symbol" aria-hidden="true">♥</span>
           <div class="card-copy">
             <h2 data-copy="practice.extracurricular"></h2>
             <span data-copy="practice.extracurricularDetail"></span>
-            <span class="attribute" data-copy="home.stamina"></span>
+            <span class="attribute" data-attribute="stamina"></span>
+            <span id="checkinProgress"></span>
           </div>
-          <span class="preview-label" data-copy="practice.planned"></span>
-        </article>
+        </a>
         <article class="practice-card math">
           <span class="practice-icon symbol" aria-hidden="true">×</span>
           <div class="card-copy">
             <h2 data-copy="practice.math"></h2>
-            <span class="attribute" data-copy="home.attack"></span>
+            <span class="attribute" data-attribute="attack"></span>
           </div>
           <span class="preview-label" data-copy="practice.planned"></span>
         </article>
@@ -49,7 +50,7 @@
           <span class="practice-icon symbol" aria-hidden="true">Aa</span>
           <div class="card-copy">
             <h2 data-copy="practice.english"></h2>
-            <span class="attribute" data-copy="home.defense"></span>
+            <span class="attribute" data-attribute="defense"></span>
           </div>
           <span class="preview-label" data-copy="practice.planned"></span>
         </article>
@@ -57,15 +58,16 @@
           <span class="practice-icon symbol" aria-hidden="true">文</span>
           <div class="card-copy">
             <h2 data-copy="practice.chinese"></h2>
-            <span class="attribute" data-copy="home.speed"></span>
+            <span class="attribute" data-attribute="speed"></span>
           </div>
           <span class="preview-label" data-copy="practice.planned"></span>
         </article>
       </section>
+      <p id="motherDragon" class="mother-dragon" hidden></p>
     </main>
 
     <script type="module">
-      import { mountPracticePage } from "./js/practice-page.js";
+      import { mountPracticePage } from "./js/practice-page.js?v=20261117-spark";
       await mountPracticePage({ titleKey: "home.practice", optionsLabel: "practice.options" });
     </script>
   </body>

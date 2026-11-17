@@ -12,8 +12,11 @@
       h1 { margin: 0 0 8px; text-align: center; font-size: clamp(1.7rem, 5vw, 2.3rem); }
       .intro { margin: 0 0 24px; text-align: center; color: #475569; }
       .child-card { margin: 14px 0; padding: 20px; border-radius: 18px; background: #eff6ff; }
+      .parent-request { margin: 12px 0; padding: 15px; border-radius: 14px; background: #fff7ed; }
       .child-card h2 { margin: 0 0 12px; color: #1e3a8a; font-size: 1.25rem; }
       .child-card p { margin: 7px 0; color: #334155; }
+      .child-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+      .child-heading button { margin-inline-start: auto; }
       .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 17px; }
       .attribute-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin-top: 18px; padding: 16px; border-radius: 14px; background: #fff; }
       .attribute-editor h3 { grid-column: 1 / -1; margin: 0; font-size: 1rem; }
@@ -34,12 +37,13 @@
     <main class="admin-card" aria-live="polite">
       <h1 id="pageTitle"></h1>
       <p id="intro" class="intro"></p>
+      <section id="parentRequests"></section>
       <section id="children"></section>
       <p id="status"></p>
     </main>
 
     <script type="module">
-      import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection } from "./js/firebase.js";
+      import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection, setDoc, runTransaction } from "./js/firebase.js";
       import { resetDragon, resetLearningHistory, updateAssessmentResult, updateDragonAttributes } from "./js/admin-dashboard.js?v=3a105b8";
       import { loadUI, t } from "./js/i18n.js";
 
@@ -187,7 +191,16 @@
         card.className = "child-card";
         const heading = document.createElement("h2");
         heading.textContent = child.name;
-        card.append(heading);
+        const header = document.createElement("header");
+        header.className = "child-heading";
+        header.append(heading);
+        if (child.parentLink?.status === "approved") {
+          header.append(paragraph(t("admin.linkedParent", { name: child.parentLink.parentName })));
+          header.append(createResetButton("reset-history", t("admin.unlinkParent"), (event) => {
+            unlinkParent(child, event.currentTarget);
+          }));
+        }
+        card.append(header);
         card.append(paragraph(t("admin.dragon", { name: child.dragon?.customName || t("admin.noDragon") })));
         const levels = paragraph("");
         const score = paragraph("");
@@ -212,22 +225,92 @@
         return card;
       }
 
+      async function unlinkParent(child, button) {
+        if (!window.confirm(t("admin.confirmUnlinkParent", { child: child.name, parent: child.parentLink.parentName }))) return;
+        button.disabled = true;
+        try {
+          await runTransaction(db, async (transaction) => {
+            const ref = doc(db, "parentLinks", child.id);
+            const snapshot = await transaction.get(ref);
+            const link = snapshot.data();
+            if (link?.status !== "approved" || link.parentId !== child.parentLink.parentId
+              || link.approvedAt !== child.parentLink.approvedAt) throw new Error("Parent link has changed");
+            transaction.delete(ref);
+          });
+          await loadChildren();
+          $("#status").textContent = t("admin.parentUnlinked");
+        } catch (error) {
+          console.error("Parent unlink or dashboard refresh failed", error);
+          $("#status").textContent = t("admin.parentUnlinkError");
+          button.disabled = false;
+        }
+      }
+
+      async function resolveParentRequest(request, status) {
+        try {
+          if (status === "approved") {
+            await runTransaction(db, async (transaction) => {
+              const linkRef = doc(db, "parentLinks", request.childId);
+              const link = await transaction.get(linkRef);
+              if (link.exists() && link.data().status === "approved") throw new Error("Child already linked");
+              transaction.set(linkRef, { parentId: request.parentId, parentName: request.parentName, childId: request.childId, childName: request.childName, status: "approved", approvedAt: Date.now() });
+              transaction.set(request.ref, { status: "approved", decidedAt: Date.now() }, { merge: true });
+            });
+            $("#status").textContent = t("admin.parentRequestApproved");
+          } else {
+            await runTransaction(db, async (transaction) => {
+              const linkRef = doc(db, "parentLinks", request.childId);
+              const link = await transaction.get(linkRef);
+              if (link.exists() && link.data().status === "pending" && link.data().parentId === request.parentId) transaction.delete(linkRef);
+              transaction.set(request.ref, { status: "declined", decidedAt: Date.now() }, { merge: true });
+            });
+            $("#status").textContent = t("admin.parentRequestDeclined");
+          }
+          await Promise.all([loadParentRequests(), loadChildren()]);
+        } catch (error) {
+          console.error("Parent request update failed", error);
+          $("#status").textContent = t("admin.parentRequestError");
+        }
+      }
+
+      async function loadParentRequests() {
+        const container = $("#parentRequests");
+        container.replaceChildren();
+        const snapshots = await getDocs(collection(db, "parentRequests"));
+        const pending = snapshots.docs.filter((item) => item.data().status === "pending");
+        const heading = document.createElement("h2");
+        heading.textContent = t("admin.parentRequests");
+        container.append(heading);
+        if (!pending.length) { container.append(paragraph(t("admin.noParentRequests"))); return; }
+        pending.forEach((snapshot) => {
+          const request = { ref: snapshot.ref, ...snapshot.data() };
+          const card = document.createElement("article"); card.className = "parent-request";
+          card.append(paragraph(`${request.parentName} → ${request.childName}`));
+          const actions = document.createElement("div"); actions.className = "actions";
+          actions.append(createResetButton("save-attributes", t("admin.approveParent"), () => resolveParentRequest(request, "approved")));
+          actions.append(createResetButton("reset-history", t("admin.declineParent"), () => resolveParentRequest(request, "declined")));
+          card.append(actions); container.append(card);
+        });
+      }
+
       async function loadChildren() {
         const people = await getDocs(collection(db, "users"));
         const children = await Promise.all(people.docs
           .filter((person) => person.data().role === "child")
           .map(async (person) => {
-            const [dragonSnapshot, progressSnapshot, attemptsSnapshot] = await Promise.all([
+            const [dragonSnapshot, progressSnapshot, attemptsSnapshot, parentSnapshot] = await Promise.all([
               getDoc(doc(db, "users", person.id, "dragon", "current")),
               getDoc(doc(db, "users", person.id, "progress", "summary")),
-              getDocs(collection(db, "users", person.id, "attempts"))
+              getDocs(collection(db, "users", person.id, "attempts")),
+              getDoc(doc(db, "parentLinks", person.id))
             ]);
             return {
               id: person.id,
               name: person.data().name,
               dragon: dragonSnapshot.exists() ? dragonSnapshot.data() : null,
               progress: progressSnapshot.exists() ? progressSnapshot.data() : null,
-              attemptCount: attemptsSnapshot.size
+              attemptCount: attemptsSnapshot.size,
+              parentLink: parentSnapshot.data()
             };
           }));
 
@@ -254,7 +337,7 @@
             location.replace("journey.html");
             return;
           }
-          await loadChildren();
+          await Promise.all([loadChildren(), loadParentRequests()]);
           $("#status").textContent = "";
         } catch (error) {
           console.error("Unable to load admin dashboard", error);

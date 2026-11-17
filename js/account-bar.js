@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./firebase.js";
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./firebase.js?v=20261117-parent";
 import { loadUI, t } from "./i18n.js";
 
 export async function mountAccountBar() {

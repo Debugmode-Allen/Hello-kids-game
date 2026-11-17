@@ -8,13 +8,28 @@ service cloud.firestore {
       return signedIn()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+    function isParent() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
+    }
+    function isLinkedParent(childId) {
+      return isParent()
+        && exists(/databases/$(database)/documents/parentLinks/$(childId))
+        && get(/databases/$(database)/documents/parentLinks/$(childId)).data.parentId == request.auth.uid
+        && get(/databases/$(database)/documents/parentLinks/$(childId)).data.status == 'approved';
+    }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // 家长可读取儿童的基础资料，供首次选择关联对象；关联后才能读取详细学习资料。
+      allow read: if isOwner(userId) || isAdmin()
+        || (isParent() && resource.data.role == 'child');
       allow create, update, delete: if false;
       match /dragon/{dragonId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create, update: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
+        allow create: if isAdmin() || (isOwner(userId)
+          && !request.resource.data.keys().hasAny(['checkinEpoch']));
+        allow update: if isAdmin() || (isOwner(userId)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkinEpoch']));
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {
@@ -34,7 +49,7 @@ service cloud.firestore {
           return data.totalCorrect is int && data.totalAnswered is int
             && data.totalCorrect >= 0 && data.totalCorrect <= data.totalAnswered;
         }
-        allow read: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
         allow create, update: if isOwner(userId);
         allow create: if canEditAssessment()
           && request.resource.data.keys().hasOnly(assessmentFields())
@@ -49,10 +64,57 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
       match /attempts/{attemptId} {
-        allow read: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
         allow create: if isOwner(userId);
         allow update: if false;
         allow delete: if isAdmin();
+      }
+      match /parentActivities/{activityDoc} {
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
+        allow create, update, delete: if isAdmin() || isLinkedParent(userId);
+      }
+      match /activityCheckins/{checkinId} {
+        function twoDigits(value) {
+          return (value < 10 ? '0' : '') + string(value);
+        }
+        function sundayOnOrAfter(year, month, day) {
+          let start = timestamp.date(year, month, day);
+          // 1970-01-04 was a Sunday.
+          let offset = (start.toMillis() - 259200000) % 604800000;
+          return start + duration.value((604800000 - offset) % 604800000, 'ms');
+        }
+        function familyDate() {
+          let year = request.time.year();
+          let summerStart = sundayOnOrAfter(year, 3, 8) + duration.value(10, 'h');
+          let summerEnd = sundayOnOrAfter(year, 11, 1) + duration.value(9, 'h');
+          let local = request.time - duration.value(request.time >= summerStart
+            && request.time < summerEnd ? 7 : 8, 'h');
+          return string(local.year()) + '-' + twoDigits(local.month()) + '-' + twoDigits(local.day());
+        }
+        function validActivity(data) {
+          let plan = get(/databases/$(database)/documents/users/$(userId)/parentActivities/current).data;
+          let link = get(/databases/$(database)/documents/parentLinks/$(userId)).data;
+          return link.status == 'approved' && link.parentId == plan.parentId
+            && data.activityIndex is int && data.activityIndex >= 0 && data.activityIndex < plan.items.size()
+            && plan.items[data.activityIndex].id == data.activityId
+            && plan.items[data.activityIndex].title == data.title;
+        }
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['activityId', 'activityIndex', 'title', 'date', 'status', 'rewardVersion', 'submittedAt'])
+          && request.resource.data.date == familyDate()
+          && request.resource.data.activityId.matches('[a-zA-Z0-9_-]{1,160}')
+          && checkinId == request.resource.data.date + '_' + request.resource.data.activityId
+          && request.resource.data.status == 'pending' && request.resource.data.rewardVersion == 2
+          && request.resource.data.submittedAt == request.time
+          && validActivity(request.resource.data);
+        allow update: if isLinkedParent(userId)
+          && resource.data.status == 'pending' && resource.data.rewardVersion == 2
+          && request.time < resource.data.submittedAt + duration.value(7, 'd')
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt'])
+          && request.resource.data.status in ['approved', 'rejected']
+          && request.resource.data.resolvedAt == request.time;
+        allow delete: if false;
       }
     }
 
@@ -65,6 +127,27 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /parentLinks/{childId} {
+      allow get: if isAdmin() || isParent()
+        || (isOwner(childId) && resource.data.status == 'approved');
+      allow list: if isAdmin() || (isParent() && resource.data.parentId == request.auth.uid);
+      // 家长发起申请时暂时占用该儿童；管理员批准或拒绝后再更新或释放。
+      allow create: if isAdmin() || (isParent()
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.childId == childId
+        && request.resource.data.status == 'pending');
+      allow update, delete: if isAdmin();
+    }
+
+    match /parentRequests/{requestId} {
+      allow read: if isAdmin() || (isParent() && resource.data.parentId == request.auth.uid);
+      allow create: if isParent()
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
   }

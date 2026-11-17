@@ -91,3 +91,9 @@ body { margin: 0; min-height: 100vh; background: linear-gradient(165deg, #ebf1e0
   .preview-label { top: 5px; right: 8px; }
   .practice-hero { min-height: 201px; }
 }
+.mother-dragon {
+  margin: clamp(2rem, 7vw, 4.5rem) 0 1.5rem;
+  padding-inline: clamp(1rem, 8vw, 5rem);
+  color: #7c4028;
+  font-size: 1.1rem;
+}

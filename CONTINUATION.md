@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前已发布版本为 `v1.0.8`，包含练习二级页、对战选关与叶龙技能。继续工作前，先运行 `git pull --ff-only` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
+本次交接版本为 `v1.0.9`，包含家长关联、课外打卡与练习进度。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 在家继续：本次战斗验收
 
@@ -38,7 +38,9 @@ py -m http.server 8000
 ## 待接入功能
 
 - 10 级进阶练习、20 级高级练习已在选关页展示，实际敌人和关卡尚待制作。
-- 三科学练与课外打卡目前只展示入口。课外流程计划由关联家长设置三个活动，孩子按实际完成量提交，家长确认后记录训练成果。冒险模块负责经验、等级和常规属性成长。
+- 三科学练目前只展示入口。课外打卡已接入家长配置、孩子提交、家长确认及体力奖励。冒险模块负责经验、等级和常规属性成长。
+- 家长关联回归测试：用测试孩子核对管理页和练习页都显示 Sarah，Allen 解绑后刷新确认姓名消失，再验证可重新申请及批准。
+- 母龙图片待补充素材。图片按孩子当前获批关联的 `parentId` 查找，名字用该关联的 `parentName`。当前 Sarah 暂无图片，有效关联只显示文字。
 
 ## 手动扩充题库
 
@@ -75,6 +77,8 @@ GitHub Pages 需要一两分钟更新；发布地址为：
 `https://debugmode-allen.github.io/Hello-kids-game/`
 
 ## 重要边界
+
+- 七天打卡使用 Spark 和 Firestore，对应权限规则已发布。接手后用测试账户验证提交、确认、拒绝和到期重算，并核对打卡历史及连续天数。旧版记录保留，已发放的奖励不会重复计入。
 
 - 只提交源码、图片、JSON 内容、文档和 `firestore.rules`。
 - 不要提交密码、孩子的真实个人资料或任何私密导出文件。

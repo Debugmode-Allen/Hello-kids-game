@@ -164,6 +164,7 @@
 
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
+      import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
       import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=vines-delay-turns";
       import { createChargeQuestions } from "./js/assessment.js";
@@ -713,7 +714,7 @@
             dragon: {
               name: dragonData.customName || species.name,
               stats: {
-                stamina: dragonData.stamina ?? 100,
+                stamina: effectiveStamina(dragonData, await loadCheckins(user.uid)),
                 attack: dragonData.attack ?? 10,
                 defense: dragonData.defense ?? 10,
                 speed: dragonData.speed ?? 10

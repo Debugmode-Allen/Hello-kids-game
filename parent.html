@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      :root { color: #172554; font-family: "Microsoft YaHei", system-ui, sans-serif; } * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 76px 16px 32px; background: linear-gradient(150deg,#e0f2fe,#f5f3ff); }
+      main { width: min(100%,820px); margin:auto; } .panel { margin:16px 0; padding:22px; border-radius:22px; background:#fff; box-shadow:0 12px 30px rgba(30,64,175,.12); }
+      h1,h2,h3 { margin:0 0 10px; } .intro,.help,#status { color:#475569; line-height:1.6; } label { display:grid; gap:6px; font-weight:700; }
+      select,input,button { min-height:42px; border-radius:10px; font:inherit; } select,input { width:100%; padding:8px 10px; border:1px solid #bfdbfe; }
+      button { padding:8px 13px; border:0; background:#2563eb; color:#fff; font-weight:800; cursor:pointer; } button:disabled { opacity:.6; cursor:wait; }
+      form { display:grid; gap:11px; } .child { margin-top:14px; padding:16px; border-radius:16px; background:#eff6ff; } .child p { margin:6px 0; }
+      .activity-list { display:grid; gap:8px; margin:12px 0; } .activity-row { display:flex; gap:8px; } .activity-row input { flex:1; }
+      .pending { margin-top:14px; padding:12px; border-radius:12px; background:#fff7ed; } .pending p { margin:0 0 9px; } .empty { color:#64748b; }
+      @media (max-width:520px) { body { padding:68px 12px 20px; } .panel { padding:18px; } .activity-row { flex-direction:column; } }
+    </style>
+  </head>
+  <body>
+    <main aria-live="polite">
+      <section class="panel"><h1 id="title"></h1><p id="intro" class="intro"></p><p id="status"></p></section>
+      <section class="panel"><h2 id="requestTitle"></h2><p id="requestHelp" class="help"></p><form id="requestForm"><label><span id="requestChildLabel"></span><select id="requestChild" required></select></label><button id="requestSubmit" type="submit"></button></form><p id="requestStatus"></p></section>
+      <section class="panel"><h2 id="linkedTitle"></h2><div id="linkedChildren"></div></section>
+    </main>
+    <script type="module" src="js/parent-page.js?v=20261117-spark"></script>
+  </body>
+</html>
