@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-本次交接版本为 `v1.0.9`，包含家长关联、课外打卡与练习进度。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+本次本地交接版本为 `v1.1.0`，在 `v1.0.9` 基础上新增五只家长守护龙、互斥选龙与孩子练习页展示。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 在家继续：本次战斗验收
 
@@ -40,7 +40,9 @@ py -m http.server 8000
 - 10 级进阶练习、20 级高级练习已在选关页展示，实际敌人和关卡尚待制作。
 - 三科学练目前只展示入口。课外打卡已接入家长配置、孩子提交、家长确认及体力奖励。冒险模块负责经验、等级和常规属性成长。
 - 家长关联回归测试：用测试孩子核对管理页和练习页都显示 Sarah，Allen 解绑后刷新确认姓名消失，再验证可重新申请及批准。
-- 母龙图片待补充素材。图片按孩子当前获批关联的 `parentId` 查找，名字用该关联的 `parentName`。当前 Sarah 暂无图片，有效关联只显示文字。
+- 家长守护龙图片已加入素材库：`thunder-mother.png`、`frost-queen.png`、`embers-lord.png`、`ancestor-of-woods.png`、`star-sea-oracle.png`。名称及背景故事放在 `content/story.zh-CN.json`，清单在 `data/parent-dragons.json`。
+- 守护龙选取需用 Sarah 与其他 parent 账户验收：一位家长选定后，其他家长应看到该龙变暗且标记“已被选择”；刷新后选择仍保留；五只全部选完后应提示联系开发者增加选择。选定后的龙按家长 UID 经 `parentLinks/{childId}` 显示在获批关联孩子的练习页。
+- 本地 `firestore.rules` 新增 `parentDragonChoices` 和 `parentDragonAssignments` 的事务校验规则，已于 2026-11-17 发布至 Firebase Console 默认数据库。代码尚未发布到 GitHub Pages；浏览器验收通过后再部署网页。
 
 ## 手动扩充题库
 

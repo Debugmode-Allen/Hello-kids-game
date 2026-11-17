@@ -12,6 +12,9 @@ service cloud.firestore {
       return signedIn()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
     }
+    function isParentDragonId(dragonId) {
+      return dragonId in ['thunder-mother', 'frost-queen', 'embers-lord', 'ancestor-of-woods', 'star-sea-oracle'];
+    }
     function isLinkedParent(childId) {
       return isParent()
         && exists(/databases/$(database)/documents/parentLinks/$(childId))
@@ -126,6 +129,38 @@ service cloud.firestore {
     match /dragonAssignments/{speciesId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // A parent gets one permanent choice. The choice and unique dragon claim
+    // must be created together in one Firestore transaction.
+    match /parentDragonChoices/{parentId} {
+      allow read: if signedIn();
+      allow create: if isParent() && request.auth.uid == parentId
+        && request.resource.data.keys().hasOnly(['parentId', 'dragonId', 'selectedAt'])
+        && request.resource.data.parentId == parentId
+        && isParentDragonId(request.resource.data.dragonId)
+        && request.resource.data.selectedAt == request.time
+        && !exists(/databases/$(database)/documents/parentDragonChoices/$(parentId))
+        && !exists(/databases/$(database)/documents/parentDragonAssignments/$(request.resource.data.dragonId))
+        && getAfter(/databases/$(database)/documents/parentDragonAssignments/$(request.resource.data.dragonId)).data.parentId == parentId
+        && getAfter(/databases/$(database)/documents/parentDragonAssignments/$(request.resource.data.dragonId)).data.dragonId == request.resource.data.dragonId;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /parentDragonAssignments/{dragonId} {
+      allow read: if signedIn();
+      allow create: if isParent() && isParentDragonId(dragonId)
+        && request.resource.data.keys().hasOnly(['parentId', 'dragonId', 'assignedAt'])
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.dragonId == dragonId
+        && request.resource.data.assignedAt == request.time
+        && !exists(/databases/$(database)/documents/parentDragonAssignments/$(dragonId))
+        && !exists(/databases/$(database)/documents/parentDragonChoices/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/parentDragonChoices/$(request.auth.uid)).data.parentId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/parentDragonChoices/$(request.auth.uid)).data.dragonId == dragonId;
       allow update: if false;
       allow delete: if isAdmin();
     }

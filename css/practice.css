@@ -92,8 +92,22 @@ body { margin: 0; min-height: 100vh; background: linear-gradient(165deg, #ebf1e0
   .practice-hero { min-height: 201px; }
 }
 .mother-dragon {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 2.5rem);
   margin: clamp(2rem, 7vw, 4.5rem) 0 1.5rem;
-  padding-inline: clamp(1rem, 8vw, 5rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid #d6dfc6;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f0f4e7, #fffdf4);
   color: #7c4028;
   font-size: 1.1rem;
+}
+.parent-dragon-image { display: block; flex: 0 0 min(34%, 300px); width: min(34%, 300px); aspect-ratio: 1; border-radius: 18px; object-fit: cover; box-shadow: 0 10px 28px #1b263426; }
+.mother-dragon-copy { min-width: 0; }
+.mother-dragon-copy p { margin: 0 0 .65rem; line-height: 1.6; }
+.mother-dragon-copy h2 { margin: 0 0 .55rem; color: #304b36; font-size: clamp(1.15rem, 3vw, 1.65rem); }
+@media (max-width: 600px) {
+  .mother-dragon { flex-direction: column; align-items: stretch; }
+  .parent-dragon-image { width: min(100%, 360px); flex-basis: auto; margin: auto; }
 }

@@ -78,13 +78,40 @@ export async function mountPracticePage({ titleKey, optionsLabel, onDragonLoaded
       }
       $("status").textContent = "";
       const motherDragon = $("motherDragon");
-      if (motherDragon) {
-        motherDragon.hidden = true;
+      const motherDragonPanel = $("motherDragonPanel");
+      if (motherDragon && motherDragonPanel) {
+        motherDragonPanel.hidden = true;
         try {
-          const link = (await getDoc(doc(db, "parentLinks", user.uid))).data();
-          if (link?.status === "approved" && link.parentName) {
+          const linkSnapshot = await getDoc(doc(db, "parentLinks", user.uid));
+          const link = linkSnapshot.data();
+          if (link?.status === "approved" && link.parentId) {
             motherDragon.textContent = t("practice.motherDragon", { name: link.parentName });
-            motherDragon.hidden = false;
+            motherDragonPanel.hidden = false;
+            const choiceSnapshot = await getDoc(doc(db, "parentDragonChoices", link.parentId));
+            const choice = choiceSnapshot.data();
+            if (choice?.dragonId) {
+              const [registryResponse, storyResponse] = await Promise.all([
+                fetch("data/parent-dragons.json", { cache: "no-store" }),
+                fetch("content/story.zh-CN.json", { cache: "no-store" })
+              ]);
+              if (!registryResponse.ok || !storyResponse.ok) throw new Error("Unable to load parent dragon profile");
+              const registry = await registryResponse.json();
+              const story = await storyResponse.json();
+              const profile = registry.find((item) => item.id === choice.dragonId);
+              if (profile) {
+                const key = `parentDragon.${profile.storyKey}`;
+                const image = $("parentDragonImage");
+                image.src = profile.image;
+                image.alt = t("practice.parentDragonAlt", { name: story[`${key}.name`] || "" });
+                image.hidden = false;
+                const title = $("parentDragonTitle");
+                title.textContent = t("practice.parentDragonTitle", { name: story[`${key}.name`] || "", title: story[`${key}.title`] || "" });
+                title.hidden = false;
+                const lore = $("parentDragonLore");
+                lore.textContent = story[`${key}.background`] || story[`${key}.intro`] || "";
+                lore.hidden = false;
+              }
+            }
           }
         } catch (error) {
           console.warn("Unable to load parent link", error);

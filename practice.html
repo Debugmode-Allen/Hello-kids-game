@@ -63,11 +63,18 @@
           <span class="preview-label" data-copy="practice.planned"></span>
         </article>
       </section>
-      <p id="motherDragon" class="mother-dragon" hidden></p>
+      <section id="motherDragonPanel" class="mother-dragon" hidden>
+        <img id="parentDragonImage" class="parent-dragon-image" alt="" hidden />
+        <div class="mother-dragon-copy">
+          <p id="motherDragon"></p>
+          <h2 id="parentDragonTitle" hidden></h2>
+          <p id="parentDragonLore" hidden></p>
+        </div>
+      </section>
     </main>
 
     <script type="module">
-      import { mountPracticePage } from "./js/practice-page.js?v=20261117-spark";
+      import { mountPracticePage } from "./js/practice-page.js?v=20261117-parent-dragon";
       await mountPracticePage({ titleKey: "home.practice", optionsLabel: "practice.options" });
     </script>
   </body>

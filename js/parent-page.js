@@ -1,4 +1,4 @@
-import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection, setDoc, runTransaction, query, where } from "./firebase.js?v=20261117-parent";
+import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection, setDoc, runTransaction, query, where, serverTimestamp } from "./firebase.js?v=20261117-parent";
 import { loadUI, t } from "./i18n.js";
 import { checkinDeadline, checkinHistory, checkinStatus, checkinTime, reviewCheckin } from "./checkin-client.js?v=20261117-spark";
 
@@ -6,8 +6,86 @@ const $ = (selector) => document.querySelector(selector);
 let parent = null;
 let children = [];
 let requestByChild = new Map();
+let parentDragons = [];
+let storyContent = {};
+let selectedParentDragon = null;
 
 const defaultActivities = () => ["parent.defaultActivity1", "parent.defaultActivity2", "parent.defaultActivity3"].map((key, index) => ({ id: `default-${index + 1}`, title: t(key) }));
+
+function story(key) { return storyContent[key] || key; }
+
+function makeGuardianCard(dragon, assignment) {
+  const card = document.createElement("article");
+  card.className = "guardian-card";
+  card.style.setProperty("--dragon-accent", dragon.accent);
+  const isMine = selectedParentDragon?.dragonId === dragon.id || assignment?.parentId === parent.id;
+  const isTaken = Boolean(assignment && assignment.parentId !== parent.id);
+  if (isTaken) card.classList.add("taken");
+
+  const image = document.createElement("img");
+  image.className = "guardian-art";
+  image.src = dragon.image;
+  image.alt = story(`parentDragon.${dragon.storyKey}.name`);
+  const copy = document.createElement("div"); copy.className = "guardian-copy";
+  const name = document.createElement("h3"); name.className = "guardian-name"; name.textContent = story(`parentDragon.${dragon.storyKey}.name`);
+  const title = document.createElement("p"); title.className = "guardian-title"; title.textContent = story(`parentDragon.${dragon.storyKey}.title`);
+  const lore = document.createElement("p"); lore.className = "guardian-lore"; lore.textContent = story(`parentDragon.${dragon.storyKey}.intro`);
+  const background = document.createElement("p"); background.className = "guardian-background"; background.textContent = story(`parentDragon.${dragon.storyKey}.background`);
+  const state = document.createElement("p"); state.className = "guardian-state";
+  const button = document.createElement("button"); button.type = "button";
+  if (isMine) {
+    state.textContent = t("parentDragon.stateMine"); button.textContent = t("parentDragon.selected"); button.disabled = true;
+  } else if (isTaken) {
+    state.textContent = t("parentDragon.stateTaken"); button.textContent = t("parentDragon.taken"); button.disabled = true;
+  } else if (selectedParentDragon) {
+    state.textContent = t("parentDragon.stateLocked"); button.textContent = t("parentDragon.choose"); button.disabled = true;
+  } else {
+    state.textContent = t("parentDragon.stateAvailable"); button.textContent = t("parentDragon.choose");
+    button.addEventListener("click", () => chooseParentDragon(dragon, button));
+  }
+  copy.append(name, title, lore, background, state);
+  card.append(image, copy, button);
+  return card;
+}
+
+async function loadParentDragonSelection() {
+  const [assignmentSnapshot, choiceSnapshot] = await Promise.all([
+    getDocs(collection(db, "parentDragonAssignments")),
+    getDoc(doc(db, "parentDragonChoices", parent.id))
+  ]);
+  const assignments = new Map(assignmentSnapshot.docs.map((item) => [item.id, item.data()]));
+  selectedParentDragon = choiceSnapshot.exists() ? choiceSnapshot.data() : null;
+  const container = $("#guardianChoices"); container.replaceChildren();
+  parentDragons.forEach((dragon) => container.append(makeGuardianCard(dragon, assignments.get(dragon.id))));
+  const full = parentDragons.length > 0 && parentDragons.every((dragon) => assignments.has(dragon.id));
+  $("#guardianStatus").textContent = full ? t("parentDragon.allTaken") : (selectedParentDragon ? t("parentDragon.selectionLocked") : "");
+}
+
+async function chooseParentDragon(dragon, button) {
+  button.disabled = true;
+  $("#guardianStatus").textContent = t("parentDragon.saving");
+  const choiceRef = doc(db, "parentDragonChoices", parent.id);
+  const assignmentRef = doc(db, "parentDragonAssignments", dragon.id);
+  try {
+    await runTransaction(db, async (transaction) => {
+      const [choice, assignment] = await Promise.all([transaction.get(choiceRef), transaction.get(assignmentRef)]);
+      if (choice.exists()) throw new Error("parent-dragon-already-chosen");
+      if (assignment.exists()) throw new Error("parent-dragon-taken");
+      transaction.set(choiceRef, { parentId: parent.id, dragonId: dragon.id, selectedAt: serverTimestamp() });
+      transaction.set(assignmentRef, { parentId: parent.id, dragonId: dragon.id, assignedAt: serverTimestamp() });
+    });
+    await loadParentDragonSelection();
+  } catch (error) {
+    console.error("Parent dragon selection failed", error);
+    const key = error.code === "permission-denied" ? "parentDragon.permissionDenied"
+      : error.message === "parent-dragon-taken" ? "parentDragon.takenError"
+      : error.message === "parent-dragon-already-chosen" ? "parentDragon.alreadyChosen"
+      : "parentDragon.saveError";
+    $("#guardianStatus").textContent = t(key);
+    button.disabled = false;
+    try { await loadParentDragonSelection(); } catch (reloadError) { console.error(reloadError); }
+  }
+}
 
 function activityRow(item = { id: `activity-${Date.now()}-${Math.random().toString(16).slice(2)}`, title: "" }) {
   const row = document.createElement("div"); row.className = "activity-row";
@@ -124,6 +202,7 @@ async function loadParentDashboard() {
 function configureText() {
   document.title = t("parent.title");
   $("#title").textContent = t("parent.title"); $("#intro").textContent = t("parent.intro");
+  $("#guardianTitle").textContent = t("parentDragon.sectionTitle"); $("#guardianHelp").textContent = t("parentDragon.sectionHelp");
   $("#requestTitle").textContent = t("parent.requestTitle"); $("#requestHelp").textContent = t("parent.requestHelp");
   $("#requestChildLabel").textContent = t("parent.requestChild"); $("#requestSubmit").textContent = t("parent.requestSubmit"); $("#linkedTitle").textContent = t("parent.linkedTitle");
   $("#requestForm").addEventListener("submit", async (event) => {
@@ -163,9 +242,23 @@ function configureText() {
   });
 }
 
-await loadUI(); configureText(); $("#status").textContent = t("admin.loading");
+await loadUI();
+const [dragonResponse, storyResponse] = await Promise.all([
+  fetch("data/parent-dragons.json", { cache: "no-store" }),
+  fetch("content/story.zh-CN.json", { cache: "no-store" })
+]);
+if (!dragonResponse.ok || !storyResponse.ok) throw new Error("Unable to load parent dragon content");
+parentDragons = await dragonResponse.json();
+storyContent = await storyResponse.json();
+configureText(); $("#status").textContent = t("admin.loading");
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.replace("index.html"); return; }
-  try { const profile = await getDoc(doc(db, "users", user.uid)); if (!profile.exists() || profile.data().role !== "parent") { location.replace("home.html"); return; } parent = { id: user.uid, ...profile.data() }; await loadParentDashboard(); $("#status").textContent = ""; }
+  try {
+    const profile = await getDoc(doc(db, "users", user.uid));
+    if (!profile.exists() || profile.data().role !== "parent") { location.replace("home.html"); return; }
+    parent = { id: user.uid, ...profile.data() };
+    await Promise.all([loadParentDashboard(), loadParentDragonSelection()]);
+    $("#status").textContent = "";
+  }
   catch (error) { console.error(error); $("#status").textContent = t("parent.loadError"); }
 });

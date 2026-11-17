@@ -1,0 +1,7 @@
+[
+  { "id": "thunder-mother", "storyKey": "thunderMother", "image": "assets/dragons/thunder-mother.png", "accent": "#6753a4" },
+  { "id": "frost-queen", "storyKey": "frostQueen", "image": "assets/dragons/frost-queen.png", "accent": "#397ca9" },
+  { "id": "embers-lord", "storyKey": "embersLord", "image": "assets/dragons/embers-lord.png", "accent": "#a9472c" },
+  { "id": "ancestor-of-woods", "storyKey": "ancestorOfWoods", "image": "assets/dragons/ancestor-of-woods.png", "accent": "#36734b" },
+  { "id": "star-sea-oracle", "storyKey": "starSeaOracle", "image": "assets/dragons/star-sea-oracle.png", "accent": "#3e5299" }
+]

@@ -1,6 +1,6 @@
 # 小小学习家：开发结构
 
-本次发布版本：`v1.0.9`（家长关联、课外打卡与练习进度）
+当前本地版本：`v1.1.0`（家长守护龙选择；待本地验收）
 
 ## 页面与路由
 
@@ -26,6 +26,7 @@
 - `data/battle-balance.json`：伤害软上限、伤害倍率边界、随机范围和速度曲线；调整平衡时优先修改它。
 - `data/skills.json`：技能的目标类型、前排保护规则和威力比例；普通爪击当前使用最大体力的 16%。
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
+- `data/parent-dragons.json`：五只家长守护龙的 ID、图片、故事键和主题色；背景介绍放在 `content/story.zh-CN.json`。
 - `assets/battle/battle-assets.json`：可替换的战斗背景和敌人精灵图清单。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
@@ -79,12 +80,15 @@
 - 对战模拟保留固定阵容，计划在龙等级达到 10 和 20 时解锁后续关卡。模拟战不发放任务奖励、经验或属性。
 - 后续把数学、英文、中文练习分别接到攻击、防御、速度方向的训练成果。经验、升级和常规属性成长由冒险模块结算。
 
-### 家长关联与课外打卡
+### 家长关联、守护龙与课外打卡
 
-- `parent.html` 和 `js/parent-page.js` 负责申请关联、配置活动及审核打卡。默认三个活动，可继续增加。孩子从练习页进入 `activities.html` 提交打卡。
+- `parent.html` 和 `js/parent-page.js` 负责选择守护龙、申请关联、配置活动及审核打卡。家长只能选择一只守护龙；已被其他家长选中的龙会变暗并标注已被选择。五只都被占用后提示联系开发者增加选项。守护龙选择及背景故事由独立资料/内容文件驱动。
+- 守护龙按家长 UID 关联，不按姓名匹配。孩子练习页读取自己的获批 `parentLinks/{childId}`，再用其中的 `parentId` 读取 `parentDragonChoices/{parentId}`，从 `data/parent-dragons.json` 与 `content/story.zh-CN.json` 显示对应图片、名称和背景介绍。解绑后孩子页不再显示；换绑后跟随新家长的选择。
+- `parentDragonChoices/{parentId}` 保存家长选定的龙；`parentDragonAssignments/{dragonId}` 是五只守护龙的全局唯一占用登记。家长端以同一 Firestore 事务创建两条记录，规则通过 `getAfter()` 校验二者一致并拒绝重复选择。家长选定后不能自行更改；管理员可在控制台删除对应两条记录以释放选择。
+- `parent.html` 和 `js/parent-page.js` 也负责申请关联、配置活动及审核打卡。默认三个活动，可继续增加。孩子从练习页进入 `activities.html` 提交打卡。
 - Spark 方案用 Firestore 事务记录申请和审核。主页、练习和战斗按基础体力、新版已确认奖励和未到期的待确认奖励计算有效体力。拒绝或满 168 小时后不再计入该笔奖励。按洛杉矶自然日和活动 ID 去重，历史和打卡连续天数保留。
 - `admin.html` 审批关联申请，在孩子卡片上显示已关联的家长，并允许管理员解绑。解绑删除关联记录，保留孩子的小龙与学习记录。
-- `practice.html` 和 `js/practice-page.js` 根据孩子当前获批的关联显示母龙提示，姓名读取关联记录的 `parentName`。未来图片按同一条关联中的 `parentId` 查找，不按姓名匹配。换绑后以新关联为准。暂时只有 Sarah，没有图片素材时只显示文字。
+- `practice.html` 和 `js/practice-page.js` 根据孩子当前获批的关联显示家长姓名及所选守护龙；姓名读取关联记录的 `parentName`，图片通过 `parentId` 查找守护龙选择。换绑后以新关联为准。
 
 ## Firestore 数据
 
@@ -96,6 +100,8 @@
 - `users/{uid}/attempts/{attemptId}`：每次测试的题目结果和推荐等级。
 - `gameSettings/current`：预留给 Allen 的全局游戏设置。
 - `dragonAssignments/{speciesId}`：全局唯一的小龙占用登记，防止不同账户孵化同一物种。
+- `parentDragonChoices/{parentId}`：家长已选择的守护龙 ID，家长 UID 为文档 ID。
+- `parentDragonAssignments/{dragonId}`：守护龙的唯一占用登记，避免多位家长选中同一只。
 - `parentRequests/{requestId}`：家长申请和管理员审核历史，每次重提生成独立记录。
 - `parentLinks/{childId}`：每个孩子的唯一关联记录。申请时为待审核占位，管理员批准后生效，拒绝或解绑时释放。孩子只可读取自己的已批准关联。
 - `users/{uid}/parentActivities/current` 和 `users/{uid}/activityCheckins/{checkinId}`：保存活动设置和每日打卡状态。
@@ -112,7 +118,7 @@ py -m http.server 8000
 
 打开 `http://localhost:8000/index.html`。修改 `content` 文件后刷新浏览器即可看到文案变化。
 
-本地验收至少检查：登录分流、分级孵蛋测验、孵化与命名、已有小龙进入主页、复测后按新等级抽题、战前充能与扣次数、管理员读取记录、两种重置操作和退出账户。
+本地验收至少检查：登录分流、分级孵蛋测验、孵化与命名、已有小龙进入主页、复测后按新等级抽题、战前充能与扣次数、管理员读取记录、两种重置操作和退出账户。家长守护龙需分别检查唯一选择、已选卡片变暗、五只选完后的提示，以及孩子在换绑后显示新家长所选图片。
 
 ## 当前安全边界（待以后升级）
 
