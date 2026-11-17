@@ -2,8 +2,8 @@ import { questionBank } from "../data/question-bank.js";
 
 const subjects = Object.keys(questionBank);
 const gradesFor = (subject) => Object.keys(questionBank[subject]).map(Number);
-const questionsPerSubject = 6;
-const questionsPerBlock = 2;
+const hatchSchedule = Array.from({ length: 3 }, () => subjects).flat().concat("math");
+const levelSchedule = Array.from({ length: 4 }, () => subjects).flat();
 
 function shuffle(items, random) {
   const result = [...items];
@@ -29,21 +29,30 @@ export function createChargeQuestions(progress = {}, random = Math.random) {
 }
 
 export function createAdaptiveAssessment(random = Math.random) {
-  const total = subjects.length * questionsPerSubject;
+  return createAssessment(hatchSchedule, random);
+}
+
+export function createLevelAssessment(random = Math.random) {
+  return createAssessment(levelSchedule, random);
+}
+
+function createAssessment(schedule, random) {
+  const total = schedule.length;
   const answers = [];
   const levels = {};
   const tracks = Object.fromEntries(subjects.map((subject) => {
     const pools = Object.fromEntries(gradesFor(subject).map((grade) => [
       grade, shuffle(questionBank[subject][grade], random)
     ]));
-    return [subject, { pools, levelIndex: 0, correctInBlock: 0 }];
+    const lastIndex = schedule.lastIndexOf(subject);
+    return [subject, { pools, lastIndex, levelIndex: 0 }];
   }));
   let current;
 
   function next() {
     if (answers.length === total) return null;
     if (current) return current;
-    const subject = subjects[answers.length % subjects.length];
+    const subject = schedule[answers.length];
     const track = tracks[subject];
     const grade = gradesFor(subject)[track.levelIndex];
     current = prepareQuestion(track.pools[grade].pop(), random);
@@ -52,25 +61,19 @@ export function createAdaptiveAssessment(random = Math.random) {
 
   function answer(choice) {
     if (!current || !current.options.includes(choice)) throw new Error("Invalid answer");
-    const subject = subjects[answers.length % subjects.length];
+    const questionIndex = answers.length;
+    const subject = schedule[questionIndex];
     const track = tracks[subject];
     const grades = gradesFor(subject);
     const correct = choice === current.answer;
     answers.push({ subject: current.subject, grade: current.grade, correct });
-    track.correctInBlock += Number(correct);
     current = null;
-
-    const subjectCount = Math.floor((answers.length - 1) / subjects.length) + 1;
-    if (subjectCount % questionsPerBlock === 0) {
-      const step = track.correctInBlock === questionsPerBlock ? 1 : track.correctInBlock === 0 ? -1 : 0;
-      const nextIndex = Math.max(0, Math.min(grades.length - 1, track.levelIndex + step));
-      if (subjectCount === questionsPerSubject) {
-        // Never recommend an untested grade.
-        levels[subject] = grades[Math.min(nextIndex, track.levelIndex)];
-      } else {
-        track.levelIndex = nextIndex;
-      }
-      track.correctInBlock = 0;
+    const nextIndex = Math.max(0, Math.min(grades.length - 1, track.levelIndex + (correct ? 1 : -1)));
+    if (questionIndex === track.lastIndex) {
+      // Never recommend an untested grade.
+      levels[subject] = grades[Math.min(nextIndex, track.levelIndex)];
+    } else {
+      track.levelIndex = nextIndex;
     }
     return correct;
   }

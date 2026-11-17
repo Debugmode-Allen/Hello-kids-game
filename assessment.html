@@ -28,13 +28,14 @@
     <script type="module">
       import { auth, onAuthStateChanged } from "./js/firebase.js";
       import { t, loadUI } from "./js/i18n.js";
-      import { createAdaptiveAssessment } from "./js/assessment.js";
+      import { createLevelAssessment } from "./js/assessment.js?v=hatch10-level12";
       import { saveLevelAssessment } from "./js/progress-store.js";
-      import { renderQuestionOptions } from "./js/question-options.js";
+      import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
 
       const $ = (id) => document.getElementById(id);
       let user;
       let assessment;
+      let selectedAnswer;
 
       function draw() {
         const question = assessment.next();
@@ -50,13 +51,15 @@
           subject: question.subject, grade: question.grade
         });
         $("question").textContent = question.question;
-        $("next").hidden = true;
+        selectedAnswer = undefined;
+        const next = $("next");
+        next.textContent = t(assessment.answers.length + 1 === assessment.total ? "assessment.showResult" : "journey.next");
+        next.hidden = false;
+        next.disabled = true;
         $("question").focus();
         renderQuestionOptions($("options"), question, (choice) => {
-          assessment.answer(choice);
-          $("next").textContent = t(assessment.answers.length === assessment.total ? "assessment.showResult" : "journey.next");
-          $("next").hidden = false;
-          $("next").focus();
+          selectedAnswer = choice;
+          next.disabled = false;
         });
       }
 
@@ -74,13 +77,18 @@
       });
 
       $("start").addEventListener("click", () => {
-        assessment = createAdaptiveAssessment();
+        assessment = createLevelAssessment();
         $("intro").hidden = true;
         $("start").hidden = true;
         $("quiz").hidden = false;
         draw();
       });
-      $("next").addEventListener("click", draw);
+      $("next").addEventListener("click", () => {
+        if (selectedAnswer === undefined) return;
+        assessment.answer(selectedAnswer);
+        selectedAnswer = undefined;
+        draw();
+      });
       $("save").addEventListener("click", async () => {
         $("save").disabled = true;
         $("status").textContent = t("assessment.saving");

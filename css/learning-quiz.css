@@ -36,6 +36,7 @@
 .quiz-option.chosen, .quiz-primary { background: #50358a; color: #fff; }
 .quiz-option:disabled { cursor: default; }
 .quiz-primary { margin-top: 10px; }
+.quiz-primary:disabled { cursor: default; opacity: .55; }
 
 .battle-charge {
   position: absolute;

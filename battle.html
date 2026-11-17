@@ -108,6 +108,7 @@
             <h2 id="chargeQuestion" tabindex="-1"></h2>
             <div id="chargeOptions" class="quiz-options"></div>
             <p id="chargeFeedback" class="charge-feedback" role="status"></p>
+            <button id="chargeSubmit" class="quiz-primary" type="button" disabled></button>
             <button id="chargeNext" class="quiz-primary" type="button" hidden></button>
           </section>
         </div>
@@ -155,7 +156,7 @@
       import { loadUI, t } from "./js/i18n.js";
       import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js";
       import { createChargeQuestions } from "./js/assessment.js";
-      import { renderQuestionOptions } from "./js/question-options.js";
+      import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
 
       const $ = (selector) => document.querySelector(selector);
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
@@ -190,11 +191,13 @@
 
       async function runChargeQuiz(questions) {
         const panel = $("#battleCharge");
+        const submit = $("#chargeSubmit");
         const next = $("#chargeNext");
         let correctCount = 0;
         $("#chargeTitle").textContent = t(skillOne ? "charge.title" : "charge.warmup");
         $("#chargeInstructions").hidden = !skillOne;
         $("#chargeInstructions").textContent = t("charge.instructions");
+        submit.textContent = t("charge.submit");
         panel.hidden = false;
 
         for (const [index, question] of questions.entries()) {
@@ -204,11 +207,20 @@
           });
           $("#chargeQuestion").textContent = question.question;
           $("#chargeFeedback").textContent = "";
+          submit.hidden = false;
+          submit.disabled = true;
           next.hidden = true;
           $("#chargeQuestion").focus();
           await new Promise((resolve) => {
-            renderQuestionOptions($("#chargeOptions"), question, (choice) => {
-              const correct = choice === question.answer;
+            let selectedAnswer;
+            const options = renderQuestionOptions($("#chargeOptions"), question, (choice) => {
+              selectedAnswer = choice;
+              submit.disabled = false;
+            });
+            submit.addEventListener("click", () => {
+              submit.hidden = true;
+              for (const option of options) option.disabled = true;
+              const correct = selectedAnswer === question.answer;
               correctCount += Number(correct);
               if (correct && skillOne) state.skillCharges.earned += 1;
               renderSkillCharges();
@@ -222,7 +234,7 @@
               next.hidden = false;
               next.addEventListener("click", resolve, { once: true });
               next.focus();
-            });
+            }, { once: true });
           });
         }
         panel.hidden = true;
