@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>对战模拟</title>
+    <link rel="stylesheet" href="css/practice.css" />
+    <link rel="stylesheet" href="css/practice-battles.css" />
+  </head>
+  <body>
+    <main class="practice-page">
+      <a class="back-link" href="practice.html" data-copy="practice.return"></a>
+      <header class="practice-hero arena-hero">
+        <div class="hero-copy">
+          <h1 data-copy="practice.simulation"></h1>
+          <p id="dragonName" class="dragon-name" hidden></p>
+          <p id="dragonLevel" class="dragon-level" hidden></p>
+          <p id="status" role="status"></p>
+        </div>
+        <img id="dragonImage" class="hero-dragon" alt="" hidden />
+      </header>
+
+      <section class="arena-grid" id="practiceOptions" hidden>
+        <article class="arena-card meadow-arena">
+          <div class="arena-scene">
+            <img src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" />
+            <img src="assets/battle/enemies/moon-moth-left.png" alt="" />
+          </div>
+          <div class="arena-body">
+            <p class="arena-requirement" data-copy="practice.arenaOpen"></p>
+            <h2 data-copy="practice.meadow"></h2>
+            <p class="arena-detail" data-copy="practice.meadowDetail"></p>
+            <a class="arena-action" href="battle.html?from=practice" data-copy="practice.startMatch"></a>
+          </div>
+        </article>
+        <article class="arena-card advanced-arena" data-unlock-level="10">
+          <div class="arena-scene preview-scene"></div>
+          <div class="arena-body">
+            <p class="arena-requirement"></p>
+            <h2 data-copy="practice.advanced"></h2>
+            <p class="arena-detail" data-copy="practice.advancedDetail"></p>
+            <span class="arena-action unavailable" data-copy="practice.arenaPreview"></span>
+          </div>
+        </article>
+        <article class="arena-card expert-arena" data-unlock-level="20">
+          <div class="arena-scene preview-scene"></div>
+          <div class="arena-body">
+            <p class="arena-requirement"></p>
+            <h2 data-copy="practice.expert"></h2>
+            <p class="arena-detail" data-copy="practice.expertDetail"></p>
+            <span class="arena-action unavailable" data-copy="practice.arenaPreview"></span>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module">
+      import { mountPracticePage } from "./js/practice-page.js";
+      import { t } from "./js/i18n.js";
+
+      await mountPracticePage({
+        titleKey: "practice.simulation",
+        optionsLabel: "practice.arenaOptions",
+        onDragonLoaded(level) {
+          for (const arena of document.querySelectorAll("[data-unlock-level]")) {
+            const required = Number(arena.dataset.unlockLevel);
+            const remaining = required - level;
+            arena.querySelector(".arena-requirement").textContent = t(
+              remaining > 0 ? "practice.arenaLocked" : "practice.arenaThresholdMet",
+              { level: required, remaining }
+            );
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -81,6 +81,9 @@
       .result-card { width: min(84%, 470px); padding: 28px 24px; border: 3px solid rgba(255,255,255,.82); border-radius: 24px; background: linear-gradient(155deg, rgba(30,58,138,.96), rgba(91,33,182,.94)); box-shadow: 0 16px 42px rgba(0,0,0,.35); }
       .result-card h2 { margin: 0 0 12px; font-size: clamp(1.7rem, 5vw, 2.7rem); }
       .result-card p { margin: 8px 0; font-family: "Microsoft YaHei", sans-serif; }
+      .result-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+      .result-actions a { padding: 9px 13px; border: 1px solid #c7d2fe; border-radius: 11px; background: #fff; color: #312e81; font-weight: 800; text-decoration: none; }
+      .result-actions[hidden] { display: none; }
       button:hover { filter: brightness(1.1); transform: translateY(-2px); } button:focus-visible { outline: 3px solid #fef08a; outline-offset: 2px; }
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
@@ -112,7 +115,15 @@
             <button id="chargeNext" class="quiz-primary" type="button" hidden></button>
           </section>
         </div>
-        <div id="battleResult" class="battle-result hidden" aria-live="polite"><section class="result-card"><h2 id="resultTitle"></h2><p id="resultSummary"></p><p id="resultReturning"></p></section></div>
+        <div id="battleResult" class="battle-result hidden" aria-live="polite">
+          <section class="result-card">
+            <h2 id="resultTitle"></h2><p id="resultSummary"></p><p id="resultReturning"></p>
+            <div id="resultActions" class="result-actions" hidden>
+              <a id="replayMatch" href="battle.html?from=practice"></a>
+              <a id="backToArenas" href="practice-battles.html"></a>
+            </div>
+          </section>
+        </div>
         <div class="battle-context">
           <span id="sceneName" class="context-name"></span>
           <div class="queue-wrap">
@@ -159,11 +170,14 @@
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
 
       const $ = (selector) => document.querySelector(selector);
+      const fromPractice = new URLSearchParams(location.search).get("from") === "practice";
+      const returnPage = fromPractice ? "practice-battles.html" : "home.html";
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
       let targeting = null;
       let skillOne = null;
       let busy = true;
+      let completedTurns = 0;
       let impactImagePath = "";
       const spellTextures = new Map();
 
@@ -266,9 +280,19 @@
             : "battle.resultFledSummary";
         $("#resultTitle").textContent = t(titleKey);
         $("#resultSummary").textContent = t(summaryKey);
-        $("#resultReturning").textContent = t("battle.resultReturning");
+        if (fromPractice) {
+          const dragon = unitById(state, "dragon");
+          $("#resultReturning").textContent = t("practice.matchStats", {
+            turns: completedTurns, hp: dragon.hp, max: dragon.maxHp
+          });
+          $("#replayMatch").textContent = t("practice.replay");
+          $("#backToArenas").textContent = t("practice.backToArenas");
+          $("#resultActions").hidden = false;
+        } else {
+          $("#resultReturning").textContent = t("battle.resultReturning");
+          setTimeout(() => location.assign(returnPage), 3000);
+        }
         result.classList.remove("hidden");
-        setTimeout(() => location.assign("home.html"), 3000);
       }
 
       async function playAttackAnimation(attacker, target, damage) {
@@ -538,6 +562,7 @@
       }
 
       async function finishDisplayedTurn() {
+        completedTurns += 1;
         render({ updateQueue: false });
         await advanceTurnQueue();
         if (state.status !== "playing") showBattleResult();
@@ -604,7 +629,7 @@
         $("#skip").setAttribute("aria-label", t("battle.skip"));
         $("#flee").title = t("battle.flee");
         $("#flee").setAttribute("aria-label", t("battle.flee"));
-        $("#returnHome").textContent = t("battle.returnHome");
+        $("#returnHome").textContent = t(fromPractice ? "practice.backToArenas" : "battle.returnHome");
         $("#claw").addEventListener("click", () => {
           if (busy || !isPlayerTurn()) return;
           targeting = "claw";
@@ -650,7 +675,7 @@
           render();
           showBattleResult();
         });
-        $("#returnHome").addEventListener("click", () => location.assign("home.html"));
+        $("#returnHome").addEventListener("click", () => location.assign(returnPage));
       }
 
       await loadUI();

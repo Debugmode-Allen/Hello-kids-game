@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>练习</title>
+    <link rel="stylesheet" href="css/practice.css" />
+  </head>
+  <body>
+    <main class="practice-page">
+      <a class="back-link" href="home.html" data-copy="battle.returnHome"></a>
+      <header class="practice-hero">
+        <div class="hero-copy">
+          <h1 data-copy="home.practice"></h1>
+          <p id="dragonName" class="dragon-name" hidden></p>
+          <p id="dragonLevel" class="dragon-level" hidden></p>
+          <p id="status" role="status"></p>
+        </div>
+        <img id="dragonImage" class="hero-dragon" alt="" hidden />
+      </header>
+
+      <section class="practice-grid" id="practiceOptions" aria-label="练习项目" hidden>
+        <a class="practice-card simulation" href="practice-battles.html">
+          <img class="practice-icon" src="assets/battle/actions/claw-swipe.png" alt="" />
+          <span class="card-copy">
+            <strong data-copy="practice.simulation"></strong>
+            <span data-copy="practice.simulationDetail"></span>
+          </span>
+          <span class="simulation-arrow" aria-hidden="true">→</span>
+        </a>
+        <article class="practice-card extracurricular">
+          <span class="practice-icon symbol" aria-hidden="true">♥</span>
+          <div class="card-copy">
+            <h2 data-copy="practice.extracurricular"></h2>
+            <span data-copy="practice.extracurricularDetail"></span>
+            <span class="attribute" data-copy="home.stamina"></span>
+          </div>
+          <span class="preview-label" data-copy="practice.planned"></span>
+        </article>
+        <article class="practice-card math">
+          <span class="practice-icon symbol" aria-hidden="true">×</span>
+          <div class="card-copy">
+            <h2 data-copy="practice.math"></h2>
+            <span class="attribute" data-copy="home.attack"></span>
+          </div>
+          <span class="preview-label" data-copy="practice.planned"></span>
+        </article>
+        <article class="practice-card english">
+          <span class="practice-icon symbol" aria-hidden="true">Aa</span>
+          <div class="card-copy">
+            <h2 data-copy="practice.english"></h2>
+            <span class="attribute" data-copy="home.defense"></span>
+          </div>
+          <span class="preview-label" data-copy="practice.planned"></span>
+        </article>
+        <article class="practice-card chinese">
+          <span class="practice-icon symbol" aria-hidden="true">文</span>
+          <div class="card-copy">
+            <h2 data-copy="practice.chinese"></h2>
+            <span class="attribute" data-copy="home.speed"></span>
+          </div>
+          <span class="preview-label" data-copy="practice.planned"></span>
+        </article>
+      </section>
+    </main>
+
+    <script type="module">
+      import { mountPracticePage } from "./js/practice-page.js";
+      await mountPracticePage({ titleKey: "home.practice", optionsLabel: "practice.options" });
+    </script>
+  </body>
+</html>

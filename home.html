@@ -113,7 +113,7 @@
       });
       document.querySelectorAll("[data-feature]").forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.feature === "practice") {
-          location.assign("battle.html");
+          location.assign("practice.html");
           return;
         }
         $("#status").textContent = t("home.featureComingSoon", { feature: t("home." + button.dataset.feature) });

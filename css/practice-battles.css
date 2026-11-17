@@ -1,0 +1,58 @@
+.arena-hero { min-height: 220px; }
+.arena-hero .hero-copy { max-width: 68%; }
+.arena-hero .hero-copy h1 { font-size: clamp(1.9rem, 6vw, 3.8rem); }
+.arena-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 17px; }
+.arena-card {
+  --arena-ink: #194a36;
+  --arena-surface: #fffdf1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d8e2cb;
+  border-radius: 20px;
+  background: var(--arena-surface);
+  color: var(--arena-ink);
+  box-shadow: 0 6px 18px #23382112;
+}
+.advanced-arena { --arena-ink: #4c572d; --arena-surface: #f1f3df; }
+.expert-arena { --arena-ink: #3b496b; --arena-surface: #eef0f6; }
+.arena-scene {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  gap: 6px;
+  height: 122px;
+  padding: 7px 10px;
+  background: linear-gradient(0deg, #122b21aa 4%, transparent 70%), #355743 url("../assets/battle/backgrounds/meadow-dragon-island.png") center 55% / cover no-repeat;
+}
+.arena-scene img { width: 40%; height: 100%; object-fit: contain; filter: drop-shadow(0 5px 5px #1330229e); }
+.advanced-arena .preview-scene { background-image: linear-gradient(110deg, #23391de0, #5260298c), url("../assets/battle/backgrounds/meadow-dragon-island.png"); background-position: center, 72% 35%; }
+.expert-arena .preview-scene { background-image: linear-gradient(110deg, #1b264cdd, #475c7b91), url("../assets/battle/backgrounds/meadow-dragon-island.png"); background-position: center, 30% 30%; }
+.arena-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 15px 16px 17px; }
+.arena-requirement { margin: 0 0 6px; font-size: .8rem; font-weight: 750; }
+.arena-body h2 { margin: 0 0 8px; font-size: clamp(1.22rem, 3vw, 1.55rem); }
+.arena-detail { flex: 1; margin: 0 0 17px; line-height: 1.5; }
+.arena-action {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #194a36;
+  border-radius: 12px;
+  background: #194a36;
+  color: #fffbed;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 800;
+}
+a.arena-action:hover { background: #266446; }
+a.arena-action:focus-visible { outline: 3px solid #b47919; outline-offset: 3px; }
+.arena-action.unavailable { border-color: #69746b55; background: #69746b18; color: var(--arena-ink); }
+
+@media (max-width: 650px) {
+  .arena-grid { grid-template-columns: 1fr; gap: 10px; }
+  .arena-card { display: grid; grid-template-columns: minmax(72px, .8fr) 1.5fr; }
+  .arena-scene { height: auto; min-height: 140px; }
+  .arena-scene img { width: 45%; height: 60px; }
+  .arena-body { padding: 12px; }
+  .arena-detail { margin-bottom: 11px; font-size: .9rem; }
+}

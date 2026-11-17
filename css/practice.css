@@ -1,0 +1,93 @@
+:root {
+  font-family: "Microsoft YaHei", "Source Sans 3", system-ui, sans-serif;
+  background: #f4f6eb;
+  color: #233721;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-height: 100vh; background: linear-gradient(165deg, #ebf1e0, #faf8ed 70%); }
+.practice-page { width: min(100% - 36px, 980px); margin: auto; padding: 62px 0 42px; }
+.back-link { display: inline-block; margin: 0 0 13px; color: #3b5235; font-weight: 750; text-underline-offset: 4px; }
+.back-link::before { content: "←"; margin-right: 7px; }
+
+.practice-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 250px;
+  padding: 25px clamp(20px, 6vw, 62px);
+  overflow: hidden;
+  border: 1px solid #56745c;
+  border-radius: 27px;
+  background: #244b36 url("../assets/battle/backgrounds/meadow-dragon-island.png") center 52% / cover no-repeat;
+  color: #fffcea;
+  box-shadow: 0 10px 28px #213d2226;
+}
+.practice-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(96deg, #123424f7 3%, #183c29e8 28%, #1c3e2f45 66%, #1731220a);
+}
+.hero-copy { position: relative; z-index: 1; max-width: 54%; }
+.hero-copy h1 { margin: 0 0 19px; font-size: clamp(2.3rem, 7vw, 4.1rem); line-height: 1.02; letter-spacing: .08em; }
+.dragon-name { margin: 0; font-size: clamp(1.2rem, 4vw, 2rem); font-weight: 800; overflow-wrap: anywhere; }
+.dragon-level { display: inline-block; margin: 9px 0 0; padding: 4px 12px; border: 1px solid #e9e5a880; border-radius: 100px; background: #25432e; color: #f5ebba; font-weight: 700; }
+#status { margin: 12px 0 0; }
+#status:empty { display: none; }
+.hero-dragon {
+  position: absolute;
+  right: clamp(2px, 6vw, 66px);
+  bottom: -5px;
+  width: min(49%, 300px);
+  height: calc(100% + 4px);
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 12px 10px #15241390);
+}
+
+.practice-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; margin-top: 16px; }
+.practice-card {
+  position: relative;
+  display: flex;
+  grid-column: span 2;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 114px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.practice-card h2, .practice-card strong { display: block; margin: 0; font-size: clamp(1rem, 2.4vw, 1.27rem); line-height: 1.25; }
+.card-copy { display: grid; gap: 5px; min-width: 0; }
+.card-copy > span { font-size: .85rem; overflow-wrap: anywhere; }
+.practice-icon { flex: 0 0 48px; width: 48px; height: 48px; border-radius: 14px; object-fit: contain; }
+.symbol { display: grid; place-items: center; background: var(--icon); font-size: 1.62rem; font-weight: 800; }
+.attribute { width: fit-content; font-weight: 750; }
+.preview-label { position: absolute; right: 10px; top: 9px; color: var(--ink); font-size: .67rem; }
+
+.simulation { --surface: #194a36; --line: #2b6249; --ink: #fff9df; grid-column: span 3; color: var(--ink); text-decoration: none; }
+.simulation:hover { background: #246346; }
+.simulation:focus-visible, .back-link:focus-visible { outline: 3px solid #b47919; outline-offset: 3px; }
+.simulation .practice-icon { border-radius: 50%; }
+.simulation-arrow { margin-left: auto; padding-right: 5px; font-size: 1.45rem; }
+.extracurricular { --surface: #f9eedc; --line: #ecd5b8; --ink: #783d27; --icon: #f1d6bc; grid-column: span 3; }
+.math { --surface: #f8eedf; --line: #edd8b8; --ink: #784620; --icon: #f2dcba; }
+.english { --surface: #eaf0fa; --line: #d3e0f4; --ink: #294b77; --icon: #d3e2f8; }
+.chinese { --surface: #f3eaf7; --line: #e5d6ed; --ink: #633c73; --icon: #eadaf0; }
+
+@media (max-width: 650px) {
+  .practice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .practice-card { grid-column: span 1; min-height: 105px; padding: 20px 10px 9px; gap: 8px; }
+  .simulation { grid-column: span 2; min-height: 84px; padding: 10px 13px; }
+  .practice-icon { flex-basis: 36px; width: 36px; height: 36px; border-radius: 10px; }
+  .symbol { font-size: 1.2rem; }
+  .preview-label { top: 5px; right: 8px; }
+  .practice-hero { min-height: 201px; }
+}
