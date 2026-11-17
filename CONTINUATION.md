@@ -22,6 +22,8 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
+当前开发工作位于 `v1.0.2`：小龙主页与练习战 UI 已完成本地验收，但此阶段的源码、战斗素材及文档尚未统一提交/推送。继续工作或发布前，先运行 `git status`，确认这些改动仍在工作目录中；不要使用 `git reset --hard` 或覆盖未提交文件。
+
 ## 日常工作方式
 
 1. 先在本地改文件并用浏览器测试。
@@ -44,3 +46,4 @@ GitHub Pages 需要一两分钟更新；发布地址为：
 - 不要提交密码、孩子的真实个人资料或任何私密导出文件。
 - Firebase Web 配置可以在网页代码中出现；真正的保护依赖 Firebase Authentication 与 Firestore Rules。
 - Firestore Rules 不会随着 Git 推送自动生效：需要在 Firebase Console 手动粘贴 `firestore.rules` 并发布。
+- 对战页的场景/战斗名称/背景由 `data/battle-library.json`、`content/battle.zh-CN.json` 与 `assets/battle/battle-assets.json` 共同定义。新增战斗优先增加配置和素材，不要直接在 `battle.html` 写死场景资料。

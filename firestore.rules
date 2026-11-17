@@ -14,7 +14,7 @@ service cloud.firestore {
       allow create, update, delete: if false;
       match /dragon/{dragonId} {
         allow read: if isOwner(userId) || isAdmin();
-        allow create, update: if isOwner(userId);
+        allow create, update: if isOwner(userId) || isAdmin();
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {

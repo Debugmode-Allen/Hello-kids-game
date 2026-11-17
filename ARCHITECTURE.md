@@ -1,13 +1,14 @@
 # 小小学习家：开发结构
 
-当前本地版本：`v1.0.1`（内容迁移与结构整理，待本地验收）
+当前本地版本：`v1.0.2`（小龙属性与练习战 UI，已完成本地布局验收，待统一发布）
 
 ## 页面与路由
 
 - `index.html`：唯一登录入口。Allen 登录后进入 `admin.html`；孩子第一次登录进入 `journey.html`；已经有小龙的孩子进入 `home.html`。
 - `journey.html`：龙岛故事、选蛋、十题起始测试、孵化、命名。
-- `home.html`：孩子的小龙与学习能力主页。
-- `admin.html`：Allen 的孩子记录概览、独立重置小龙、独立清除学习与测试记录。
+- `home.html`：孩子的小龙主页，显示小龙等级、经验、阶段、四维属性，以及冒险、对战、合作挑战、练习四个功能入口。
+- `admin.html`：Allen 的孩子学习记录概览、独立重置功能和小龙属性编辑器。
+- `battle.html`：战斗展示层。当前加载“练习战”的场景配置，呈现透视阵位、行动顺序、角色高亮、操作按钮与退出入口；尚未接入伤害、回合推进和结算规则。
 
 每个非登录页面都会由 `js/firebase.js` 自动加载 `js/account-bar.js`，在右上角显示当前账户名和退出按钮。
 
@@ -19,6 +20,9 @@
 - `content/story.zh-CN.json`：孩子看到的故事、龙蛋名称和描述。
 - `data/question-bank.js`：题目、答案、选项和年级分类；它是题库数据。
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
+- `assets/battle/battle-assets.json`：可替换的战斗背景和敌人精灵图清单。
+- `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
+- `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
 
 新增语言时，复制 `ui.zh-CN.json` 与 `story.zh-CN.json` 后翻译内容；页面逻辑不应因翻译而改动。
 
@@ -32,12 +36,28 @@
 - `js/progress-store.js`：事务式保存测试、进度、小龙和全局小龙占用登记。
 - `js/admin-dashboard.js`：管理员重置小龙及清除学习历史。
 
+## 对战模块的顶层设计
+
+对战功能分为三个层次，避免以后换场景、加敌人或接入真实规则时反复修改页面：
+
+1. **资料层**：`assets/battle/battle-assets.json` 登记背景、敌人、行动图标等可替换素材；`content/battle.zh-CN.json` 保存场景名、战斗名和描述。
+2. **战斗配置层**：`data/battle-library.json` 的每一场战斗指定 `backgroundId`、敌人列表和文案键。当前 `practice-meadow` 对应“龙岛草原 / 练习战”。
+3. **展示与规则层**：`battle.html` 只读取配置并呈现战场。下一阶段新增独立的战斗规则模块，负责速度行动顺序、目标选择、伤害、血量、逃跑与结算；不要把规则写回页面 DOM 代码中。
+
+当前练习战的 UI 约定：左右各五个透视阵位；空位显示浅色虚线椭圆；已有角色悬停时同时显示轮廓和脚下椭圆；顶部只显示最近十次行动顺序；底部为爪击、技能一、预留技能二/三、跳过、逃跑。技能二/三现阶段透明但保留空间，防止操作区布局在后续解锁时跳动。
+
+## 当前开发阶段与下一步
+
+- 已完成：登录与账户分流、初始测试/孵化/命名、小龙属性与管理员编辑、战斗场景资料库、练习战纯 UI。
+- 正在进入：练习战的真实战斗模块。
+- 下一步建议顺序：先定义战斗状态和速度行动队列，再实现爪击/跳过/逃跑，最后加入敌人 AI、胜负结算与奖励。对战结果应先保存为独立战斗记录，确认规则稳定后再影响小龙成长属性。
+
 ## Firestore 数据
 
 `users/{uid}` 仅保存 `name` 和 `role`。
 
-- `users/{uid}/dragon/current`：小龙物种、孩子命名、职业、等级、经验和属性。
-- `users/{uid}/progress/summary`：各学科等级、经验和答题汇总。
+- `users/{uid}/dragon/current`：小龙物种、孩子命名、职业、等级、经验、阶段和四维属性（`attack`、`defense`、`speed`、`stamina`）。新小龙初始值为 10、10、10、100。
+- `users/{uid}/progress/summary`：属于孩子账户的各学科等级、经验和答题汇总，不属于小龙属性。
 - `users/{uid}/attempts/{attemptId}`：每次测试的题目结果和推荐等级。
 - `gameSettings/current`：预留给 Allen 的全局游戏设置。
 - `dragonAssignments/{speciesId}`：全局唯一的小龙占用登记，防止不同账户孵化同一物种。

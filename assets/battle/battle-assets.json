@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "notes": "战斗素材清单。更换同类图片时保留 id 和相对路径，或同步更新调用页面。敌人精灵图默认放在右侧敌方阵位，面朝左侧主角团。敌人基础图统一为正方形透明 PNG；后续等级变体应保持轮廓与构图，仅加深颜色或增加细节。",
+  "backgrounds": [
+    {
+      "id": "meadow-dragon-island",
+      "name": "草地龙岛战场",
+      "path": "assets/battle/backgrounds/meadow-dragon-island.png",
+      "aspectRatio": "16:9",
+      "usage": "传统回合制战斗背景；左右预留角色阵位。"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "leaf-caterpillar",
+      "name": "叶帽毛毛虫",
+      "path": "assets/battle/enemies/leaf-caterpillar-left.png",
+      "facing": "left",
+      "element": "forest",
+      "usage": "基础草地敌人；右侧敌方阵位。弯曲直立姿势；高等级可加深绿色。"
+    },
+    {
+      "id": "moon-moth",
+      "name": "月光蛾",
+      "path": "assets/battle/enemies/moon-moth-left.png",
+      "facing": "left",
+      "element": "moon",
+      "usage": "基础夜系敌人；右侧敌方阵位。浅色基础款；高等级可加深紫色。"
+    }
+  ],
+  "actions": [
+    {
+      "id": "claw-swipe",
+      "name": "爪击",
+      "path": "assets/battle/actions/claw-swipe.png",
+      "usage": "战斗操作区的圆形爪击按钮图标。"
+    },
+    {
+      "id": "skip-sleep",
+      "name": "跳过",
+      "path": "assets/battle/actions/skip-sleep.png",
+      "usage": "战斗操作区的圆形跳过按钮图标；使用睡眠与 Zzz 表示不行动。"
+    },
+    {
+      "id": "flee-dash",
+      "name": "逃跑",
+      "path": "assets/battle/actions/flee-dash.png",
+      "usage": "战斗操作区的圆形逃跑按钮图标；使用小龙冲向出口表示离开战斗。"
+    }
+  ]
+}

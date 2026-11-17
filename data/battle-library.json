@@ -1,0 +1,12 @@
+{
+  "battles": [
+    {
+      "id": "practice-meadow",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "battle.practice.name",
+      "descriptionKey": "battle.practice.description",
+      "enemies": ["leaf-caterpillar", "moon-moth"]
+    }
+  ]
+}

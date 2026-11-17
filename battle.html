@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      :root { font-family: Georgia, "STKaiti", "KaiTi", serif; color: #172554; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 70px 16px 24px; background: radial-gradient(circle at top, #dbeafe, #bfdbfe); }
+      .battle-page { width: min(100%, 1120px); margin: 0 auto; }
+      .battlefield { position: relative; min-height: 620px; overflow: hidden; border: 6px solid #f8fafc; border-radius: 28px; background: #7dd3fc center / cover; box-shadow: 0 20px 42px rgba(30,64,175,.25); }
+      .battlefield::after { position: absolute; inset: 0; z-index: 0; pointer-events: none; content: ""; background: linear-gradient(180deg, rgba(15,23,42,.16), transparent 30%, transparent 68%, rgba(15,23,42,.14)); }
+      .battle-context { position: absolute; top: 14px; right: 18px; left: 18px; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 12px; pointer-events: none; }
+      .context-name { width: fit-content; max-width: 190px; padding: 8px 13px; border: 1px solid transparent; border-radius: 12px; background: transparent; box-shadow: none; color: #1e3a8a; font-size: 1rem; font-weight: 800; letter-spacing: .06em; text-shadow: 0 1px 2px rgba(255,255,255,.9); }
+      .battle-name { justify-self: end; color: #7f1d1d; }
+      .queue-wrap { display: grid; justify-items: center; }
+      .turn-queue { display: flex; justify-content: center; gap: 4px; }
+      .turn-icon { display: grid; grid-template-rows: 42px 17px; flex: 0 0 43px; width: 43px; height: 61px; padding: 1px; overflow: hidden; border: 0; border-radius: 7px; background: transparent; box-shadow: none; color: #172554; cursor: pointer; pointer-events: auto; }
+      .turn-icon img { width: 100%; height: 42px; object-fit: contain; }
+      .turn-icon span { overflow: hidden; padding: 1px 2px; color: #172554; font-family: "Microsoft YaHei", sans-serif; font-size: .56rem; font-weight: 800; line-height: 15px; text-align: center; text-overflow: ellipsis; text-shadow: 0 1px 2px #fff; white-space: nowrap; }
+      .turn-icon.highlight { box-shadow: 0 0 0 3px #fde68a; transform: translateY(-3px); }
+      .slot { position: absolute; z-index: 1; width: var(--size); height: var(--size); transform: translate(-50%, -50%); transition: transform .16s, filter .16s; }
+      .slot::after { position: absolute; bottom: 4%; left: 50%; z-index: 0; width: 100%; height: 18%; box-sizing: border-box; border-radius: 50%; content: ""; transform: translateX(-50%) skewX(-10deg); }
+      .player-rear-1 { --size: 140px; top: 69%; left: 14%; } .player-rear-2 { --size: 122px; top: 66%; left: 30%; } .player-rear-3 { --size: 92px; top: 47%; left: 14%; }
+      .player-front-1 { --size: 108px; top: 48%; left: 35%; } .player-front-2 { --size: 72px; top: 38%; left: 25%; }
+      .enemy-rear-1 { --size: 140px; top: 69%; left: 86%; } .enemy-rear-2 { --size: 122px; top: 66%; left: 70%; } .enemy-rear-3 { --size: 92px; top: 47%; left: 86%; }
+      .enemy-front-1 { --size: 108px; top: 48%; left: 65%; } .enemy-front-2 { --size: 72px; top: 38%; left: 75%; }
+      .slot.empty { display: block; pointer-events: none; }
+      .slot.empty::after { border: 1px dashed rgba(255,255,255,.54); background: rgba(255,255,255,.05); }
+      .actor { z-index: 2; display: grid; place-items: center; background: transparent; }
+      .actor.highlight { z-index: 4; transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 12px #fde68a); }
+      .actor::after { border: 2px solid rgba(254,240,138,.95); background: rgba(253,230,138,.12); opacity: 0; transition: opacity .16s; }
+      .actor.highlight::after { opacity: 1; }
+      .actor img { z-index: 1; width: 96%; height: 96%; object-fit: contain; }
+      .health { position: absolute; top: -12px; left: 50%; z-index: 2; width: 86%; height: 11px; overflow: hidden; border: 2px solid #fff; border-radius: 99px; background: #1e293b; transform: translateX(-50%); box-shadow: 0 2px 5px rgba(15,23,42,.28); }
+      .health span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #16a34a, #86efac); }
+      .enemy .health span { background: linear-gradient(90deg, #dc2626, #fca5a5); }
+      .controls { position: absolute; z-index: 6; bottom: 16px; display: flex; align-items: end; gap: 10px; }
+      .player-controls { left: 16px; } .enemy-controls { right: 16px; }
+      .round-action { display: grid; width: 70px; height: 70px; place-items: center; padding: 0; overflow: hidden; border: 3px solid rgba(255,255,255,.92); border-radius: 50%; background: #1e3a8a; cursor: pointer; box-shadow: 0 6px 13px rgba(15,23,42,.3); }
+      #claw, #skillOne { width: 84px; height: 84px; }
+      .round-action img { width: 100%; height: 100%; object-fit: cover; }
+      .skill-placeholder { background: radial-gradient(circle at 30% 25%, #ddd6fe, #7c3aed 52%, #312e81); color: #fff; }
+      .skill-placeholder span { font-family: "Microsoft YaHei", sans-serif; font-size: 2rem; text-shadow: 0 2px 5px #312e81; }
+      /* 后续技能二、三尚未解锁：保留与前两个技能相同的空间，
+         但完全不可见，避免“跳过”按钮紧贴技能一。 */
+      .skill-locked { visibility: hidden; width: 84px; height: 84px; border: 2px dashed rgba(255,255,255,.7); background: rgba(49,46,129,.22); box-shadow: none; opacity: .75; }
+      button:hover { filter: brightness(1.1); transform: translateY(-2px); } button:focus-visible { outline: 3px solid #fef08a; outline-offset: 2px; }
+      .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
+      @media (max-width: 760px) {
+        body { padding: 64px 6px 16px; } .battlefield { min-height: 520px; border-width: 4px; }
+        .battle-context { top: 8px; right: 8px; left: 8px; gap: 4px; } .context-name { max-width: 92px; padding: 5px 6px; font-size: .68rem; }
+        .turn-queue { gap: 2px; } .turn-icon { grid-template-rows: 31px 13px; flex-basis: 31px; width: 31px; height: 46px; border-radius: 5px; } .turn-icon img { height: 31px; } .turn-icon span { font-size: .45rem; line-height: 11px; }
+        .player-rear-1 { --size: 104px; top: 70%; left: 14%; } .player-rear-2 { --size: 90px; top: 67%; left: 30%; } .player-rear-3 { --size: 68px; top: 49%; left: 14%; }
+        .player-front-1 { --size: 80px; top: 50%; left: 35%; } .player-front-2 { --size: 54px; top: 41%; left: 25%; }
+        .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 90px; top: 67%; left: 70%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
+        .enemy-front-1 { --size: 80px; top: 50%; left: 65%; } .enemy-front-2 { --size: 54px; top: 41%; left: 75%; }
+        .controls { bottom: 10px; gap: 6px; } .player-controls { left: 9px; } .enemy-controls { right: 9px; } .round-action { width: 55px; height: 55px; } #claw, #skillOne, .skill-locked { width: 66px; height: 66px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="battle-page">
+      <section class="battlefield" aria-label="battlefield">
+        <div class="battle-context">
+          <span id="sceneName" class="context-name"></span>
+          <div class="queue-wrap"><div id="turnQueue" class="turn-queue"></div></div>
+          <span id="battleName" class="context-name battle-name"></span>
+        </div>
+
+        <div class="slot player-rear-1 empty"></div><div class="slot player-rear-2 empty"></div><div class="slot player-rear-3 empty"></div>
+        <div id="dragonActor" class="slot actor player-front-1" data-actor="dragon"><img id="dragonImage" alt="" /><span class="health"><span></span></span></div>
+        <div class="slot player-front-2 empty"></div>
+        <div class="slot enemy-rear-1 empty"></div>
+        <div id="mothActor" class="slot actor enemy enemy-rear-2" data-actor="moth"><img src="assets/battle/enemies/moon-moth-left.png" alt="" /><span class="health"><span></span></span></div>
+        <div class="slot enemy-rear-3 empty"></div>
+        <div id="caterpillarActor" class="slot actor enemy enemy-front-1" data-actor="caterpillar"><img src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" /><span class="health"><span></span></span></div>
+        <div class="slot enemy-front-2 empty"></div>
+
+        <div class="controls player-controls">
+          <button id="claw" class="round-action" type="button"><img src="assets/battle/actions/claw-swipe.png" alt="" /></button>
+          <button id="skillOne" class="round-action skill-placeholder" type="button"><span aria-hidden="true">✦</span></button>
+          <span class="round-action skill-locked" aria-hidden="true"></span>
+          <span class="round-action skill-locked" aria-hidden="true"></span>
+          <button id="skip" class="round-action" type="button"><img src="assets/battle/actions/skip-sleep.png" alt="" /></button>
+        </div>
+        <div class="controls enemy-controls"><button id="flee" class="round-action" type="button"><img src="assets/battle/actions/flee-dash.png?v=20261116" alt="" /></button></div>
+      </section>
+      <p id="notice" class="notice" aria-live="polite"></p>
+    </main>
+
+    <script type="module">
+      import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
+      import { loadUI, t } from "./js/i18n.js";
+
+      const $ = (selector) => document.querySelector(selector);
+      const actors = {
+        dragon: { element: $("#dragonActor"), image: $("#dragonImage"), name: "" },
+        caterpillar: { element: $("#caterpillarActor"), image: $("#caterpillarActor img"), name: "" },
+        moth: { element: $("#mothActor"), image: $("#mothActor img"), name: "" }
+      };
+
+      function setHighlight(actorId, active) {
+        actors[actorId].element.classList.toggle("highlight", active);
+        document.querySelectorAll(`[data-actor="${actorId}"]`).forEach((item) => item.classList.toggle("highlight", active));
+      }
+
+      function buildQueue(order) {
+        const queue = $("#turnQueue");
+        queue.replaceChildren();
+        order.forEach((actorId) => {
+          const icon = document.createElement("button");
+          icon.type = "button";
+          icon.className = "turn-icon";
+          icon.dataset.actor = actorId;
+          const image = document.createElement("img");
+          image.src = actors[actorId].image.src;
+          image.alt = actors[actorId].name;
+          const caption = document.createElement("span");
+          caption.textContent = actors[actorId].name;
+          icon.append(image, caption);
+          icon.addEventListener("mouseenter", () => setHighlight(actorId, true));
+          icon.addEventListener("mouseleave", () => setHighlight(actorId, false));
+          icon.addEventListener("focus", () => setHighlight(actorId, true));
+          icon.addEventListener("blur", () => setHighlight(actorId, false));
+          queue.append(icon);
+        });
+      }
+
+      async function loadLibrary() {
+        const response = await fetch("assets/dragons/dragon-library.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Dragon library: ${response.status}`);
+        return response.json();
+      }
+
+      async function loadJson(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) throw new Error(`${path}: ${response.status}`);
+        return response.json();
+      }
+
+      await loadUI();
+      document.title = t("battle.title");
+      actors.caterpillar.name = t("battle.caterpillar");
+      actors.moth.name = t("battle.moth");
+      $("#skillOne").textContent = t("battle.skillOne");
+      // 逃跑按钮使用图标；不可用 textContent 覆盖，否则会把 <img> 从按钮中移除。
+      $("#claw").title = t("battle.claw");
+      $("#claw").setAttribute("aria-label", t("battle.claw"));
+      $("#skillOne").title = t("battle.skillOne");
+      $("#skillOne").setAttribute("aria-label", t("battle.skillOne"));
+      $("#skip").title = t("battle.skip");
+      $("#skip").setAttribute("aria-label", t("battle.skip"));
+      $("#flee").title = t("battle.flee");
+      $("#flee").setAttribute("aria-label", t("battle.flee"));
+      Object.entries(actors).forEach(([actorId, actor]) => {
+        actor.element.addEventListener("mouseenter", () => setHighlight(actorId, true));
+        actor.element.addEventListener("mouseleave", () => setHighlight(actorId, false));
+      });
+      document.querySelectorAll(".round-action").forEach((button) => button.addEventListener("click", () => {
+        $("#notice").textContent = t("battle.uiOnlyNotice");
+      }));
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) { location.replace("index.html"); return; }
+        try {
+          const [dragonSnapshot, library, battleLibrary, battleContent, battleAssets] = await Promise.all([
+            getDoc(doc(db, "users", user.uid, "dragon", "current")),
+            loadLibrary(),
+            loadJson("data/battle-library.json"),
+            loadJson("content/battle.zh-CN.json"),
+            loadJson("assets/battle/battle-assets.json")
+          ]);
+          if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
+          const dragon = dragonSnapshot.data();
+          const species = library.find((item) => item.id === dragon.speciesId);
+          if (!species) throw new Error("Missing dragon species");
+          const battle = battleLibrary.battles.find((item) => item.id === "practice-meadow");
+          const background = battleAssets.backgrounds.find((item) => item.id === battle?.backgroundId);
+          if (!battle || !background) throw new Error("Missing battle configuration");
+          $(".battlefield").style.backgroundImage = `url("${background.path}")`;
+          $("#sceneName").textContent = battleContent[battle.sceneNameKey];
+          $("#battleName").textContent = battleContent[battle.nameKey];
+          $("#battleName").title = battleContent[battle.descriptionKey];
+          actors.dragon.image.src = species.image;
+          actors.dragon.image.alt = dragon.customName || species.name;
+          actors.dragon.name = dragon.customName || species.name;
+          buildQueue(["dragon", "moth", "dragon", "caterpillar", "moth", "dragon", "dragon", "caterpillar", "moth", "dragon"]);
+        } catch (error) {
+          console.error("Unable to load battle layout", error);
+          $("#notice").textContent = t("battle.loadError");
+        }
+      });
+    </script>
+  </body>
+</html>

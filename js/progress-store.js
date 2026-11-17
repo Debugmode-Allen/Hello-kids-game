@@ -14,7 +14,19 @@ export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, ans
     const dragon = available[Math.floor(Math.random() * available.length)];
     const score = answers.filter((answer) => answer.correct).length;
     transaction.set(doc(db, "dragonAssignments", dragon.id), { ownerId: userId, assignedAt: new Date().toISOString() });
-    transaction.set(doc(db, "users", userId, "dragon", "current"), { eggId, speciesId: dragon.id, customName: dragon.name, profession: dragon.profession, level: 1, xp: 0, stage: "hatchling", strength: 1, wisdom: 1, kindness: 1 });
+    transaction.set(doc(db, "users", userId, "dragon", "current"), {
+      eggId,
+      speciesId: dragon.id,
+      customName: dragon.name,
+      profession: dragon.profession,
+      level: 1,
+      xp: 0,
+      stage: 1,
+      attack: 10,
+      defense: 10,
+      speed: 10,
+      stamina: 100
+    });
     transaction.set(doc(db, "users", userId, "progress", "summary"), { chineseLevel: levels.chinese, englishLevel: levels.english, mathLevel: levels.math, totalCorrect: score, totalAnswered: answers.length });
     transaction.set(attemptRef, { type: "initial-assessment", eggId, score, answers, levels, createdAt: new Date().toISOString() });
     return dragon;

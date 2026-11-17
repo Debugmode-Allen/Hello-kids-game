@@ -10,26 +10,42 @@
       body { min-height: 100vh; margin: 0; padding: 76px 20px 32px; background: linear-gradient(160deg, #e0f2fe, #f5f3ff); }
       .dragon-home { width: min(100%, 680px); margin: 0 auto; padding: 34px 28px; text-align: center; background: rgba(255,255,255,.95); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
       h1 { margin: 0 0 12px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
-      .dragon-image { display: block; width: min(100%, 310px); height: 260px; margin: 6px auto 12px; object-fit: contain; }
+      .dragon-stage { position: relative; width: min(100%, 420px); height: 280px; margin: 6px auto 12px; }
+      .dragon-image { display: block; width: 250px; height: 260px; margin: 0 auto; object-fit: contain; }
       #dragonName { margin: 0; font-size: 1.7rem; color: #7c3aed; }
       #dragonProfession { min-height: 1.5em; margin: 8px 0 26px; color: #475569; }
       .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
       .stat { padding: 14px 8px; border-radius: 16px; background: #eff6ff; }
       .stat-label { display: block; color: #475569; font-size: .88rem; }
       .stat-value { display: block; margin-top: 6px; font-size: 1.15rem; color: #1d4ed8; }
-      .learning { margin-top: 24px; padding: 17px; border-radius: 16px; background: #f5f3ff; }
-      .learning h2 { margin: 0 0 9px; font-size: 1.05rem; }
-      .learning p { margin: 0; color: #475569; }
+      .attributes { margin-top: 24px; padding: 18px; border-radius: 18px; background: #f5f3ff; }
+      .attributes h2 { margin: 0 0 13px; font-size: 1.1rem; }
+      .attribute-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .attribute { padding: 12px 8px; border-radius: 14px; background: #fff; }
+      .path-card { position: absolute; z-index: 1; width: 92px; min-height: 58px; padding: 8px 7px; border: 2px solid #bfdbfe; border-radius: 999px; background: linear-gradient(145deg, #fff, #dbeafe); color: #1e3a8a; font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 6px 14px rgba(37,99,235,.12); }
+      .path-card:hover { border-color: #2563eb; background: #bfdbfe; transform: scale(1.05); }
+      .path-icon { display: inline-block; margin-right: 3px; }
+      .path-name { font-size: .86rem; }
+      .path-adventure { top: 14px; left: 0; }
+      .path-battle { top: 14px; right: 0; }
+      .path-cooperation { bottom: 14px; left: 0; }
+      .path-practice { right: 0; bottom: 14px; }
       #status { min-height: 1.5em; margin: 16px 0 0; color: #64748b; }
       .hidden { display: none; }
-      @media (max-width: 430px) { body { padding: 68px 12px 20px; } .dragon-home { padding: 28px 16px; } }
+      @media (max-width: 430px) { body { padding: 68px 12px 20px; } .dragon-home { padding: 28px 16px; } .dragon-stage { height: 250px; } .dragon-image { width: 210px; height: 230px; } .path-card { width: 78px; min-height: 52px; padding: 6px 3px; font-size: .75rem; } }
     </style>
   </head>
   <body>
     <main class="dragon-home" aria-live="polite">
       <h1 id="pageTitle"></h1>
       <section id="dragonPanel" class="hidden">
-        <img id="dragonImage" class="dragon-image" alt="" />
+        <div class="dragon-stage">
+          <img id="dragonImage" class="dragon-image" alt="" />
+          <button class="path-card path-adventure" type="button" data-feature="adventure"><span class="path-icon" aria-hidden="true">🗺️</span><span id="adventureName" class="path-name"></span></button>
+          <button class="path-card path-battle" type="button" data-feature="battle"><span class="path-icon" aria-hidden="true">⚔️</span><span id="battleName" class="path-name"></span></button>
+          <button class="path-card path-cooperation" type="button" data-feature="cooperation"><span class="path-icon" aria-hidden="true">🤝</span><span id="cooperationName" class="path-name"></span></button>
+          <button class="path-card path-practice" type="button" data-feature="practice"><span class="path-icon" aria-hidden="true">✨</span><span id="practiceName" class="path-name"></span></button>
+        </div>
         <h2 id="dragonName"></h2>
         <p id="dragonProfession"></p>
         <div class="stats">
@@ -37,7 +53,15 @@
           <div class="stat"><span id="xpLabel" class="stat-label"></span><strong id="xpValue" class="stat-value"></strong></div>
           <div class="stat"><span id="stageLabel" class="stat-label"></span><strong id="stageValue" class="stat-value"></strong></div>
         </div>
-        <section class="learning"><h2 id="learningLabel"></h2><p id="learningValues"></p></section>
+        <section class="attributes">
+          <h2 id="attributesTitle"></h2>
+          <div class="attribute-grid">
+            <div class="attribute"><span id="attackLabel" class="stat-label"></span><strong id="attackValue" class="stat-value"></strong></div>
+            <div class="attribute"><span id="defenseLabel" class="stat-label"></span><strong id="defenseValue" class="stat-value"></strong></div>
+            <div class="attribute"><span id="speedLabel" class="stat-label"></span><strong id="speedValue" class="stat-value"></strong></div>
+            <div class="attribute"><span id="staminaLabel" class="stat-label"></span><strong id="staminaValue" class="stat-value"></strong></div>
+          </div>
+        </section>
       </section>
       <p id="status"></p>
     </main>
@@ -54,19 +78,19 @@
         return response.json();
       }
 
-      function showDragon(dragon, progress, species) {
+      function showDragon(dragon, species) {
         $("#dragonImage").src = species.image;
         $("#dragonImage").alt = dragon.customName || species.name;
         $("#dragonName").textContent = dragon.customName || species.name;
         $("#dragonProfession").textContent = species.profession || dragon.profession || "";
         $("#levelValue").textContent = dragon.level ?? 1;
         $("#xpValue").textContent = dragon.xp ?? 0;
-        $("#stageValue").textContent = dragon.stage ?? 1;
-        $("#learningValues").textContent = t("home.learningValues", {
-          chinese: progress?.chineseLevel ?? 1,
-          english: progress?.englishLevel ?? 1,
-          math: progress?.mathLevel ?? 1
-        });
+        const stage = dragon.stage === "hatchling" ? 1 : (dragon.stage ?? 1);
+        $("#stageValue").textContent = stage === 1 ? t("home.stageOne") : t("home.stageValue", { stage });
+        $("#attackValue").textContent = dragon.attack ?? 10;
+        $("#defenseValue").textContent = dragon.defense ?? 10;
+        $("#speedValue").textContent = dragon.speed ?? 10;
+        $("#staminaValue").textContent = dragon.stamina ?? 100;
         $("#dragonPanel").classList.remove("hidden");
       }
 
@@ -76,22 +100,35 @@
       $("#levelLabel").textContent = t("home.level");
       $("#xpLabel").textContent = t("home.xp");
       $("#stageLabel").textContent = t("home.stage");
-      $("#learningLabel").textContent = t("home.learning");
+      $("#attributesTitle").textContent = t("home.dragonAttributes");
+      $("#attackLabel").textContent = t("home.attack");
+      $("#defenseLabel").textContent = t("home.defense");
+      $("#speedLabel").textContent = t("home.speed");
+      $("#staminaLabel").textContent = t("home.stamina");
+      ["adventure", "battle", "cooperation", "practice"].forEach((feature) => {
+        $("#" + feature + "Name").textContent = t("home." + feature);
+      });
+      document.querySelectorAll("[data-feature]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.feature === "practice") {
+          location.assign("battle.html");
+          return;
+        }
+        $("#status").textContent = t("home.featureComingSoon", { feature: t("home." + button.dataset.feature) });
+      }));
       $("#status").textContent = t("home.loading");
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, progressSnapshot, library] = await Promise.all([
+          const [dragonSnapshot, library] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
-            getDoc(doc(db, "users", user.uid, "progress", "summary")),
             loadDragonLibrary()
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragon = dragonSnapshot.data();
           const species = library.find((item) => item.id === dragon.speciesId);
           if (!species) throw new Error("Missing dragon species");
-          showDragon(dragon, progressSnapshot.exists() ? progressSnapshot.data() : null, species);
+          showDragon(dragon, species);
           $("#status").textContent = "";
         } catch (error) {
           console.error("Unable to load dragon home", error);
