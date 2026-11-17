@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-本次本地交接版本为 `v1.1.0`，在 `v1.0.9` 基础上新增五只家长守护龙、互斥选龙与孩子练习页展示。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前发布版本为 `v1.1.0`，GitHub commit `d134c16`，在 `v1.0.9` 基础上新增五只家长守护龙、互斥选龙与孩子练习页展示。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 在家继续：本次战斗验收
 
