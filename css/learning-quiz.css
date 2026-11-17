@@ -1,0 +1,91 @@
+.assessment-page {
+  margin: 0;
+  padding: 76px 16px 32px;
+  background: linear-gradient(160deg, #e0f2fe, #f5f3ff);
+  color: #172554;
+  font-family: "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.quiz-card {
+  box-sizing: border-box;
+  width: min(100%, 580px);
+  margin: 0 auto;
+  padding: clamp(14px, 4vw, 28px);
+  border: 2px solid #ddd6fe;
+  border-radius: 20px;
+  background: #f8f7ff;
+  color: #231642;
+  text-align: left;
+  box-shadow: 0 16px 36px #26154d38;
+}
+
+.quiz-card h1, .quiz-card h2, .quiz-card p { margin: 0 0 10px; }
+.quiz-card h2 { font-size: clamp(1rem, 3.2vw, 1.35rem); }
+.quiz-card a { display: inline-block; margin-bottom: 14px; color: #4c3293; }
+.quiz-options { display: grid; gap: 6px; }
+.quiz-card button { font: inherit; font-weight: 700; }
+.quiz-option, .quiz-primary {
+  padding: 7px 10px;
+  border: 1px solid #a99ad6;
+  border-radius: 9px;
+  background: #fff;
+  color: #231642;
+  cursor: pointer;
+}
+.quiz-option { text-align: left; }
+.quiz-option.chosen, .quiz-primary { background: #50358a; color: #fff; }
+.quiz-option:disabled { cursor: default; }
+.quiz-primary { margin-top: 10px; }
+
+.battle-charge {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-items: center;
+  overflow: auto;
+  padding: 12px;
+  background: #1e154963;
+  font-family: "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.battle-charge[hidden] { display: none; }
+.charge-feedback { min-height: 1.5em; margin: 10px 0 0 !important; }
+
+.skill-control { position: relative; }
+
+.skill-charge-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  pointer-events: none;
+  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 8px), #000 calc(100% - 7px), #000 calc(100% - 1px), transparent 100%);
+}
+
+.charge-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(transparent var(--start), var(--arc-fill) var(--start) var(--end), transparent var(--end));
+  --arc-fill: #333b56;
+}
+
+.charge-arc[data-state="ready"] {
+  --arc-fill: #ffe66d;
+  filter: drop-shadow(0 0 4px #ff9900);
+}
+
+.charge-arc[data-state="spent"] {
+  --arc-fill: #cd8f77;
+  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 6px), #000 calc(100% - 5px), #000 calc(100% - 2px), transparent 100%);
+  animation: charge-ember .42s ease-out;
+}
+
+@keyframes charge-ember {
+  from { filter: brightness(1.7); }
+  to { filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .charge-arc[data-state="spent"] { animation: none; }
+}

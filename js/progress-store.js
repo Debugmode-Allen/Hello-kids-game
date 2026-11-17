@@ -1,6 +1,23 @@
 import { db, doc, collection, runTransaction } from "./firebase.js";
 import { eggPools } from "./hatching.js";
 
+const levelFields = (levels) => ({
+  chineseLevel: levels.chinese, englishLevel: levels.english, mathLevel: levels.math
+});
+
+export async function saveLevelAssessment(userId, { answers, levels }) {
+  const attemptRef = doc(collection(db, "users", userId, "attempts"));
+  const dragonRef = doc(db, "users", userId, "dragon", "current");
+  const progressRef = doc(db, "users", userId, "progress", "summary");
+  const score = answers.filter((answer) => answer.correct).length;
+
+  await runTransaction(db, async (transaction) => {
+    if (!(await transaction.get(dragonRef)).exists()) throw new Error("Missing dragon");
+    transaction.set(progressRef, levelFields(levels), { merge: true });
+    transaction.set(attemptRef, { type: "level-assessment", score, answers, levels, createdAt: new Date().toISOString() });
+  });
+}
+
 export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, answers, levels) {
   const candidates = dragons.filter((dragon) => (eggPools[eggId] ?? []).includes(dragon.id));
   const attemptRef = doc(collection(db, "users", userId, "attempts"));
@@ -27,7 +44,7 @@ export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, ans
       speed: 10,
       stamina: 100
     });
-    transaction.set(doc(db, "users", userId, "progress", "summary"), { chineseLevel: levels.chinese, englishLevel: levels.english, mathLevel: levels.math, totalCorrect: score, totalAnswered: answers.length });
+    transaction.set(doc(db, "users", userId, "progress", "summary"), { ...levelFields(levels), totalCorrect: score, totalAnswered: answers.length });
     transaction.set(attemptRef, { type: "initial-assessment", eggId, score, answers, levels, createdAt: new Date().toISOString() });
     return dragon;
   });

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
     <link rel="stylesheet" href="css/battle-effects.css" />
+    <link rel="stylesheet" href="css/learning-quiz.css" />
     <style>
       :root { font-family: Georgia, "STKaiti", "KaiTi", serif; color: #172554; }
       * { box-sizing: border-box; }
@@ -15,12 +16,15 @@
       .battle-context { position: absolute; top: 14px; right: 18px; left: 18px; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 12px; pointer-events: none; }
       .context-name { width: fit-content; max-width: 190px; padding: 8px 13px; border: 1px solid transparent; border-radius: 12px; background: transparent; box-shadow: none; color: #1e3a8a; font-size: 1rem; font-weight: 800; letter-spacing: .06em; text-shadow: 0 1px 2px rgba(255,255,255,.9); }
       .battle-name { justify-self: end; color: #7f1d1d; }
-      .queue-wrap { display: grid; justify-items: center; }
-      .turn-queue { display: flex; justify-content: center; gap: 4px; }
+      .queue-wrap { display: grid; justify-items: center; gap: 6px; min-width: 0; }
+      .turn-queue { display: flex; justify-content: flex-start; gap: 4px; width: 466px; max-width: 100%; }
       .turn-icon { display: grid; grid-template-rows: 42px 17px; flex: 0 0 43px; width: 43px; height: 61px; padding: 1px; overflow: hidden; border: 0; border-radius: 7px; background: transparent; box-shadow: none; color: #172554; cursor: pointer; pointer-events: auto; }
       .turn-icon img { width: 100%; height: 42px; object-fit: contain; }
       .turn-icon span { overflow: hidden; padding: 1px 2px; color: #172554; font-family: "Microsoft YaHei", sans-serif; font-size: .56rem; font-weight: 800; line-height: 15px; text-align: center; text-overflow: ellipsis; text-shadow: 0 1px 2px #fff; white-space: nowrap; }
       .turn-icon.highlight { box-shadow: 0 0 0 3px #fde68a; transform: translateY(-3px); }
+      .turn-icon[aria-current="true"] { background: #fff4cd; box-shadow: inset 0 0 0 2px #d99422; }
+      .turn-indicator { margin: 0; max-width: 100%; padding: 4px 12px; border: 1px solid #c2cef4; border-radius: 999px; background: #f2f6ff; color: #24366b; font: 800 clamp(.72rem, 1.8vw, .9rem)/1.25 "Microsoft YaHei", sans-serif; text-align: center; overflow-wrap: anywhere; box-shadow: 0 2px 6px #1e3a8a29; }
+      .turn-indicator[data-side="player"] { border-color: #f3ca71; background: #fff4cd; color: #713e07; }
       .slot { position: absolute; z-index: 1; width: var(--size); height: var(--size); transform: translate(-50%, -50%); transition: transform .16s, filter .16s; }
       .slot::after { position: absolute; bottom: 4%; left: 50%; z-index: 0; width: 100%; height: 18%; box-sizing: border-box; border-radius: 50%; content: ""; transform: translateX(-50%) skewX(-10deg); }
       .player-rear-1 { --size: 140px; top: 69%; left: 14%; } .player-rear-2 { --size: 122px; top: 66%; left: 30%; } .player-rear-3 { --size: 92px; top: 47%; left: 14%; }
@@ -81,8 +85,9 @@
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
         body { padding: 64px 6px 16px; } .battlefield { min-height: 520px; border-width: 4px; }
-        .battle-context { top: 8px; right: 8px; left: 8px; gap: 4px; } .context-name { max-width: 92px; padding: 5px 6px; font-size: .68rem; }
-        .turn-queue { gap: 2px; } .turn-icon { grid-template-rows: 31px 13px; flex-basis: 31px; width: 31px; height: 46px; border-radius: 5px; } .turn-icon img { height: 31px; } .turn-icon span { font-size: .45rem; line-height: 11px; }
+        .battle-context { top: 8px; right: 8px; left: 8px; gap: 4px; grid-template-columns: repeat(2, minmax(0, 1fr)); } .context-name { max-width: 92px; padding: 5px 6px; font-size: .68rem; }
+        .queue-wrap { grid-column: 1 / -1; grid-row: 2; }
+        .turn-queue { gap: 2px; width: 328px; } .turn-icon { grid-template-rows: 31px 13px; flex: 0 1 31px; min-width: 0; width: 31px; height: 46px; border-radius: 5px; } .turn-icon img { height: 31px; } .turn-icon span { font-size: .45rem; line-height: 11px; }
         .player-rear-1 { --size: 104px; top: 70%; left: 14%; } .player-rear-2 { --size: 90px; top: 67%; left: 30%; } .player-rear-3 { --size: 68px; top: 49%; left: 14%; }
         .player-front-1 { --size: 80px; top: 50%; left: 35%; } .player-front-2 { --size: 54px; top: 41%; left: 25%; }
         .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 90px; top: 67%; left: 70%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
@@ -95,10 +100,24 @@
     <main class="battle-page">
       <section class="battlefield" aria-label="battlefield">
         <div id="battleIntro" class="battle-intro hidden" aria-live="polite"><h1 id="battleIntroTitle" class="battle-intro-title"></h1></div>
+        <div id="battleCharge" class="battle-charge" hidden>
+          <section class="quiz-card" aria-labelledby="chargeTitle">
+            <h2 id="chargeTitle"></h2>
+            <p id="chargeInstructions"></p>
+            <p id="chargeProgress"></p>
+            <h2 id="chargeQuestion" tabindex="-1"></h2>
+            <div id="chargeOptions" class="quiz-options"></div>
+            <p id="chargeFeedback" class="charge-feedback" role="status"></p>
+            <button id="chargeNext" class="quiz-primary" type="button" hidden></button>
+          </section>
+        </div>
         <div id="battleResult" class="battle-result hidden" aria-live="polite"><section class="result-card"><h2 id="resultTitle"></h2><p id="resultSummary"></p><p id="resultReturning"></p></section></div>
         <div class="battle-context">
           <span id="sceneName" class="context-name"></span>
-          <div class="queue-wrap"><div id="turnQueue" class="turn-queue"></div></div>
+          <div class="queue-wrap">
+            <div id="turnQueue" class="turn-queue"></div>
+            <p id="turnIndicator" class="turn-indicator" role="status" hidden></p>
+          </div>
           <span id="battleName" class="context-name battle-name"></span>
         </div>
 
@@ -113,7 +132,14 @@
 
         <div class="controls player-controls">
           <button id="claw" class="round-action" type="button"><img src="assets/battle/actions/claw-swipe.png" alt="" /></button>
-          <button id="skillOne" class="round-action skill-placeholder" type="button"><span aria-hidden="true">✦</span></button>
+          <div class="skill-control">
+            <button id="skillOne" class="round-action skill-placeholder" type="button" disabled><span aria-hidden="true">✦</span></button>
+            <span id="skillChargeRing" class="skill-charge-ring" aria-hidden="true" hidden>
+              <span class="charge-arc" style="--start: 4deg; --end: 116deg"></span>
+              <span class="charge-arc" style="--start: 124deg; --end: 236deg"></span>
+              <span class="charge-arc" style="--start: 244deg; --end: 356deg"></span>
+            </span>
+          </div>
           <span class="round-action skill-locked" aria-hidden="true"></span>
           <span class="round-action skill-locked" aria-hidden="true"></span>
           <button id="skip" class="round-action" type="button"><img src="assets/battle/actions/skip-sleep.png" alt="" /></button>
@@ -127,14 +153,16 @@
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
       import { loadUI, t } from "./js/i18n.js";
-      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js";
+      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js";
+      import { createChargeQuestions } from "./js/assessment.js";
+      import { renderQuestionOptions } from "./js/question-options.js";
 
       const $ = (selector) => document.querySelector(selector);
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
       let targeting = null;
       let skillOne = null;
-      let busy = false;
+      let busy = true;
       let impactImagePath = "";
       const spellTextures = new Map();
 
@@ -148,15 +176,70 @@
 
       const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-      function showBattleIntro(battleName) {
+      async function showBattleIntro(battleName, progress) {
         const intro = $("#battleIntro");
         $("#battleIntroTitle").textContent = battleName;
         intro.classList.remove("hidden", "leaving");
-        setTimeout(() => intro.classList.add("leaving"), 3000);
-        setTimeout(() => {
-          intro.classList.add("hidden");
-          runEnemyTurns();
-        }, 3750);
+        await wait(850);
+        intro.classList.add("leaving");
+        await wait(700);
+        intro.classList.add("hidden");
+        await runChargeQuiz(createChargeQuestions(progress));
+        await runEnemyTurns();
+      }
+
+      async function runChargeQuiz(questions) {
+        const panel = $("#battleCharge");
+        const next = $("#chargeNext");
+        let correctCount = 0;
+        $("#chargeTitle").textContent = t(skillOne ? "charge.title" : "charge.warmup");
+        $("#chargeInstructions").hidden = !skillOne;
+        $("#chargeInstructions").textContent = t("charge.instructions");
+        panel.hidden = false;
+
+        for (const [index, question] of questions.entries()) {
+          const last = index === questions.length - 1;
+          $("#chargeProgress").textContent = t("assessment.progress", {
+            current: index + 1, total: questions.length, subject: question.subject, grade: question.grade
+          });
+          $("#chargeQuestion").textContent = question.question;
+          $("#chargeFeedback").textContent = "";
+          next.hidden = true;
+          $("#chargeQuestion").focus();
+          await new Promise((resolve) => {
+            renderQuestionOptions($("#chargeOptions"), question, (choice) => {
+              const correct = choice === question.answer;
+              correctCount += Number(correct);
+              if (correct && skillOne) state.skillCharges.earned += 1;
+              renderSkillCharges();
+              $("#chargeFeedback").textContent = t(last && skillOne ? "charge.result" : "charge.feedback", {
+                feedback: t(correct ? "charge.correct" : "charge.incorrect", { answer: question.answer }),
+                count: correctCount,
+                total: questions.length,
+                charges: remainingSkillCharges(state)
+              });
+              next.textContent = t(last ? "charge.beginBattle" : "journey.next");
+              next.hidden = false;
+              next.addEventListener("click", resolve, { once: true });
+              next.focus();
+            });
+          });
+        }
+        panel.hidden = true;
+      }
+
+      function renderSkillCharges() {
+        if (!skillOne) return;
+        const { earned, spent } = state.skillCharges;
+        const ring = $("#skillChargeRing");
+        ring.querySelectorAll(".charge-arc").forEach((arc, index) => {
+          arc.dataset.state = index < spent ? "spent" : index < earned ? "ready" : "empty";
+        });
+        const description = t(`${skillOne.nameKey}Description`, { turns: skillOne.durationTurns });
+        const counts = t("charge.counts", { remaining: earned - spent, spent, empty: ring.children.length - earned });
+        const button = $("#skillOne");
+        button.title = `${description} ${counts}`;
+        button.setAttribute("aria-label", button.title);
       }
 
       function showBattleResult() {
@@ -280,7 +363,8 @@
       function renderQueue() {
         const queue = $("#turnQueue");
         queue.replaceChildren();
-        upcomingTurns(state).forEach((unitId) => {
+        const preview = state.status === "playing" ? upcomingTurns(state) : [];
+        preview.forEach((unitId) => {
           const unit = unitById(state, unitId);
           const icon = document.createElement("button");
           icon.type = "button";
@@ -298,6 +382,52 @@
           icon.addEventListener("blur", () => setHighlight(unitId, false));
           queue.append(icon);
         });
+      }
+
+      function renderTurnIndicator() {
+        const active = currentUnit();
+        const indicator = $("#turnIndicator");
+        indicator.hidden = !active;
+        if (!active) return;
+        indicator.dataset.side = active.side;
+        indicator.textContent = t(active.side === "player" ? "battle.queuePlayerTurn" : "battle.queueEnemyTurn", { name: active.name });
+        $("#turnQueue").firstElementChild?.setAttribute("aria-current", "true");
+      }
+
+      async function advanceTurnQueue() {
+        const queue = $("#turnQueue");
+        const [finished, ...following] = queue.children;
+        if (!finished || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          renderQueue();
+          renderTurnIndicator();
+          return;
+        }
+
+        const previousPositions = new Map();
+        for (const icon of following) {
+          const id = icon.dataset.queueUnit;
+          const positions = previousPositions.get(id) ?? [];
+          positions.push(icon.getBoundingClientRect().left);
+          previousPositions.set(id, positions);
+        }
+        await finished.animate([
+          { transform: "translateY(0)", opacity: 1 },
+          { transform: "translateY(20px) scale(.88)", opacity: 0 }
+        ], { duration: 205, easing: "ease-in", fill: "forwards" }).finished;
+
+        renderQueue();
+        const shifts = [...queue.children].map((icon) => {
+          const previous = previousPositions.get(icon.dataset.queueUnit)?.shift();
+          if (previous === undefined) {
+            return icon.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220 }).finished;
+          }
+          const offset = previous - icon.getBoundingClientRect().left;
+          return icon.animate([
+            { transform: `translateX(${offset}px)` }, { transform: "translateX(0)" }
+          ], { duration: 220, easing: "ease-out" }).finished;
+        });
+        await Promise.all(shifts);
+        renderTurnIndicator();
       }
 
       function renderUnits() {
@@ -356,16 +486,26 @@
         const playerTurn = isPlayerTurn();
         $("#claw").disabled = !playerTurn || busy;
         $("#skip").disabled = !playerTurn || busy;
-        $("#skillOne").disabled = !skillOne || !playerTurn || busy;
+        $("#skillOne").disabled = !skillOne || !playerTurn || busy || remainingSkillCharges(state) === 0;
         $("#flee").disabled = state?.status !== "playing" || busy;
         $("#returnHome").classList.remove("visible");
       }
 
-      function render() {
+      function render({ updateQueue = true } = {}) {
         if (!state) return;
         renderUnits();
-        renderQueue();
+        if (updateQueue) {
+          renderQueue();
+          renderTurnIndicator();
+        }
         renderControls();
+        renderSkillCharges();
+      }
+
+      async function finishDisplayedTurn() {
+        render({ updateQueue: false });
+        await advanceTurnQueue();
+        if (state.status !== "playing") showBattleResult();
       }
 
       async function runEnemyTurns() {
@@ -373,6 +513,7 @@
         while (state.status === "playing") {
           const active = beginNextTurn(state);
           if (!active) return;
+          renderTurnIndicator();
           if (active.side === "player") {
             busy = false;
             setNotice("battle.playerTurn", { name: active.name });
@@ -388,8 +529,7 @@
           setNotice(result.missed ? "battle.darkMagicMiss" : "battle.enemyTurn", {
             name: active.name, skill: t(result.skill.nameKey), damage: result.damage
           });
-          render();
-          if (result.outcome !== "playing") { showBattleResult(); return; }
+          await finishDisplayedTurn();
         }
       }
 
@@ -411,9 +551,8 @@
         const result = useDamageSkill(state, active.id, unit.id, skillId, () => roll);
         targeting = null;
         setNotice("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: result.damage });
-        render();
-        if (result.outcome !== "playing") { showBattleResult(); return; }
-        await runEnemyTurns();
+        await finishDisplayedTurn();
+        if (result.outcome === "playing") await runEnemyTurns();
       }
 
       function configureButtons() {
@@ -434,7 +573,7 @@
           render();
         });
         $("#skillOne").addEventListener("click", async () => {
-          if (!skillOne || busy || !isPlayerTurn()) return;
+          if (!skillOne || busy || !isPlayerTurn() || remainingSkillCharges(state) === 0) return;
           if (skillOne.target === "singleEnemy") {
             targeting = skillOne.id;
             setNotice("battle.chooseTarget");
@@ -450,7 +589,7 @@
           await Promise.all(targets.map((target) => playSpellAnimation(active, target, skillOne.id)));
           useDarkMagic(state, active.id);
           setNotice("battle.darkMagicCast", { name: active.name });
-          render();
+          await finishDisplayedTurn();
           await runEnemyTurns();
         });
         $("#skip").addEventListener("click", async () => {
@@ -460,7 +599,7 @@
           skipTurn(state, active.id);
           targeting = null;
           setNotice("battle.skipNotice", { name: active.name });
-          render();
+          await finishDisplayedTurn();
           await runEnemyTurns();
         });
         $("#flee").addEventListener("click", () => {
@@ -482,8 +621,9 @@
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData] = await Promise.all([
+          const [dragonSnapshot, progressSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
+            getDoc(doc(db, "users", user.uid, "progress", "summary")),
             loadJson("assets/dragons/dragon-library.json"),
             loadJson("data/battle-library.json"),
             loadJson("content/battle.zh-CN.json"),
@@ -519,9 +659,10 @@
             enemies: battle.enemies,
             enemyAssets: battleAssets.enemies,
             balance,
-            skills: skillData.skills
+            skills: skillData.skills,
+            skillOneId: skillData.skillOneBySpecies?.[species.id]
           });
-          skillOne = state.skills[skillData.skillOneBySpecies?.[species.id]];
+          skillOne = state.skills[state.skillOneId];
           if (skillOne) {
             const texture = new Image();
             texture.src = spellTextures.get(skillOne.id);
@@ -532,11 +673,10 @@
             icon.alt = "";
             button.replaceChildren(icon);
             button.classList.remove("skill-placeholder");
-            button.title = t(`${skillOne.nameKey}Description`, { turns: skillOne.durationTurns });
-            button.setAttribute("aria-label", button.title);
+            $("#skillChargeRing").hidden = false;
           }
           render();
-          showBattleIntro(battleContent[battle.nameKey]);
+          await showBattleIntro(battleContent[battle.nameKey], progressSnapshot.data());
         } catch (error) {
           console.error("Unable to start battle", error);
           setNotice("battle.loadError");

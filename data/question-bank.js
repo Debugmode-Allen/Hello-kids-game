@@ -1,19 +1,24 @@
-const make = (subject, grade, items) => items.map(([q, a, o]) => ({ subject, grade, question: q, answer: a, options: [a, ...o] }));
+import chinese1 from "./questions/chinese-grade-1.js";
+import chinese2 from "./questions/chinese-grade-2.js";
+import chinese3 from "./questions/chinese-grade-3.js";
+import english3 from "./questions/english-grade-3.js";
+import english4 from "./questions/english-grade-4.js";
+import english5 from "./questions/english-grade-5.js";
+import math3 from "./questions/math-grade-3.js";
+import math4 from "./questions/math-grade-4.js";
+import math5 from "./questions/math-grade-5.js";
+
+function makeSubject(subject, grades) {
+  return Object.fromEntries(Object.entries(grades).map(([grade, questions]) => [
+    grade,
+    questions.map(([question, answer, ...distractors]) => ({
+      subject, grade: Number(grade), question, answer, options: [answer, ...distractors]
+    }))
+  ]));
+}
 
 export const questionBank = {
-  chinese: {
-    1: make("中文", 1, [["‘山’字有几画？","3",["2","4","5"]],["‘大’的反义词是？","小",["多","高","长"]],["‘木’加一笔可以变成？","本",["日","口","人"]],["‘月’表示什么？","月亮",["太阳","花朵","小鸟"]],["‘水’的部首是？","水",["火","木","土"]],["‘人’加一笔可以变成？","大",["口","日","土"]],["‘口’字里面有几笔？","3",["2","4","5"]],["下雨时要带什么？","雨伞",["铅笔","尺子","帽子"]],["‘红’是一种？","颜色",["动物","水果","数字"]],["早晨太阳从哪里升起？","东边",["西边","南边","北边"]]]),
-    2: make("中文", 2, [["‘明’由哪两个字组成？","日和月",["日和口","月和木","人和土"]],["‘快乐’的近义词是？","开心",["难过","安静","生气"]],["‘认真’的反义词是？","马虎",["努力","仔细","专心"]],["小鸟在天空中____。","飞翔",["游泳","奔跑","睡觉"]],["‘春天’后面是什么季节？","夏天",["冬天","秋天","雨天"]],["‘学校’是学习的什么？","地方",["动物","颜色","数字"]],["‘干净’的反义词是？","脏",["白","新","轻"]],["‘一心一意’形容什么？","专心",["害怕","饥饿","寒冷"]],["句子末尾常用什么符号？","句号",["逗号","问号","顿号"]],["‘画龙点睛’里有哪种动物？","龙",["马","羊","鱼"]]]),
-    3: make("中文", 3, [["‘果然’表示什么？","事情和预想一样",["完全不知道","正在提问","特别伤心"]],["‘温暖’的反义词是？","寒冷",["明亮","柔软","安静"]],["‘一边…一边…’表示？","同时做两件事",["只做一件事","比较两件事","原因结果"]],["‘勤奋’是什么意思？","努力不懈",["轻松玩耍","十分害怕","安静休息"]],["‘奇妙’的近义词是？","神奇",["普通","困难","缓慢"]],["‘保护环境’可以怎么做？","不乱扔垃圾",["浪费纸张","踩坏花草","开着水龙头"]],["‘争分夺秒’形容？","珍惜时间",["比赛跑步","分东西","睡得很晚"]],["书信开头常写什么？","称呼",["日期","署名","邮票"]],["‘观察’时要？","仔细看和思考",["快速离开","大声喊叫","随便猜测"]],["‘团结’的力量？","更大",["更小","没有","一样"]]])
-  },
-  english: {
-    3: make("English", 3, [["What is ‘apple’ in Chinese?","苹果",["香蕉","书","狗"]],["Which word means ‘猫’?","cat",["dog","bird","fish"]],["What color is ‘red’?","红色",["蓝色","绿色","黄色"]],["‘book’ means?","书",["桌子","门","鞋"]],["Choose the number ‘three’.","3",["2","4","5"]],["‘sun’ means?","太阳",["月亮","星星","雨"]],["Which word means ‘朋友’?","friend",["teacher","water","happy"]],["‘I am happy.’ means?","我很开心",["我饿了","我很累","我在跑"]],["‘blue’ is a?","颜色",["动物","食物","动作"]],["Which is a fruit?","banana",["chair","pencil","bird"]]]),
-    4: make("English", 4, [["‘beautiful’ means?","美丽的",["快速的","小的","冷的"]],["Choose the plural of ‘book’.","books",["bookes","bookies","book"]],["‘She is my sister.’ means?","她是我的姐姐或妹妹",["她是我妈妈","她是我老师","她是我朋友"]],["What is the opposite of ‘big’?","small",["tall","fast","new"]],["‘We can swim.’ means?","我们会游泳",["我们会唱歌","我们在睡觉","我们有一条鱼"]],["Which word is an animal?","rabbit",["window","yellow","water"]],["‘Where is my bag?’ is asking?","包在哪里",["包是什么颜色","谁的包","包有多大"]],["Choose a day of the week.","Monday",["January","summer","morning"]],["‘teacher’ means?","老师",["学生","医生","司机"]],["What do you say to greet someone?","Hello",["Goodbye","Sorry","Thanks"]]]),
-    5: make("English", 5, [["‘because’ is used to give a?","reason",["color","number","place"]],["Choose the past form of ‘play’.","played",["playes","playing","plays"]],["‘I went to the park yesterday.’ means?","我昨天去了公园",["我明天去公园","我在公园跑步","我喜欢公园"]],["What is the opposite of ‘early’?","late",["quick","bright","short"]],["‘There are two birds.’ means?","有两只鸟",["鸟在飞","一只鸟","鸟很大"]],["Which word describes weather?","cloudy",["pencil","family","jump"]],["‘How often?’ asks about?","频率",["地点","人物","颜色"]],["Choose the correct sentence.","She likes music.",["She like music.","She liking music.","She liked music now."]],["‘careful’ means?","小心的",["吵闹的","饥饿的","昂贵的"]],["What can we do with a library card?","borrow books",["cook food","drive a car","plant trees"]]])
-  },
-  math: {
-    3: make("数学", 3, [["36 + 27 = ?","63",["53","73","64"]],["85 - 39 = ?","46",["44","56","47"]],["7 × 8 = ?","56",["48","54","64"]],["54 ÷ 6 = ?","9",["8","7","6"]],["一条绳子长 45 厘米，剪去 18 厘米，还剩？","27厘米",["37厘米","23厘米","63厘米"]],["最大的两位数是？","99",["100","90","98"]],["3 个百、4 个十和 5 个一组成？","345",["354","435","305"]],["1 小时有多少分钟？","60",["30","100","24"]],["一个正方形有几条边？","4",["3","5","6"]],["25 + 25 + 25 = ?","75",["50","65","80"]]]),
-    4: make("数学", 4, [["125 + 368 = ?","493",["483","503","513"]],["700 - 286 = ?","414",["424","404","416"]],["24 × 3 = ?","72",["62","82","74"]],["96 ÷ 8 = ?","12",["11","13","14"]],["3.5 元 + 2 元 = ?","5.5元",["5元","6.5元","7元"]],["一个三角形内角和是？","180度",["90度","270度","360度"]],["1 米 = 多少厘米？","100",["10","1000","50"]],["四分之一写作？","1/4",["1/3","1/2","4/1"]],["5 个 12 相加是？","60",["50","70","72"]],["长方形长 8、宽 3，周长是？","22",["11","24","16"]]]),
-    5: make("数学", 5, [["2.4 + 1.75 = ?","4.15",["3.15","4.05","4.25"]],["5.6 - 2.38 = ?","3.22",["3.32","3.12","2.22"]],["3/5 + 1/5 = ?","4/5",["4/10","3/10","2/5"]],["4.8 ÷ 0.6 = ?","8",["0.8","80","7"]],["一件 80 元的商品打八折，现价？","64元",["72元","60元","68元"]],["长方体有几个面？","6",["4","8","12"]],["2.5 × 4 = ?","10",["1","6.5","8.5"]],["一个数的 25% 是 20，这个数是？","80",["5","45","100"]],["半径为 3 的圆，直径是？","6",["9","3","12"]],["平均数：6、8、10 的平均数是？","8",["7","9","24"]]])
-  }
+  chinese: makeSubject("中文", { 1: chinese1, 2: chinese2, 3: chinese3 }),
+  english: makeSubject("English", { 3: english3, 4: english4, 5: english5 }),
+  math: makeSubject("数学", { 3: math3, 4: math4, 5: math5 })
 };

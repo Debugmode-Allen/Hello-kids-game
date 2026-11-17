@@ -62,7 +62,7 @@
 
     <script type="module">
       import { auth, db, doc, setDoc, onAuthStateChanged } from "./js/firebase.js";
-      import { createAssessment, calculateLevels } from "./js/assessment.js";
+      import { createAdaptiveAssessment } from "./js/assessment.js";
       import { eggImages, lock } from "./js/hatching.js";
       import { reserveDragonAndSaveAssessment } from "./js/progress-store.js";
       import { loadUI, t } from "./js/i18n.js";
@@ -97,9 +97,7 @@
 
       let user;
       let selectedEgg;
-      let questions = [];
-      let questionIndex = 0;
-      let answers = [];
+      let assessment;
       let hatchedDragon;
 
       onAuthStateChanged(auth, (currentUser) => {
@@ -110,16 +108,14 @@
       $("#begin").addEventListener("click", () => show("eggs"));
       document.querySelectorAll(".egg").forEach((button) => button.addEventListener("click", () => {
         selectedEgg = button.dataset.egg;
-        questions = createAssessment();
-        questionIndex = 0;
-        answers = [];
+        assessment = createAdaptiveAssessment();
         show("quiz");
         drawQuestion();
       }));
 
       function drawQuestion() {
-        const question = questions[questionIndex];
-        $("#progress").textContent = t("journey.questionProgress", { current: questionIndex + 1, total: questions.length });
+        const question = assessment.next();
+        $("#progress").textContent = t("journey.questionProgress", { current: assessment.answers.length + 1, total: assessment.total });
         $("#question").textContent = question.question;
         $("#options").replaceChildren();
         delete $("#options").dataset.answer;
@@ -133,7 +129,7 @@
             document.querySelectorAll(".option").forEach((item) => item.classList.remove("selected"));
             option.classList.add("selected");
             $("#options").dataset.answer = answer;
-            $("#next").textContent = questionIndex === questions.length - 1 ? t("journey.finish") : t("journey.next");
+            $("#next").textContent = assessment.answers.length === assessment.total - 1 ? t("journey.finish") : t("journey.next");
             $("#next").classList.remove("hidden");
           });
           $("#options").append(option);
@@ -141,10 +137,11 @@
       }
 
       $("#next").addEventListener("click", () => {
-        const question = questions[questionIndex];
-        answers.push({ subject: question.subject, grade: question.grade, correct: $("#options").dataset.answer === question.answer });
-        questionIndex += 1;
-        if (questionIndex < questions.length) { drawQuestion(); return; }
+        const choice = $("#options").dataset.answer;
+        if (!assessment?.next() || choice === undefined) return;
+        delete $("#options").dataset.answer;
+        assessment.answer(choice);
+        if (assessment.next()) { drawQuestion(); return; }
         $("#heading").textContent = story["hatching.glowing"];
         $("#image").src = eggImages[selectedEgg];
         $("#image").alt = story[`egg.${selectedEgg}.name`];
@@ -155,9 +152,9 @@
       $("#open").addEventListener("click", async () => {
         if (!user || !lock($("#open"), t("journey.hatching"))) return;
         try {
-          const levels = calculateLevels(answers);
+          const { answers, levels } = assessment;
           const dragon = await reserveDragonAndSaveAssessment(user.uid, selectedEgg, dragons, answers, levels);
-          const score = answers.filter((answer) => answer.correct).length * 10;
+          const score = Math.round(answers.filter((answer) => answer.correct).length * 100 / assessment.total);
           $("#image").className = "";
           $("#image").src = dragon.image;
           $("#image").alt = dragon.name;

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link rel="stylesheet" href="css/learning-quiz.css" />
+  </head>
+  <body class="assessment-page">
+    <main class="quiz-card">
+      <a id="back" href="home.html"></a>
+      <h1 id="title"></h1>
+      <p id="intro"></p>
+      <button id="start" class="quiz-primary" type="button" disabled></button>
+      <section id="quiz" hidden>
+        <p id="progress"></p>
+        <h2 id="question" tabindex="-1"></h2>
+        <div id="options" class="quiz-options"></div>
+        <button id="next" class="quiz-primary" type="button" hidden></button>
+      </section>
+      <section id="result" hidden>
+        <h2 id="resultTitle" tabindex="-1"></h2>
+        <p id="levels"></p>
+        <button id="save" class="quiz-primary" type="button"></button>
+        <p id="status" role="status"></p>
+      </section>
+    </main>
+    <script type="module">
+      import { auth, onAuthStateChanged } from "./js/firebase.js";
+      import { t, loadUI } from "./js/i18n.js";
+      import { createAdaptiveAssessment } from "./js/assessment.js";
+      import { saveLevelAssessment } from "./js/progress-store.js";
+      import { renderQuestionOptions } from "./js/question-options.js";
+
+      const $ = (id) => document.getElementById(id);
+      let user;
+      let assessment;
+
+      function draw() {
+        const question = assessment.next();
+        if (!question) {
+          $("quiz").hidden = true;
+          $("result").hidden = false;
+          $("levels").textContent = t("assessment.levels", assessment.levels);
+          $("resultTitle").focus();
+          return;
+        }
+        $("progress").textContent = t("assessment.progress", {
+          current: assessment.answers.length + 1, total: assessment.total,
+          subject: question.subject, grade: question.grade
+        });
+        $("question").textContent = question.question;
+        $("next").hidden = true;
+        $("question").focus();
+        renderQuestionOptions($("options"), question, (choice) => {
+          assessment.answer(choice);
+          $("next").textContent = t(assessment.answers.length === assessment.total ? "assessment.showResult" : "journey.next");
+          $("next").hidden = false;
+          $("next").focus();
+        });
+      }
+
+      await loadUI();
+      document.title = t("assessment.title");
+      for (const [id, key] of Object.entries({
+        back: "battle.returnHome", title: "assessment.title", intro: "assessment.intro",
+        start: "assessment.start", resultTitle: "assessment.result", save: "assessment.save"
+      })) $(id).textContent = t(key);
+
+      onAuthStateChanged(auth, (account) => {
+        if (!account) { location.replace("index.html"); return; }
+        user = account;
+        $("start").disabled = false;
+      });
+
+      $("start").addEventListener("click", () => {
+        assessment = createAdaptiveAssessment();
+        $("intro").hidden = true;
+        $("start").hidden = true;
+        $("quiz").hidden = false;
+        draw();
+      });
+      $("next").addEventListener("click", draw);
+      $("save").addEventListener("click", async () => {
+        $("save").disabled = true;
+        $("status").textContent = t("assessment.saving");
+        try {
+          await saveLevelAssessment(user.uid, assessment);
+          $("status").textContent = t("assessment.saved");
+          $("save").hidden = true;
+        } catch (error) {
+          console.error("Unable to save level assessment", error);
+          $("status").textContent = t("assessment.saveError");
+          $("save").disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

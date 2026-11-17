@@ -1,34 +1,79 @@
 import { questionBank } from "../data/question-bank.js";
 
-const choose = (items, count) => [...items].sort(() => Math.random() - 0.5).slice(0, count);
+const subjects = Object.keys(questionBank);
+const gradesFor = (subject) => Object.keys(questionBank[subject]).map(Number);
+const questionsPerSubject = 6;
+const questionsPerBlock = 2;
 
-export function createAssessment() {
-  if (!document.querySelector("#assessment-option-style")) {
-    const style = document.createElement("style");
-    style.id = "assessment-option-style";
-    style.textContent = "button.option{background:#bfdbfe!important;color:#0f172a!important;border:2px solid #2563eb!important;font-weight:800!important;opacity:1!important;text-shadow:none!important}button.option.selected{background:#1d4ed8!important;color:#ffffff!important;border-color:#172554!important}";
-    document.head.append(style);
-    const paintOptions = () => document.querySelectorAll("button.option").forEach((button) => {
-      const selected = button.classList.contains("selected");
-      button.style.setProperty("color", selected ? "#ffffff" : "#0f172a", "important");
-      button.style.setProperty("background-color", selected ? "#1d4ed8" : "#bfdbfe", "important");
-      button.style.setProperty("border", "2px solid #2563eb", "important");
-    });
-    new MutationObserver(paintOptions).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+function shuffle(items, random) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(random() * (index + 1));
+    [result[index], result[swap]] = [result[swap], result[index]];
   }
-  return ["chinese", "english", "math"].flatMap((subject, index) =>
-    choose(Object.values(questionBank[subject]).flat(), [3, 3, 4][index])
-  ).sort(() => Math.random() - 0.5);
+  return result;
 }
 
-export function calculateLevels(answers) {
-  const correct = (subject) => answers.filter((answer) => answer.subject === subject && answer.correct).length;
-  const subjectNames = Object.fromEntries(
-    Object.entries(questionBank).map(([key, grades]) => [key, Object.values(grades)[0][0].subject])
-  );
-  return {
-    chinese: Math.min(3, 1 + Math.floor(correct(subjectNames.chinese) / 2)),
-    english: Math.min(5, 3 + Math.floor(correct(subjectNames.english) / 2)),
-    math: Math.min(5, 3 + Math.floor(correct(subjectNames.math) / 2))
-  };
+function prepareQuestion(question, random) {
+  return { ...question, options: shuffle(question.options, random) };
+}
+
+export function createChargeQuestions(progress = {}, random = Math.random) {
+  return shuffle(subjects, random).map((subject) => {
+    const grades = gradesFor(subject);
+    const saved = Number(progress?.[subject + "Level"]);
+    const grade = grades.includes(saved) ? saved : grades[0];
+    const pool = questionBank[subject][grade];
+    return prepareQuestion(pool[Math.floor(random() * pool.length)], random);
+  });
+}
+
+export function createAdaptiveAssessment(random = Math.random) {
+  const total = subjects.length * questionsPerSubject;
+  const answers = [];
+  const levels = {};
+  const tracks = Object.fromEntries(subjects.map((subject) => {
+    const pools = Object.fromEntries(gradesFor(subject).map((grade) => [
+      grade, shuffle(questionBank[subject][grade], random)
+    ]));
+    return [subject, { pools, levelIndex: 0, correctInBlock: 0 }];
+  }));
+  let current;
+
+  function next() {
+    if (answers.length === total) return null;
+    if (current) return current;
+    const subject = subjects[answers.length % subjects.length];
+    const track = tracks[subject];
+    const grade = gradesFor(subject)[track.levelIndex];
+    current = prepareQuestion(track.pools[grade].pop(), random);
+    return current;
+  }
+
+  function answer(choice) {
+    if (!current || !current.options.includes(choice)) throw new Error("Invalid answer");
+    const subject = subjects[answers.length % subjects.length];
+    const track = tracks[subject];
+    const grades = gradesFor(subject);
+    const correct = choice === current.answer;
+    answers.push({ subject: current.subject, grade: current.grade, correct });
+    track.correctInBlock += Number(correct);
+    current = null;
+
+    const subjectCount = Math.floor((answers.length - 1) / subjects.length) + 1;
+    if (subjectCount % questionsPerBlock === 0) {
+      const step = track.correctInBlock === questionsPerBlock ? 1 : track.correctInBlock === 0 ? -1 : 0;
+      const nextIndex = Math.max(0, Math.min(grades.length - 1, track.levelIndex + step));
+      if (subjectCount === questionsPerSubject) {
+        // Never recommend an untested grade.
+        levels[subject] = grades[Math.min(nextIndex, track.levelIndex)];
+      } else {
+        track.levelIndex = nextIndex;
+      }
+      track.correctInBlock = 0;
+    }
+    return correct;
+  }
+
+  return { total, answers, levels, next, answer };
 }

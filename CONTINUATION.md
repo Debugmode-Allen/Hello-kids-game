@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前已发布版本为 `v1.0.5`，练习战已接入火焰龙和月龙的技能一。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
+当前已发布版本为 `v1.0.6`，包含战前充能、行动队列动画和分级题库。继续工作前，先运行 `git pull` 获取最新版本，再运行 `git status` 确认工作目录状态；不要使用 `git reset --hard` 或覆盖未提交文件。数值应优先修改 `data/battle-balance.json` 和 `data/skills.json`；战斗规则修改放在 `js/battle-engine.js`，页面 `battle.html` 只负责显示和点击交互。
 
 ## 在家继续：本次战斗验收
 
@@ -30,6 +30,25 @@ py -m http.server 8000
 
 - Amy 的火焰龙：点击火焰喷吐，再选择可攻击的怪物。检查火焰是否从龙嘴连续延伸到目标，以及灼烧和扣血演出。
 - Shirlyn 的月龙：点击黑暗术。检查每只怪物是否出现黑雾、本体变暗和血条下的「黑暗 · 1回合」标签。每只怪物的下一次攻击应该显示 MISS、保持目标 HP，并在结算后移除自己的黑暗效果。
+- 战前答对至少一题，再施放技能一。检查亮金圆弧是否变成细铜色。爪击、施法、跳过和怪物攻击后，检查队首图标是否淡出下落，后续图标是否左移，以及队列下方是否显示正确的行动者。
+
+## 手动扩充题库
+
+九个文件统一放在 `data/questions/`。三种答题流程会自动读到文件中的新题。
+
+| 学科 | 最低级 | 中级 | 最高级 |
+| --- | --- | --- | --- |
+| 中文 | `chinese-grade-1.js` | `chinese-grade-2.js` | `chinese-grade-3.js` |
+| 数学（加州） | `math-grade-3.js` | `math-grade-4.js` | `math-grade-5.js` |
+| 英文（加州） | `english-grade-3.js` | `english-grade-4.js` | `english-grade-5.js` |
+
+在对应文件的 `export default [ ... ]` 里追加一行。依次填题干、正确答案和三个互不相同的干扰项。选项顺序会在游戏里打乱。
+
+```js
+["一（ ）苹果。", "个", "辆", "本", "棵"],
+```
+
+用 UTF-8 保存。孵蛋及水平测验会在同一科目、同一年级的不重复题目中抽题，每份文件至少保留六道题。
 
 ## 日常工作方式
 

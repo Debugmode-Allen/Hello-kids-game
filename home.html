@@ -30,6 +30,7 @@
       .path-battle { top: 14px; right: 0; }
       .path-cooperation { bottom: 14px; left: 0; }
       .path-practice { right: 0; bottom: 14px; }
+      .level-test-link { display: inline-block; margin-top: 20px; color: #3730a3; font-weight: 800; }
       #status { min-height: 1.5em; margin: 16px 0 0; color: #64748b; }
       .hidden { display: none; }
       @media (max-width: 430px) { body { padding: 68px 12px 20px; } .dragon-home { padding: 28px 16px; } .dragon-stage { height: 250px; } .dragon-image { width: 210px; height: 230px; } .path-card { width: 78px; min-height: 52px; padding: 6px 3px; font-size: .75rem; } }
@@ -62,6 +63,7 @@
             <div class="attribute"><span id="staminaLabel" class="stat-label"></span><strong id="staminaValue" class="stat-value"></strong></div>
           </div>
         </section>
+        <a class="level-test-link" id="levelTestLink" href="assessment.html"></a>
       </section>
       <p id="status"></p>
     </main>
@@ -105,6 +107,7 @@
       $("#defenseLabel").textContent = t("home.defense");
       $("#speedLabel").textContent = t("home.speed");
       $("#staminaLabel").textContent = t("home.stamina");
+      $("#levelTestLink").textContent = t("assessment.title");
       ["adventure", "battle", "cooperation", "practice"].forEach((feature) => {
         $("#" + feature + "Name").textContent = t("home." + feature);
       });

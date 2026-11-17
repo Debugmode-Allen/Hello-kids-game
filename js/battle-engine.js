@@ -39,7 +39,7 @@ function tieBreak(a, b) {
   return a.slot.localeCompare(b.slot);
 }
 
-export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills }) {
+export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null }) {
   const dragonUnit = createCombatant({
     id: "dragon", side: "player", slot: "L4", name: dragon.name, image: dragonImage,
     stats: dragon.stats, skillId: "claw"
@@ -57,11 +57,25 @@ export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balanc
     units: [dragonUnit, ...enemyUnits],
     balance,
     skills: Object.fromEntries(skills.map((skill) => [skill.id, skill])),
+    skillOneId,
+    skillCharges: { earned: 0, spent: 0 },
     activeUnitId: null,
     clock: 0
   };
   state.units.forEach((unit) => { unit.nextActionAt = actionInterval(unit, balance.speed); });
   return state;
+}
+
+export function remainingSkillCharges(state) {
+  return state.skillCharges.earned - state.skillCharges.spent;
+}
+
+function spendSkillCharge(state, attacker, skillId) {
+  if (attacker.side !== "player" || skillId === attacker.skillId) return;
+  if (skillId !== state.skillOneId || remainingSkillCharges(state) <= 0) {
+    throw new Error("Skill one has no charge");
+  }
+  state.skillCharges.spent += 1;
 }
 
 export function livingUnits(state, side) {
@@ -149,6 +163,7 @@ export function useDamageSkill(state, attackerId, targetId, skillId = "claw", ra
   }
   const missed = attacker.darknessTurns > 0;
   const damage = calculateDamage(state, attacker, target, skillId, random);
+  spendSkillCharge(state, attacker, skillId);
   target.hp = Math.max(0, target.hp - damage);
   target.alive = target.hp > 0;
   finishTurn(state, attacker);
@@ -163,6 +178,7 @@ export function useDarkMagic(state, attackerId) {
   if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !targets.length) {
     throw new Error("Invalid dark magic action");
   }
+  spendSkillCharge(state, attacker, "dark-magic");
   for (const target of targets) target.darknessTurns = skill.durationTurns;
   finishTurn(state, attacker);
   return { targets, skill };
