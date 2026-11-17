@@ -1,0 +1,20 @@
+{
+  "skills": [
+    {
+      "id": "claw",
+      "nameKey": "battle.claw",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": true,
+      "powerRatio": 0.16
+    },
+    {
+      "id": "enemy-claw",
+      "nameKey": "battle.enemyClaw",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": true,
+      "powerRatio": 0.5
+    }
+  ]
+}

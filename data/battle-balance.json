@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "notes": "战斗平衡参数。此文件用于调节公式，不需要修改战斗程序。数值达到 1000 时仍会因软上限而保持稳定。",
+  "damage": {
+    "statSoftCap": 300,
+    "advantageScale": 1.3,
+    "minimumMultiplier": 0.55,
+    "maximumMultiplier": 1.8,
+    "randomMin": 0.95,
+    "randomMax": 1.05,
+    "minimumDamage": 1
+  },
+  "speed": {
+    "linearUntil": 10,
+    "maximumEffectiveSpeed": 30,
+    "curveOffset": 90,
+    "timelineUnit": 100
+  }
+}

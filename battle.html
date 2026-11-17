@@ -32,7 +32,13 @@
       .actor.highlight { z-index: 4; transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 12px #fde68a); }
       .actor::after { border: 2px solid rgba(254,240,138,.95); background: rgba(253,230,138,.12); opacity: 0; transition: opacity .16s; }
       .actor.highlight::after { opacity: 1; }
+      .actor.targetable { cursor: pointer; filter: drop-shadow(0 0 5px #fef08a); }
+      .actor.targetable::after { border-color: #fef08a; background: rgba(254,240,138,.25); opacity: 1; }
+      .actor.protected { filter: brightness(.72) saturate(.7); }
+      .actor.protected::before { position: absolute; top: 25%; left: 50%; z-index: 3; content: "🛡"; transform: translate(-50%, -50%); font-size: clamp(1rem, 2vw, 1.8rem); text-shadow: 0 1px 3px #fff; }
       .actor img { z-index: 1; width: 96%; height: 96%; object-fit: contain; }
+      .unit-button { width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: inherit; }
+      .unit-button:focus-visible { outline: 3px solid #fef08a; border-radius: 50%; }
       .health { position: absolute; top: -12px; left: 50%; z-index: 2; width: 86%; height: 11px; overflow: hidden; border: 2px solid #fff; border-radius: 99px; background: #1e293b; transform: translateX(-50%); box-shadow: 0 2px 5px rgba(15,23,42,.28); }
       .health span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #16a34a, #86efac); }
       .enemy .health span { background: linear-gradient(90deg, #dc2626, #fca5a5); }
@@ -46,6 +52,9 @@
       /* 后续技能二、三尚未解锁：保留与前两个技能相同的空间，
          但完全不可见，避免“跳过”按钮紧贴技能一。 */
       .skill-locked { visibility: hidden; width: 84px; height: 84px; border: 2px dashed rgba(255,255,255,.7); background: rgba(49,46,129,.22); box-shadow: none; opacity: .75; }
+      .round-action:disabled { cursor: not-allowed; filter: grayscale(.8) opacity(.55); transform: none; }
+      #returnHome { display: none; margin: 14px auto 0; padding: 10px 16px; border: 0; border-radius: 12px; background: #2563eb; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+      #returnHome.visible { display: block; }
       button:hover { filter: brightness(1.1); transform: translateY(-2px); } button:focus-visible { outline: 3px solid #fef08a; outline-offset: 2px; }
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
@@ -69,14 +78,14 @@
           <span id="battleName" class="context-name battle-name"></span>
         </div>
 
-        <div class="slot player-rear-1 empty"></div><div class="slot player-rear-2 empty"></div><div class="slot player-rear-3 empty"></div>
-        <div id="dragonActor" class="slot actor player-front-1" data-actor="dragon"><img id="dragonImage" alt="" /><span class="health"><span></span></span></div>
-        <div class="slot player-front-2 empty"></div>
-        <div class="slot enemy-rear-1 empty"></div>
-        <div id="mothActor" class="slot actor enemy enemy-rear-2" data-actor="moth"><img src="assets/battle/enemies/moon-moth-left.png" alt="" /><span class="health"><span></span></span></div>
-        <div class="slot enemy-rear-3 empty"></div>
-        <div id="caterpillarActor" class="slot actor enemy enemy-front-1" data-actor="caterpillar"><img src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" /><span class="health"><span></span></span></div>
-        <div class="slot enemy-front-2 empty"></div>
+        <div class="slot player-rear-1" data-slot="L3"></div><div class="slot player-rear-2" data-slot="L5"></div><div class="slot player-rear-3" data-slot="L1"></div>
+        <div class="slot player-front-1" data-slot="L4"></div>
+        <div class="slot player-front-2" data-slot="L2"></div>
+        <div class="slot enemy-rear-1" data-slot="R3"></div>
+        <div class="slot enemy-rear-2" data-slot="R5"></div>
+        <div class="slot enemy-rear-3" data-slot="R1"></div>
+        <div class="slot enemy-front-1" data-slot="R4"></div>
+        <div class="slot enemy-front-2" data-slot="R2"></div>
 
         <div class="controls player-controls">
           <button id="claw" class="round-action" type="button"><img src="assets/battle/actions/claw-swipe.png" alt="" /></button>
@@ -88,51 +97,18 @@
         <div class="controls enemy-controls"><button id="flee" class="round-action" type="button"><img src="assets/battle/actions/flee-dash.png?v=20261116" alt="" /></button></div>
       </section>
       <p id="notice" class="notice" aria-live="polite"></p>
+      <button id="returnHome" type="button"></button>
     </main>
 
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
       import { loadUI, t } from "./js/i18n.js";
+      import { beginNextTurn, createBattle, fleeBattle, isProtected, skipTurn, unitById, upcomingTurns, useDamageSkill, validTargets } from "./js/battle-engine.js";
 
       const $ = (selector) => document.querySelector(selector);
-      const actors = {
-        dragon: { element: $("#dragonActor"), image: $("#dragonImage"), name: "" },
-        caterpillar: { element: $("#caterpillarActor"), image: $("#caterpillarActor img"), name: "" },
-        moth: { element: $("#mothActor"), image: $("#mothActor img"), name: "" }
-      };
-
-      function setHighlight(actorId, active) {
-        actors[actorId].element.classList.toggle("highlight", active);
-        document.querySelectorAll(`[data-actor="${actorId}"]`).forEach((item) => item.classList.toggle("highlight", active));
-      }
-
-      function buildQueue(order) {
-        const queue = $("#turnQueue");
-        queue.replaceChildren();
-        order.forEach((actorId) => {
-          const icon = document.createElement("button");
-          icon.type = "button";
-          icon.className = "turn-icon";
-          icon.dataset.actor = actorId;
-          const image = document.createElement("img");
-          image.src = actors[actorId].image.src;
-          image.alt = actors[actorId].name;
-          const caption = document.createElement("span");
-          caption.textContent = actors[actorId].name;
-          icon.append(image, caption);
-          icon.addEventListener("mouseenter", () => setHighlight(actorId, true));
-          icon.addEventListener("mouseleave", () => setHighlight(actorId, false));
-          icon.addEventListener("focus", () => setHighlight(actorId, true));
-          icon.addEventListener("blur", () => setHighlight(actorId, false));
-          queue.append(icon);
-        });
-      }
-
-      async function loadLibrary() {
-        const response = await fetch("assets/dragons/dragon-library.json", { cache: "no-store" });
-        if (!response.ok) throw new Error(`Dragon library: ${response.status}`);
-        return response.json();
-      }
+      const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
+      let state = null;
+      let targeting = false;
 
       async function loadJson(path) {
         const response = await fetch(path, { cache: "no-store" });
@@ -140,56 +116,214 @@
         return response.json();
       }
 
+      function setNotice(key, values = {}) { $("#notice").textContent = t(key, values); }
+
+      function currentUnit() { return unitById(state, state?.activeUnitId); }
+
+      function isPlayerTurn() {
+        return state?.status === "playing" && currentUnit()?.side === "player";
+      }
+
+      function setHighlight(unitId, active) {
+        const unit = unitById(state, unitId);
+        slots.get(unit?.slot)?.classList.toggle("highlight", active);
+        document.querySelectorAll(`[data-queue-unit="${unitId}"]`).forEach((item) => item.classList.toggle("highlight", active));
+      }
+
+      function renderQueue() {
+        const queue = $("#turnQueue");
+        queue.replaceChildren();
+        upcomingTurns(state).forEach((unitId) => {
+          const unit = unitById(state, unitId);
+          const icon = document.createElement("button");
+          icon.type = "button";
+          icon.className = "turn-icon";
+          icon.dataset.queueUnit = unitId;
+          const image = document.createElement("img");
+          image.src = unit.image;
+          image.alt = unit.name;
+          const caption = document.createElement("span");
+          caption.textContent = unit.name;
+          icon.append(image, caption);
+          icon.addEventListener("mouseenter", () => setHighlight(unitId, true));
+          icon.addEventListener("mouseleave", () => setHighlight(unitId, false));
+          icon.addEventListener("focus", () => setHighlight(unitId, true));
+          icon.addEventListener("blur", () => setHighlight(unitId, false));
+          queue.append(icon);
+        });
+      }
+
+      function renderUnits() {
+        const validIds = targeting && isPlayerTurn()
+          ? new Set(validTargets(state, currentUnit().id, "claw").map((unit) => unit.id))
+          : new Set();
+        slots.forEach((slot, slotId) => {
+          const unit = state.units.find((candidate) => candidate.slot === slotId && candidate.alive);
+          slot.replaceChildren();
+          slot.classList.remove("actor", "enemy", "targetable", "protected", "highlight");
+          if (!unit) { slot.classList.add("empty"); return; }
+          slot.classList.remove("empty");
+          slot.classList.add("actor");
+          if (unit.side === "enemy") slot.classList.add("enemy");
+          const canTarget = validIds.has(unit.id);
+          const protectedTarget = targeting && unit.side === "enemy" && isProtected(state, unit);
+          slot.classList.toggle("targetable", canTarget);
+          slot.classList.toggle("protected", protectedTarget);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "unit-button";
+          button.setAttribute("aria-label", unit.name);
+          const image = document.createElement("img");
+          image.src = unit.image;
+          image.alt = "";
+          const health = document.createElement("span");
+          health.className = "health";
+          const healthFill = document.createElement("span");
+          healthFill.style.width = `${Math.max(0, unit.hp / unit.maxHp * 100)}%`;
+          health.append(healthFill);
+          button.append(image, health);
+          button.addEventListener("mouseenter", () => setHighlight(unit.id, true));
+          button.addEventListener("mouseleave", () => setHighlight(unit.id, false));
+          button.addEventListener("click", () => onUnitClick(unit));
+          slot.append(button);
+        });
+      }
+
+      function renderControls() {
+        const playerTurn = isPlayerTurn();
+        $("#claw").disabled = !playerTurn;
+        $("#skip").disabled = !playerTurn;
+        $("#skillOne").disabled = true;
+        $("#flee").disabled = state?.status !== "playing";
+        $("#returnHome").classList.toggle("visible", ["victory", "defeat", "fled"].includes(state?.status));
+      }
+
+      function render() {
+        if (!state) return;
+        renderUnits();
+        renderQueue();
+        renderControls();
+      }
+
+      function endMessage() {
+        if (state.status === "victory") setNotice("battle.victory");
+        if (state.status === "defeat") setNotice("battle.defeat");
+      }
+
+      function runEnemyTurns() {
+        while (state.status === "playing") {
+          const active = beginNextTurn(state);
+          if (!active) return;
+          if (active.side === "player") {
+            setNotice("battle.playerTurn", { name: active.name });
+            render();
+            return;
+          }
+          const target = validTargets(state, active.id, active.skillId)[0];
+          if (!target) return;
+          const result = useDamageSkill(state, active.id, target.id, active.skillId);
+          setNotice("battle.enemyTurn", { name: active.name, skill: result.skill.nameKey ? t(result.skill.nameKey) : "", damage: result.damage });
+          if (result.outcome !== "playing") { endMessage(); render(); return; }
+        }
+      }
+
+      function onUnitClick(unit) {
+        if (!targeting || !isPlayerTurn() || unit.side !== "enemy") return;
+        const active = currentUnit();
+        const valid = validTargets(state, active.id, "claw");
+        if (!valid.some((candidate) => candidate.id === unit.id)) {
+          setNotice(isProtected(state, unit) ? "battle.protected" : "battle.chooseTarget");
+          return;
+        }
+        const result = useDamageSkill(state, active.id, unit.id, "claw");
+        targeting = false;
+        setNotice("battle.playerAttack", { name: active.name, skill: t("battle.claw"), target: unit.name, damage: result.damage });
+        render();
+        if (result.outcome !== "playing") { endMessage(); return; }
+        runEnemyTurns();
+      }
+
+      function configureButtons() {
+        $("#skillOne").textContent = t("battle.skillOne");
+        $("#claw").title = t("battle.claw");
+        $("#claw").setAttribute("aria-label", t("battle.claw"));
+        $("#skillOne").title = t("battle.skillOne");
+        $("#skillOne").setAttribute("aria-label", t("battle.skillOne"));
+        $("#skip").title = t("battle.skip");
+        $("#skip").setAttribute("aria-label", t("battle.skip"));
+        $("#flee").title = t("battle.flee");
+        $("#flee").setAttribute("aria-label", t("battle.flee"));
+        $("#returnHome").textContent = t("battle.returnHome");
+        $("#claw").addEventListener("click", () => {
+          if (!isPlayerTurn()) return;
+          targeting = true;
+          setNotice("battle.chooseTarget");
+          render();
+        });
+        $("#skip").addEventListener("click", () => {
+          if (!isPlayerTurn()) return;
+          const active = currentUnit();
+          skipTurn(state, active.id);
+          targeting = false;
+          setNotice("battle.skipNotice", { name: active.name });
+          render();
+          runEnemyTurns();
+        });
+        $("#flee").addEventListener("click", () => {
+          fleeBattle(state);
+          targeting = false;
+          setNotice("battle.fleeNotice");
+          render();
+        });
+        $("#returnHome").addEventListener("click", () => location.assign("home.html"));
+      }
+
       await loadUI();
       document.title = t("battle.title");
-      actors.caterpillar.name = t("battle.caterpillar");
-      actors.moth.name = t("battle.moth");
-      $("#skillOne").textContent = t("battle.skillOne");
-      // 逃跑按钮使用图标；不可用 textContent 覆盖，否则会把 <img> 从按钮中移除。
-      $("#claw").title = t("battle.claw");
-      $("#claw").setAttribute("aria-label", t("battle.claw"));
-      $("#skillOne").title = t("battle.skillOne");
-      $("#skillOne").setAttribute("aria-label", t("battle.skillOne"));
-      $("#skip").title = t("battle.skip");
-      $("#skip").setAttribute("aria-label", t("battle.skip"));
-      $("#flee").title = t("battle.flee");
-      $("#flee").setAttribute("aria-label", t("battle.flee"));
-      Object.entries(actors).forEach(([actorId, actor]) => {
-        actor.element.addEventListener("mouseenter", () => setHighlight(actorId, true));
-        actor.element.addEventListener("mouseleave", () => setHighlight(actorId, false));
-      });
-      document.querySelectorAll(".round-action").forEach((button) => button.addEventListener("click", () => {
-        $("#notice").textContent = t("battle.uiOnlyNotice");
-      }));
+      configureButtons();
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, library, battleLibrary, battleContent, battleAssets] = await Promise.all([
+          const [dragonSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
-            loadLibrary(),
+            loadJson("assets/dragons/dragon-library.json"),
             loadJson("data/battle-library.json"),
             loadJson("content/battle.zh-CN.json"),
-            loadJson("assets/battle/battle-assets.json")
+            loadJson("assets/battle/battle-assets.json"),
+            loadJson("data/battle-balance.json"),
+            loadJson("data/skills.json")
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
-          const dragon = dragonSnapshot.data();
-          const species = library.find((item) => item.id === dragon.speciesId);
-          if (!species) throw new Error("Missing dragon species");
+          const dragonData = dragonSnapshot.data();
+          const species = library.find((item) => item.id === dragonData.speciesId);
           const battle = battleLibrary.battles.find((item) => item.id === "practice-meadow");
           const background = battleAssets.backgrounds.find((item) => item.id === battle?.backgroundId);
-          if (!battle || !background) throw new Error("Missing battle configuration");
+          if (!species || !battle || !background) throw new Error("Missing battle configuration");
           $(".battlefield").style.backgroundImage = `url("${background.path}")`;
           $("#sceneName").textContent = battleContent[battle.sceneNameKey];
           $("#battleName").textContent = battleContent[battle.nameKey];
           $("#battleName").title = battleContent[battle.descriptionKey];
-          actors.dragon.image.src = species.image;
-          actors.dragon.image.alt = dragon.customName || species.name;
-          actors.dragon.name = dragon.customName || species.name;
-          buildQueue(["dragon", "moth", "dragon", "caterpillar", "moth", "dragon", "dragon", "caterpillar", "moth", "dragon"]);
+          state = createBattle({
+            dragon: {
+              name: dragonData.customName || species.name,
+              stats: {
+                stamina: dragonData.stamina ?? 100,
+                attack: dragonData.attack ?? 10,
+                defense: dragonData.defense ?? 10,
+                speed: dragonData.speed ?? 10
+              }
+            },
+            dragonImage: species.image,
+            enemies: battle.enemies,
+            enemyAssets: battleAssets.enemies,
+            balance,
+            skills: skillData.skills
+          });
+          runEnemyTurns();
         } catch (error) {
-          console.error("Unable to load battle layout", error);
-          $("#notice").textContent = t("battle.loadError");
+          console.error("Unable to start battle", error);
+          setNotice("battle.loadError");
         }
       });
     </script>

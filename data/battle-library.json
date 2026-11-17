@@ -6,7 +6,23 @@
       "sceneNameKey": "battlefield.meadow.name",
       "nameKey": "battle.practice.name",
       "descriptionKey": "battle.practice.description",
-      "enemies": ["leaf-caterpillar", "moon-moth"]
+      "enemies": [
+        {
+          "id": "caterpillar-1",
+          "speciesId": "leaf-caterpillar",
+          "slot": "R4",
+          "stats": { "stamina": 40, "attack": 7, "defense": 4, "speed": 5 },
+          "skillId": "enemy-claw"
+        },
+        {
+          "id": "moth-1",
+          "speciesId": "moon-moth",
+          "slot": "R5",
+          "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 },
+          "skillId": "enemy-claw",
+          "powerRatio": 0.364
+        }
+      ]
     }
   ]
 }
