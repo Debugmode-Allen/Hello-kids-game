@@ -13,6 +13,22 @@ export async function resetLearningHistory(userId) {
   await deleteDoc(doc(db, "users", userId, "progress", "summary"));
 }
 
+export async function updateAssessmentResult(userId, result) {
+  const { chineseLevel, englishLevel, mathLevel, totalCorrect, totalAnswered } = result;
+  const levels = { chineseLevel, englishLevel, mathLevel };
+  const valid = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
+  if (!valid(chineseLevel, 1, 3) || !valid(englishLevel, 3, 5) || !valid(mathLevel, 3, 5)) {
+    throw new RangeError("Invalid assessment levels");
+  }
+  if (totalCorrect !== null || totalAnswered !== null) {
+    if (!valid(totalAnswered, 0, Number.MAX_SAFE_INTEGER) || !valid(totalCorrect, 0, totalAnswered)) {
+      throw new RangeError("Invalid assessment totals");
+    }
+    Object.assign(levels, { totalCorrect, totalAnswered });
+  }
+  await setDoc(doc(db, "users", userId, "progress", "summary"), levels, { merge: true });
+}
+
 function wholeNumber(value, fallback, minimum) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= minimum ? parsed : fallback;

@@ -18,8 +18,34 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {
+        function canEditAssessment() {
+          return progressId == 'summary' && isAdmin()
+            && get(/databases/$(database)/documents/users/$(userId)).data.role == 'child';
+        }
+        function assessmentFields() {
+          return ['chineseLevel', 'englishLevel', 'mathLevel', 'totalCorrect', 'totalAnswered'];
+        }
+        function validAssessmentLevels(data) {
+          return data.chineseLevel is int && data.chineseLevel >= 1 && data.chineseLevel <= 3
+            && data.englishLevel is int && data.englishLevel >= 3 && data.englishLevel <= 5
+            && data.mathLevel is int && data.mathLevel >= 3 && data.mathLevel <= 5;
+        }
+        function validAssessmentTotals(data) {
+          return data.totalCorrect is int && data.totalAnswered is int
+            && data.totalCorrect >= 0 && data.totalCorrect <= data.totalAnswered;
+        }
         allow read: if isOwner(userId) || isAdmin();
         allow create, update: if isOwner(userId);
+        allow create: if canEditAssessment()
+          && request.resource.data.keys().hasOnly(assessmentFields())
+          && validAssessmentLevels(request.resource.data)
+          && (!request.resource.data.keys().hasAny(['totalCorrect', 'totalAnswered'])
+            || validAssessmentTotals(request.resource.data));
+        allow update: if canEditAssessment()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(assessmentFields())
+          && validAssessmentLevels(request.resource.data)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalCorrect', 'totalAnswered'])
+            || validAssessmentTotals(request.resource.data));
         allow delete: if isAdmin();
       }
       match /attempts/{attemptId} {

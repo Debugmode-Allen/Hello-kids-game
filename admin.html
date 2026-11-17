@@ -40,7 +40,7 @@
 
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc, getDocs, collection } from "./js/firebase.js";
-      import { resetDragon, resetLearningHistory, updateDragonAttributes } from "./js/admin-dashboard.js";
+      import { resetDragon, resetLearningHistory, updateAssessmentResult, updateDragonAttributes } from "./js/admin-dashboard.js";
       import { loadUI, t } from "./js/i18n.js";
 
       const $ = (selector) => document.querySelector(selector);
@@ -60,7 +60,7 @@
         return button;
       }
 
-      function createNumberInput(key, label, value, minimum) {
+      function createNumberInput(key, label, value, minimum, maximum = null, required = true) {
         const wrapper = document.createElement("label");
         const labelText = document.createElement("span");
         labelText.textContent = label;
@@ -69,10 +69,65 @@
         input.name = key;
         input.min = minimum;
         input.step = "1";
-        input.required = true;
+        if (maximum !== null) input.max = maximum;
+        input.required = required;
         input.value = value;
         wrapper.append(labelText, input);
         return wrapper;
+      }
+
+      function showAssessmentSummary(child, levels, score) {
+        const progress = child.progress;
+        levels.textContent = t("admin.learningLevels", {
+          chinese: progress?.chineseLevel ?? "-",
+          english: progress?.englishLevel ?? "-",
+          math: progress?.mathLevel ?? "-"
+        });
+        score.textContent = t("admin.assessmentScore", {
+          correct: progress?.totalCorrect ?? "-", answered: progress?.totalAnswered ?? "-"
+        });
+      }
+
+      function createAssessmentEditor(child, refreshSummary) {
+        const form = document.createElement("form");
+        form.className = "attribute-editor";
+        const title = document.createElement("h3");
+        title.textContent = t("admin.assessmentEditor");
+        const info = paragraph(t("admin.assessmentHelp"));
+        const progress = child.progress;
+        const save = document.createElement("button");
+        save.type = "submit";
+        save.className = "save-attributes";
+        save.textContent = t("admin.assessmentSave");
+        const notice = document.createElement("p");
+        notice.className = "form-notice";
+        notice.setAttribute("role", "status");
+        form.append(title, info,
+          createNumberInput("chineseLevel", t("admin.assessmentChinese"), progress?.chineseLevel ?? "", 1, 3),
+          createNumberInput("englishLevel", t("admin.assessmentEnglish"), progress?.englishLevel ?? "", 3, 5),
+          createNumberInput("mathLevel", t("admin.assessmentMath"), progress?.mathLevel ?? "", 3, 5),
+          createNumberInput("totalCorrect", t("admin.assessmentCorrect"), progress?.totalCorrect ?? "", 0, null, false),
+          createNumberInput("totalAnswered", t("admin.assessmentAnswered"), progress?.totalAnswered ?? "", 0, null, false),
+          save, notice
+        );
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const result = Object.fromEntries([...new FormData(form)].map(([key, value]) => [key, value === "" ? null : Number(value)]));
+          save.disabled = true;
+          notice.textContent = "";
+          try {
+            await updateAssessmentResult(child.id, result);
+            child.progress = { ...child.progress, ...Object.fromEntries(Object.entries(result).filter(([, value]) => value !== null)) };
+            refreshSummary();
+            notice.textContent = t("admin.assessmentSaved");
+          } catch (error) {
+            if (!(error instanceof RangeError)) console.error("Assessment result save failed", error);
+            notice.textContent = t(error instanceof RangeError ? "admin.assessmentInvalid" : "admin.assessmentSaveError");
+          } finally {
+            save.disabled = false;
+          }
+        });
+        return form;
       }
 
       function createAttributeEditor(child) {
@@ -134,12 +189,12 @@
         heading.textContent = child.name;
         card.append(heading);
         card.append(paragraph(t("admin.dragon", { name: child.dragon?.customName || t("admin.noDragon") })));
-        card.append(paragraph(t("admin.learningLevels", {
-          chinese: child.progress?.chineseLevel ?? "-",
-          english: child.progress?.englishLevel ?? "-",
-          math: child.progress?.mathLevel ?? "-"
-        })));
-        card.append(paragraph(t("admin.attemptCount", { count: child.attemptCount })));
+        const levels = paragraph("");
+        const score = paragraph("");
+        const refreshSummary = () => showAssessmentSummary(child, levels, score);
+        refreshSummary();
+        card.append(levels, score, paragraph(t("admin.attemptCount", { count: child.attemptCount })));
+        card.append(createAssessmentEditor(child, refreshSummary));
 
         const actions = document.createElement("div");
         actions.className = "actions";
