@@ -30,6 +30,10 @@
   ],
   "effects": [
     {
+      "skillId": "entangling-vines",
+      "path": "assets/battle/effects/entangling-vines-wrap.png"
+    },
+    {
       "skillId": "fire-breath",
       "path": "assets/battle/effects/fire-breath-stream.png"
     },
@@ -39,6 +43,12 @@
     }
   ],
   "actions": [
+    {
+      "id": "entangling-vines",
+      "name": "藤蔓缠绕",
+      "path": "assets/battle/actions/entangling-vines.png",
+      "usage": "叶龙技能一的圆形战斗按钮图标。"
+    },
     {
       "id": "claw-swipe",
       "name": "爪击",

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="stylesheet" href="css/battle-effects.css" />
+    <link rel="stylesheet" href="css/battle-effects.css?v=entangling-vines" />
     <link rel="stylesheet" href="css/learning-quiz.css" />
     <style>
       :root { font-family: Georgia, "STKaiti", "KaiTi", serif; color: #172554; }
@@ -154,7 +154,7 @@
     <script type="module">
       import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
       import { loadUI, t } from "./js/i18n.js";
-      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js";
+      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=vines-delay-turns";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
 
@@ -247,7 +247,9 @@
         ring.querySelectorAll(".charge-arc").forEach((arc, index) => {
           arc.dataset.state = index < spent ? "spent" : index < earned ? "ready" : "empty";
         });
-        const description = t(`${skillOne.nameKey}Description`, { turns: skillOne.durationTurns });
+        const description = t(`${skillOne.nameKey}Description`, {
+          turns: skillOne.durationTurns, delay: skillOne.delayTurns
+        });
         const counts = t("charge.counts", { remaining: earned - spent, spent, empty: ring.children.length - earned });
         const button = $("#skillOne");
         button.title = `${description} ${counts}`;
@@ -308,6 +310,27 @@
         effect.setAttribute("aria-hidden", "true");
         container.append(effect);
         return effect;
+      }
+
+      async function playVineAnimation(target, damage) {
+        const targetSlot = slots.get(target.slot);
+        const vines = spellEffect("vine-wrap", "entangling-vines", targetSlot);
+        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        await wait(reducedMotion ? 0 : 340);
+        targetSlot.classList.add("hit-shake", "spell-shake");
+        const number = document.createElement("strong");
+        number.className = "damage-number";
+        number.textContent = `-${damage}`;
+        targetSlot.append(number);
+        const leaves = document.createElement("span");
+        leaves.className = "vine-leaves";
+        leaves.setAttribute("aria-hidden", "true");
+        targetSlot.append(leaves);
+        await wait(reducedMotion ? 620 : 1000);
+        vines.remove();
+        leaves.remove();
+        number.remove();
+        targetSlot.classList.remove("hit-shake", "spell-shake");
       }
 
       async function playSpellAnimation(attacker, target, skillId, damage) {
@@ -559,10 +582,14 @@
         const roll = Math.random();
         const damage = calculateDamage(state, active, unit, skillId, () => roll);
         if (skillId === "claw") await playAttackAnimation(active, unit, damage);
+        else if (skillId === "entangling-vines") await playVineAnimation(unit, damage);
         else await playSpellAnimation(active, unit, skillId, damage);
         const result = useDamageSkill(state, active.id, unit.id, skillId, () => roll);
         targeting = null;
-        setNotice("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: result.damage });
+        const notice = t("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: result.damage });
+        $("#notice").textContent = result.delayedTurns
+          ? `${notice} ${t("battle.vinesDelay", { target: unit.name, delay: result.delayedTurns })}`
+          : notice;
         await finishDisplayedTurn();
         if (result.outcome === "playing") await runEnemyTurns();
       }

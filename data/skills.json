@@ -1,9 +1,19 @@
 {
   "skillOneBySpecies": {
     "red-fire": "fire-breath",
-    "purple-moon": "dark-magic"
+    "purple-moon": "dark-magic",
+    "green-forest": "entangling-vines"
   },
   "skills": [
+    {
+      "id": "entangling-vines",
+      "nameKey": "battle.entanglingVines",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": true,
+      "powerRatio": 0.12,
+      "delayTurns": 2
+    },
     {
       "id": "fire-breath",
       "nameKey": "battle.fireBreath",

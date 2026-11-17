@@ -153,12 +153,13 @@ export function beginNextTurn(state) {
 }
 
 export function useDamageSkill(state, attackerId, targetId, skillId = "claw", random = Math.random) {
+  const skill = state.skills[skillId];
   const attacker = unitById(state, attackerId);
   const target = unitById(state, targetId);
   if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !target?.alive) {
     throw new Error("Invalid action");
   }
-  if (state.skills[skillId]?.type !== "damage" || !validTargets(state, attackerId, skillId).some((candidate) => candidate.id === targetId)) {
+  if (skill?.type !== "damage" || !validTargets(state, attackerId, skillId).some((candidate) => candidate.id === targetId)) {
     throw new Error("Protected target");
   }
   const missed = attacker.darknessTurns > 0;
@@ -167,8 +168,10 @@ export function useDamageSkill(state, attackerId, targetId, skillId = "claw", ra
   target.hp = Math.max(0, target.hp - damage);
   target.alive = target.hp > 0;
   finishTurn(state, attacker);
+  const delayedTurns = !missed && target.alive ? (skill.delayTurns ?? 0) : 0;
+  if (delayedTurns) target.nextActionAt += delayedTurns * actionInterval(target, state.balance.speed);
   updateOutcome(state);
-  return { attacker, target, skill: state.skills[skillId], damage, missed, outcome: state.status };
+  return { attacker, target, skill, damage, missed, delayedTurns, outcome: state.status };
 }
 
 export function useDarkMagic(state, attackerId) {
