@@ -72,6 +72,68 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isAdmin();
       }
+      match /trainingDays/{trainingId} {
+        function twoDigits(value) {
+          return (value < 10 ? '0' : '') + string(value);
+        }
+        function sundayOnOrAfter(year, month, day) {
+          let start = timestamp.date(year, month, day);
+          // 1970-01-04 was a Sunday.
+          let offset = (start.toMillis() - 259200000) % 604800000;
+          return start + duration.value((604800000 - offset) % 604800000, 'ms');
+        }
+        function familyDate() {
+          let year = request.time.year();
+          let summerStart = sundayOnOrAfter(year, 3, 8) + duration.value(10, 'h');
+          let summerEnd = sundayOnOrAfter(year, 11, 1) + duration.value(9, 'h');
+          let local = request.time - duration.value(request.time >= summerStart
+            && request.time < summerEnd ? 7 : 8, 'h');
+          return string(local.year()) + '-' + twoDigits(local.month()) + '-' + twoDigits(local.day());
+        }
+        function validTrainingSession(data) {
+          let path = /databases/$(database)/documents/users/$(userId)/attempts/$(data.lastSessionId);
+          let session = getAfter(path).data;
+          return data.lastSessionId.matches('[A-Za-z0-9_-]{1,150}')
+            && session.type == 'subject-practice'
+            && session.day == data.day
+            && session.subject == data.subject
+            && session.score == data.lastScore
+            && session.total == 5
+            && session.answers.size() == 5
+            && session.completedAt == request.time;
+        }
+        function validTrainingData(data) {
+          return data.keys().hasOnly(['day', 'subject', 'attemptCount', 'bestScore', 'lastScore', 'rewardGranted', 'lastSessionId', 'updatedAt'])
+            && data.day is string && data.day == familyDate()
+            && data.subject in ['math', 'english', 'chinese']
+            && trainingId == data.day + '_' + data.subject
+            && data.attemptCount is int && data.attemptCount >= 1
+            && data.bestScore is int && data.bestScore >= data.lastScore && data.bestScore <= 5
+            && data.lastScore is int && data.lastScore >= 0 && data.lastScore <= 5
+            && data.rewardGranted is bool
+            && data.lastSessionId is string
+            && data.updatedAt == request.time
+            && validTrainingSession(data);
+        }
+        allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
+        allow create: if isOwner(userId)
+          && validTrainingData(request.resource.data)
+          && request.resource.data.attemptCount == 1
+          && request.resource.data.bestScore == request.resource.data.lastScore
+          && request.resource.data.rewardGranted == (request.resource.data.lastScore >= 4)
+          && getAfter(/databases/$(database)/documents/users/$(userId)/attempts/$(request.resource.data.lastSessionId)).data.rewardGranted == request.resource.data.rewardGranted;
+        allow update: if isOwner(userId)
+          && validTrainingData(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attemptCount', 'bestScore', 'lastScore', 'rewardGranted', 'lastSessionId', 'updatedAt'])
+          && request.resource.data.day == resource.data.day
+          && request.resource.data.subject == resource.data.subject
+          && request.resource.data.attemptCount == resource.data.attemptCount + 1
+          && request.resource.data.bestScore == (request.resource.data.lastScore > resource.data.bestScore
+            ? request.resource.data.lastScore : resource.data.bestScore)
+          && request.resource.data.rewardGranted == (resource.data.rewardGranted || request.resource.data.lastScore >= 4)
+          && getAfter(/databases/$(database)/documents/users/$(userId)/attempts/$(request.resource.data.lastSessionId)).data.rewardGranted == (request.resource.data.lastScore >= 4 && !resource.data.rewardGranted);
+        allow delete: if isAdmin();
+      }
       match /parentActivities/{activityDoc} {
         allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
         allow create, update, delete: if isAdmin() || isLinkedParent(userId);

@@ -69,8 +69,8 @@
     </main>
 
     <script type="module">
-      import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
-      import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
+      import { auth, db, onAuthStateChanged, doc, getDoc, collection, getDocs } from "./js/firebase.js";
+      import { staminaBreakdown, loadCheckins } from "./js/checkin-client.js?v=20261118-stamina-breakdown";
       import { loadUI, t } from "./js/i18n.js";
 
       const $ = (selector) => document.querySelector(selector);
@@ -81,7 +81,7 @@
         return response.json();
       }
 
-      function showDragon(dragon, species) {
+      function showDragon(dragon, species, practiceBonuses, stamina) {
         $("#dragonImage").src = species.image;
         $("#dragonImage").alt = dragon.customName || species.name;
         $("#dragonName").textContent = dragon.customName || species.name;
@@ -90,10 +90,20 @@
         $("#xpValue").textContent = dragon.xp ?? 0;
         const stage = dragon.stage === "hatchling" ? 1 : (dragon.stage ?? 1);
         $("#stageValue").textContent = stage === 1 ? t("home.stageOne") : t("home.stageValue", { stage });
-        $("#attackValue").textContent = dragon.attack ?? 10;
-        $("#defenseValue").textContent = dragon.defense ?? 10;
-        $("#speedValue").textContent = dragon.speed ?? 10;
-        $("#staminaValue").textContent = dragon.stamina ?? 100;
+        const attributes = [
+          ["attackValue", "attack", practiceBonuses.attack],
+          ["defenseValue", "defense", practiceBonuses.defense],
+          ["speedValue", "speed", practiceBonuses.speed]
+        ];
+        for (const [elementId, key, bonus] of attributes) {
+          const total = Number(dragon[key] ?? 10);
+          $("#" + elementId).textContent = t("home.attributeBreakdown", {
+            total, base: total - bonus, bonus
+          });
+        }
+        $("#staminaValue").textContent = t("home.attributeBreakdown", {
+          total: stamina.total, base: stamina.base, bonus: stamina.bonus
+        });
         $("#dragonPanel").classList.remove("hidden");
       }
 
@@ -124,15 +134,25 @@
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, library] = await Promise.all([
+          const [dragonSnapshot, attemptsSnapshot, library] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
+            getDocs(collection(db, "users", user.uid, "attempts")),
             loadDragonLibrary()
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragon = dragonSnapshot.data();
           const species = library.find((item) => item.id === dragon.speciesId);
           if (!species) throw new Error("Missing dragon species");
-          showDragon({ ...dragon, stamina: effectiveStamina(dragon, await loadCheckins(user.uid)) }, species);
+          const practiceBonuses = { attack: 0, defense: 0, speed: 0 };
+          for (const entry of attemptsSnapshot.docs.map((item) => item.data())) {
+            if (entry.type !== "subject-practice" || entry.rewardGranted !== true) continue;
+            if (entry.subject === "math") practiceBonuses.attack++;
+            if (entry.subject === "english") practiceBonuses.defense++;
+            if (entry.subject === "chinese") practiceBonuses.speed++;
+          }
+          const checkins = await loadCheckins(user.uid);
+          const stamina = staminaBreakdown(dragon, checkins);
+          showDragon(dragon, species, practiceBonuses, stamina);
           $("#status").textContent = "";
         } catch (error) {
           console.error("Unable to load dragon home", error);

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>练习</title>
-    <link rel="stylesheet" href="css/practice.css" />
+    <link rel="stylesheet" href="css/practice.css?v=20261118-stat-breakdown" />
   </head>
   <body>
     <main class="practice-page">
@@ -38,30 +38,30 @@
             <span id="checkinProgress"></span>
           </div>
         </a>
-        <article class="practice-card math">
+        <a class="practice-card math training-link" href="subject-practice.html?subject=math">
           <span class="practice-icon symbol" aria-hidden="true">×</span>
           <div class="card-copy">
             <h2 data-copy="practice.math"></h2>
             <span class="attribute" data-attribute="attack"></span>
+            <span class="practice-progress" data-practice-progress="math"></span>
           </div>
-          <span class="preview-label" data-copy="practice.planned"></span>
-        </article>
-        <article class="practice-card english">
+        </a>
+        <a class="practice-card english training-link" href="subject-practice.html?subject=english">
           <span class="practice-icon symbol" aria-hidden="true">Aa</span>
           <div class="card-copy">
             <h2 data-copy="practice.english"></h2>
             <span class="attribute" data-attribute="defense"></span>
+            <span class="practice-progress" data-practice-progress="english"></span>
           </div>
-          <span class="preview-label" data-copy="practice.planned"></span>
-        </article>
-        <article class="practice-card chinese">
+        </a>
+        <a class="practice-card chinese training-link" href="subject-practice.html?subject=chinese">
           <span class="practice-icon symbol" aria-hidden="true">文</span>
           <div class="card-copy">
             <h2 data-copy="practice.chinese"></h2>
             <span class="attribute" data-attribute="speed"></span>
+            <span class="practice-progress" data-practice-progress="chinese"></span>
           </div>
-          <span class="preview-label" data-copy="practice.planned"></span>
-        </article>
+        </a>
       </section>
       <section id="motherDragonPanel" class="mother-dragon" hidden>
         <img id="parentDragonImage" class="parent-dragon-image" alt="" hidden />
@@ -74,7 +74,7 @@
     </main>
 
     <script type="module">
-      import { mountPracticePage } from "./js/practice-page.js?v=20261117-parent-dragon";
+      import { mountPracticePage } from "./js/practice-page.js?v=20261118-stat-breakdown";
       await mountPracticePage({ titleKey: "home.practice", optionsLabel: "practice.options" });
     </script>
   </body>

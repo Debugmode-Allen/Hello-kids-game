@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link rel="stylesheet" href="css/subject-practice.css?v=20261118-practice-progress" />
+  </head>
+  <body>
+    <main class="training-page">
+      <a class="back-link" href="practice.html" data-copy="training.back"></a>
+      <section class="training-panel">
+        <header class="training-header">
+          <p id="questionProgress" class="eyebrow" hidden></p>
+          <h1 id="pageTitle"></h1>
+          <p id="instructions" class="instructions"></p>
+          <p id="gradeInfo" class="info-line"></p>
+          <p id="attributeInfo" class="info-line"></p>
+          <p id="practiceHistory" class="practice-history"></p>
+          <p id="dailyStatus" class="daily-note"></p>
+        </header>
+
+        <section id="startPanel" class="flow-panel">
+          <button id="startButton" type="button" data-copy="training.start" disabled></button>
+        </section>
+
+        <section id="questionPanel" class="flow-panel" hidden>
+          <h2 id="questionText" class="question-text"></h2>
+          <p id="selectPrompt" class="select-prompt"></p>
+          <div id="answerOptions" class="answer-options"></div>
+          <button id="advanceButton" type="button" disabled></button>
+        </section>
+
+        <section id="resultPanel" class="flow-panel result-panel" hidden>
+          <h2 id="resultTitle"></h2>
+          <p id="scoreText" class="score-text"></p>
+          <p id="resultMessage" class="result-message"></p>
+          <p id="resultAttribute" class="result-attribute"></p>
+          <p id="resultDailyStatus" class="daily-note"></p>
+          <button id="againButton" type="button" data-copy="training.startAgain"></button>
+        </section>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script type="module" src="js/subject-practice.js?v=20261118-practice-progress"></script>
+  </body>
+</html>

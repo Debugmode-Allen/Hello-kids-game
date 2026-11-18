@@ -22,7 +22,20 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前发布版本为 `v1.1.0`，GitHub commit `d134c16`，在 `v1.0.9` 基础上新增五只家长守护龙、互斥选龙与孩子练习页展示。继续工作前，先运行 `git status` 检查本地改动，再运行 `git pull --ff-only` 同步。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前 GitHub 发布版本为 `v1.1.0`，提交 `d134c16`（版本记录随后更新）。本地另有 `v1.1.1` 每日学科练习开发，尚未推送；工作前先运行 `git status`，不要覆盖本地未提交改动。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+
+## 当前接手任务：三科学练
+
+新增通用 `subject-practice.html`，从练习菜单分别以 `?subject=math`、`?subject=english`、`?subject=chinese` 进入。题目通过 `js/assessment.js` 的 `createSubjectPractice()` 从九份分级题库里，按孩子 `progress/summary` 的对应年级随机抽五题。
+
+- 数学答题组提升龙的攻击，英文提升防御，中文提升速度。
+- 题组不限次数；只有每科每天首个至少 4/5 的题组奖励对应属性 +1，不需要家长审批。按 `America/Los_Angeles` 自然日独立计算。
+- 每题不揭示答案或对错，完成五题后只显示总分/5 和加点说明。
+- 练习菜单的三个学科卡片将本项目累计加点（`+N`）放在小龙当前属性值旁边，连续/累计练习天数单独显示在下行；详情页显示“本项目累计 +N”，不显示小龙属性总值。课外打卡原有的连胜/累计点数行继续保留。
+- 小龙主页四维属性显示总值和拆分值，例如 `攻击 11（10+1）`、`体力 115（100+15）`；练习页显示基础值加项目贡献，如 `攻击力 10+1`、`体力 100+15`。管理员“重置小龙”会保留练习历史；重新孵化时，已有数学/英文/中文奖励分别加回攻击/防御/速度。
+- 每日汇总在 `users/{uid}/trainingDays/{YYYY-MM-DD_subject}`；每组记录复用 `users/{uid}/attempts/{attemptId}`，类型为 `subject-practice`。家长页显示组数和最近五次的成绩及时间。
+- `firestore.rules` 的 `trainingDays` 规则已写在本地，尚未发布 Firebase Console。未发布时读写会 `permission-denied`。发布后先用 test 或孩子账户逐科验收：不足 4/5 后继续练习；同日达到 4/5 后只加一次；当日其他题组不再加点；隔天奖励重新可得；孩子刷新主页属性更新；家长看成绩时间；管理员清除学习历史后练习记录也清空。
+- 当前实现是浏览器端评分，规则限制日计数与记录配对，但项目现有的孩子端属性写权限仍允许技术用户篡改自己的数据。要完全防作弊需要后续服务端验证；本功能不引入需付费的 Cloud Functions。
 
 ## 在家继续：本次战斗验收
 

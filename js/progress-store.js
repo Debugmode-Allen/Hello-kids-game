@@ -1,4 +1,4 @@
-import { db, doc, collection, runTransaction } from "./firebase.js";
+import { db, doc, collection, getDocs, runTransaction } from "./firebase.js";
 import { eggPools } from "./hatching.js";
 
 const levelFields = (levels) => ({
@@ -21,6 +21,15 @@ export async function saveLevelAssessment(userId, { answers, levels }) {
 export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, answers, levels) {
   const candidates = dragons.filter((dragon) => (eggPools[eggId] ?? []).includes(dragon.id));
   const attemptRef = doc(collection(db, "users", userId, "attempts"));
+  const history = await getDocs(collection(db, "users", userId, "attempts"));
+  const practiceBonuses = { attack: 0, defense: 0, speed: 0 };
+  for (const snapshot of history.docs) {
+    const entry = snapshot.data();
+    if (entry.type !== "subject-practice" || entry.rewardGranted !== true) continue;
+    if (entry.subject === "math") practiceBonuses.attack++;
+    if (entry.subject === "english") practiceBonuses.defense++;
+    if (entry.subject === "chinese") practiceBonuses.speed++;
+  }
   return runTransaction(db, async (transaction) => {
     const available = [];
     for (const dragon of candidates) {
@@ -39,9 +48,9 @@ export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, ans
       level: 1,
       xp: 0,
       stage: 1,
-      attack: 10,
-      defense: 10,
-      speed: 10,
+      attack: 10 + practiceBonuses.attack,
+      defense: 10 + practiceBonuses.defense,
+      speed: 10 + practiceBonuses.speed,
       stamina: 100
     });
     transaction.set(doc(db, "users", userId, "progress", "summary"), { ...levelFields(levels), totalCorrect: score, totalAnswered: answers.length });

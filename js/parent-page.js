@@ -136,9 +136,28 @@ async function renderLinkedChild(link) {
   const card = document.createElement("article"); card.className = "child";
   const heading = document.createElement("h3"); heading.textContent = child.name;
   const details = document.createElement("p"); details.textContent = t("admin.learningLevels", { chinese: child.progress?.chineseLevel ?? "-", english: child.progress?.englishLevel ?? "-", math: child.progress?.mathLevel ?? "-" });
-  const history = document.createElement("p"); history.textContent = t("admin.attemptCount", { count: attemptsSnapshot.size });
+  const attemptEntries = attemptsSnapshot.docs.map((snapshot) => snapshot.data());
+  const practiceEntries = attemptEntries
+    .filter((entry) => entry.type === "subject-practice")
+    .sort((a, b) => (b.completedAt?.toMillis?.() ?? 0) - (a.completedAt?.toMillis?.() ?? 0));
+  const assessmentCount = attemptEntries.filter((entry) => entry.type !== "subject-practice").length;
+  const history = document.createElement("p");
+  history.textContent = t("admin.attemptCount", { count: assessmentCount });
+  const practiceSummary = document.createElement("p");
+  practiceSummary.textContent = t("parent.practiceSetCount", { count: practiceEntries.length });
+  const practiceHistory = document.createElement("ul");
+  practiceEntries.slice(0, 5).forEach((entry) => {
+    const row = document.createElement("li");
+    row.textContent = t("parent.practiceHistoryEntry", {
+      subject: t(`practice.${entry.subject}`), score: entry.score,
+      time: checkinTime(entry.completedAt)
+    });
+    practiceHistory.append(row);
+  });
   const config = activitiesSnapshot.data();
-  card.append(heading, details, history, activityForm(child, config?.parentId === parent.id ? config.items : undefined));
+  card.append(heading, details, history, practiceSummary);
+  if (practiceEntries.length) card.append(practiceHistory);
+  card.append(activityForm(child, config?.parentId === parent.id ? config.items : undefined));
   const pending = checkinsSnapshot.docs.filter((item) =>
     item.data().rewardVersion === 2 && checkinStatus(item.data()) === "pending");
   const pendingBox = document.createElement("section"); pendingBox.className = "pending";

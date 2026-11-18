@@ -8,8 +8,12 @@ export async function resetDragon(userId) {
 }
 
 export async function resetLearningHistory(userId) {
-  const attempts = await getDocs(collection(db, "users", userId, "attempts"));
-  await Promise.all(attempts.docs.map((attempt) => deleteDoc(attempt.ref)));
+  const [attempts, practiceDays] = await Promise.all([
+    getDocs(collection(db, "users", userId, "attempts")),
+    getDocs(collection(db, "users", userId, "trainingDays"))
+  ]);
+  await Promise.all([...attempts.docs, ...practiceDays.docs]
+    .map((entry) => deleteDoc(entry.ref)));
   await deleteDoc(doc(db, "users", userId, "progress", "summary"));
 }
 

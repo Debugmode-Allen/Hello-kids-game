@@ -36,6 +36,22 @@ export function createLevelAssessment(random = Math.random) {
   return createAssessment(levelSchedule, random);
 }
 
+export function createSubjectPractice(subject, progress = {}, random = Math.random, count = 5) {
+  const subjectBank = questionBank[subject];
+  if (!subjectBank) throw new Error("Unknown practice subject");
+  const grades = Object.keys(subjectBank).map(Number);
+  const savedGrade = Number(progress?.[`${subject}Level`]);
+  const grade = grades.includes(savedGrade) ? savedGrade : grades[0];
+  const pool = shuffle(subjectBank[grade], random);
+  if (!Number.isInteger(count) || count < 1 || pool.length < count) {
+    throw new Error("Not enough questions for practice set");
+  }
+  return {
+    grade,
+    questions: pool.slice(0, count).map((question) => prepareQuestion(question, random))
+  };
+}
+
 function createAssessment(schedule, random) {
   const total = schedule.length;
   const answers = [];

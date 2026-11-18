@@ -1,0 +1,35 @@
+:root { font-family: "Microsoft YaHei", system-ui, sans-serif; color: #173456; background: #eef6ff; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-height: 100vh; background: linear-gradient(150deg, #eaf4ff, #f8f5ff); }
+.training-page { width: min(100% - 32px, 760px); margin: auto; padding: 72px 0 42px; }
+.back-link { display: inline-block; margin: 0 0 14px; color: #355777; font-weight: 750; text-underline-offset: 4px; }
+.back-link:focus-visible, button:focus-visible { outline: 3px solid #e3a42e; outline-offset: 3px; }
+.training-panel { padding: clamp(22px, 5vw, 42px); border: 1px solid #d8e5f5; border-radius: 26px; background: #fff; box-shadow: 0 14px 34px #24466b1a; }
+.training-header { text-align: center; }
+.training-header h1 { margin: 0 0 12px; color: #183e68; font-size: clamp(2rem, 6vw, 3.2rem); }
+.eyebrow { margin: 0 0 8px; color: #56708d; font-weight: 800; }
+.instructions { margin: 0 auto 16px; max-width: 570px; color: #4a6079; line-height: 1.65; }
+.info-line { margin: 7px 0; color: #375674; font-weight: 750; }
+.practice-history { margin: 8px auto; color: #425e7c; font-size: .92rem; font-weight: 700; line-height: 1.5; }
+.daily-note { margin: 15px 0; padding: 13px 16px; border-radius: 14px; background: #eef6ff; color: #28517b; line-height: 1.6; }
+.flow-panel { margin-top: 23px; text-align: center; }
+button { min-height: 48px; padding: 10px 24px; border: 0; border-radius: 13px; background: #4b7ff0; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+button:disabled { opacity: .55; cursor: default; }
+.question-text { margin: 5px 0 16px; color: #1c344c; font-size: clamp(1.35rem, 4vw, 1.9rem); line-height: 1.5; white-space: pre-wrap; }
+.select-prompt { color: #66788b; }
+.answer-options { display: grid; gap: 11px; margin: 18px 0 22px; }
+.answer-option { width: 100%; min-height: 52px; border: 2px solid #c6d8f3; background: #eff5ff; color: #1b3c62; text-align: left; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+.answer-option:hover { transform: translateY(-1px); background: #e3edff; }
+.answer-option.selected { border-color: #245cc7; background: #3f73d8; color: #fff; box-shadow: 0 0 0 3px #d5e3ff; }
+.result-panel { padding-top: 10px; }
+.result-panel h2 { margin: 0 0 10px; color: #1d704c; font-size: 1.8rem; }
+.score-text { margin: 4px 0 12px; color: #1b3f67; font-size: clamp(1.6rem, 5vw, 2.3rem); font-weight: 900; }
+.result-message { margin: 10px 0; color: #364f68; line-height: 1.65; }
+.result-attribute { color: #244f7a; font-weight: 800; }
+#status { min-height: 1.5em; margin: 14px 0 0; color: #a13b36; text-align: center; }
+@media (max-width: 520px) {
+  .training-page { width: min(100% - 20px, 760px); padding-top: 66px; }
+  .training-panel { border-radius: 20px; }
+  .answer-option { padding-inline: 16px; }
+}

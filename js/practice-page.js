@@ -1,12 +1,13 @@
-import { auth, db, onAuthStateChanged, doc, getDoc } from "./firebase.js";
+import { auth, db, onAuthStateChanged, doc, getDoc, collection, getDocs } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
-import { checkinDay, effectiveStamina, loadCheckins } from "./checkin-client.js?v=20261117-spark";
+import { checkinDay, staminaBreakdown, loadCheckins } from "./checkin-client.js?v=20261118-stamina-breakdown";
 
 async function renderCheckinProgress(element, uid, dragon) {
   try {
     const history = await loadCheckins(uid);
-    document.querySelector('[data-attribute="stamina"]').textContent = t("practice.attributeValue", {
-      label: t("home.stamina"), value: effectiveStamina(dragon, history)
+    const { base: staminaBase, bonus: staminaBonus } = staminaBreakdown(dragon, history);
+    document.querySelector('[data-attribute="stamina"]').textContent = t("practice.attributeBreakdown", {
+      label: t("home.stamina"), base: staminaBase, bonus: staminaBonus
     });
     const submissions = history
       .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.date));
@@ -27,6 +28,50 @@ async function renderCheckinProgress(element, uid, dragon) {
   } catch (error) {
     console.warn("Unable to load check-in progress", error);
     element.textContent = t("practice.progressUnavailable");
+  }
+}
+
+async function renderSubjectProgress(uid, dragon) {
+  const subjects = ["math", "english", "chinese"];
+  const attributeFor = { math: "attack", english: "defense", chinese: "speed" };
+  try {
+    const snapshot = await getDocs(collection(db, "users", uid, "attempts"));
+    const entries = snapshot.docs.map((item) => item.data())
+      .filter((entry) => entry.type === "subject-practice");
+    const today = checkinDay();
+    for (const subject of subjects) {
+      const subjectEntries = entries.filter((entry) => entry.subject === subject);
+      const days = new Set(subjectEntries.map((entry) => entry.day)
+        .filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(day)));
+      const earned = subjectEntries.filter((entry) => entry.rewardGranted === true).length;
+      const attribute = attributeFor[subject];
+      const total = Number(dragon[attribute] ?? 10);
+      const base = total - earned;
+      const attributeLine = document.querySelector(`[data-attribute="${attribute}"]`);
+      if (attributeLine) {
+        attributeLine.textContent = t("practice.attributeBreakdown", {
+          label: t(`home.${attribute}`), base, bonus: earned
+        });
+      }
+      const date = new Date(`${today}T00:00:00Z`);
+      const dateKey = () => date.toISOString().slice(0, 10);
+      if (!days.has(dateKey())) date.setUTCDate(date.getUTCDate() - 1);
+      let streak = 0;
+      while (days.has(dateKey())) {
+        streak++;
+        date.setUTCDate(date.getUTCDate() - 1);
+      }
+      const progress = document.querySelector(`[data-practice-progress="${subject}"]`);
+      if (!progress) continue;
+      progress.textContent = t(streak ? "practice.subjectStreak" : "practice.subjectTotal", {
+        streak, days: days.size
+      });
+    }
+  } catch (error) {
+    console.warn("Unable to load subject practice progress", error);
+    for (const progress of document.querySelectorAll("[data-practice-progress]")) {
+      progress.textContent = t("practice.subjectProgressUnavailable");
+    }
   }
 }
 
@@ -69,10 +114,12 @@ export async function mountPracticePage({ titleKey, optionsLabel, onDragonLoaded
         });
       }
       const progress = $("checkinProgress");
-      if (progress) void renderCheckinProgress(progress, user.uid, dragon);
+      const progressTasks = [renderSubjectProgress(user.uid, dragon)];
+      if (progress) progressTasks.push(renderCheckinProgress(progress, user.uid, dragon));
       $("dragonImage").alt = name;
       $("dragonImage").src = species.image;
       onDragonLoaded?.(level);
+      await Promise.all(progressTasks);
       for (const id of ["dragonName", "dragonLevel", "dragonImage", "practiceOptions"]) {
         $(id).hidden = false;
       }

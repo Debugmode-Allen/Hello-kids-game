@@ -23,6 +23,16 @@ export function effectiveStamina(dragon, records) {
   return (dragon.stamina ?? 100) + rewards.length * 5;
 }
 
+export function staminaBreakdown(dragon, records) {
+  const stored = Number(dragon.stamina ?? 100);
+  const confirmedBonus = records.filter((record) => record.status === "approved").length * 5;
+  const effective = effectiveStamina(dragon, records);
+  const activeBonus = Math.max(0, effective - stored);
+  const bonus = Math.max(confirmedBonus, activeBonus);
+  const total = Math.max(effective, 100 + bonus);
+  return { base: total - bonus, bonus, total };
+}
+
 export function submitCheckin(uid, activity, activityIndex) {
   const date = checkinDay();
   const ref = doc(db, "users", uid, "activityCheckins", `${date}_${activity.id}`);
