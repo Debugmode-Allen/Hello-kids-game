@@ -12,7 +12,7 @@
       button { font: inherit; }
       .dragon-home { width: min(100%, 720px); margin: 0 auto; padding: 28px 24px; text-align: center; background: rgba(255,255,255,.96); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
       h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
-      .showcase { display: grid; grid-template-columns: 190px minmax(180px, 1fr) 108px; align-items: center; width: min(100%, 650px); min-height: 292px; margin: 0 auto; }
+      .showcase { display: grid; grid-template-columns: 190px minmax(180px, 1fr) 190px; align-items: center; width: min(100%, 650px); min-height: 292px; margin: 0 auto; }
       .skill-column { display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; height: 292px; }
       .skill-control { position: relative; display: grid; place-items: center; width: 76px; min-height: 82px; padding: 4px; border: 0; border-radius: 18px; color: #17366f; background: transparent; cursor: pointer; touch-action: manipulation; }
       .skill-control:hover, .skill-control:focus-visible, .skill-control.is-active { background: #eff6ff; outline: 2px solid #93c5fd; outline-offset: 1px; }
@@ -52,7 +52,7 @@
       @media (max-width: 520px) {
         body { padding: 68px 9px 18px; }
         .dragon-home { padding: 22px 12px; border-radius: 22px; }
-        .showcase { grid-template-columns: 148px minmax(120px, 1fr) 82px; min-height: 260px; }
+        .showcase { grid-template-columns: minmax(0, 1fr) minmax(120px, 1.25fr) minmax(0, 1fr); min-height: 260px; }
         .skill-column { height: 240px; }
         .skill-control { width: 66px; min-height: 74px; }
         .energy-control { width: 146px; min-height: 158px; }
@@ -65,7 +65,7 @@
         .attributes { padding: 13px 10px; }
       }
       @media (max-width: 360px) {
-        .showcase { grid-template-columns: 132px minmax(105px, 1fr) 70px; }
+        .showcase { grid-template-columns: minmax(78px, 1fr) minmax(120px, 1.5fr) minmax(78px, 1fr); }
         .skill-control { width: 60px; }
         .energy-control { width: 130px; }
         .energy-control .energy-meter { --energy-meter-size: 124px; }
