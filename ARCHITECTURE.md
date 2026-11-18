@@ -1,7 +1,7 @@
 # 小小学习家：开发结构
 
-当前 GitHub 版本：`v1.2.0`（进阶练习与 11 级五敌人练习；commit `f71b493`）
-本地正在开发 `v1.2.1`：修正左右战场的前后排槽位映射，并接入持久能量环；尚未提交或推送。
+当前 GitHub 版本：`v1.2.1`（阵位修正、持久能量环与小龙主页技能面板；commit `d83de12`）
+GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本版本已推送；手机端目视验收待用户确认。
 
 ## 页面与路由
 
@@ -127,7 +127,7 @@
 - `parentLinks/{childId}`：每个孩子的唯一关联记录。申请时为待审核占位，管理员批准后生效，拒绝或解绑时释放。孩子只可读取自己的已批准关联。
 - `users/{uid}/parentActivities/current` 和 `users/{uid}/activityCheckins/{checkinId}`：保存活动设置和每日打卡状态。
 
-仓库根目录的 `firestore.rules` 是当前规则的备份。本地规则限定 `dragon/current.energy` 为 0–10 整数；创建小龙时要求能量等于同一事务新增的 10 题 `initial-assessment` 分数；每次充能最多 +1，技能消耗可以降至 0。规则尚需在 Firebase Console 的 Firestore Rules 页面发布。Rules 不能验证孩子是否真的答对，客户端仍可连续伪造 +1；服务端答案验证仍待以后实现。
+仓库根目录的 `firestore.rules` 是当前规则的备份。本版本包含能量规则：限定 `dragon/current.energy` 为 0–10 整数；创建小龙时要求能量等于同一事务新增的 10 题 `initial-assessment` 分数；每次充能最多 +1，技能消耗可以降至 0。GitHub 推送不会自动部署 Firestore Rules；线上规则需在 Firebase Console 单独确认/发布。Rules 不能验证孩子是否真的答对，客户端仍可连续伪造 +1；服务端答案验证仍待以后实现。
 
 ## 本地运行与验收
 

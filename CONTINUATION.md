@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前 GitHub 源码版本为 `v1.2.0`，功能提交 `f71b493`。本地正在开发 `v1.2.1` 阵位映射修正，尚未提交或推送。战斗练习关卡更新已推送；每日学科练习和属性拆分显示也已推送。用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前 GitHub 源码版本为 `v1.2.1`，提交 `d83de12`。本版本包括阵位映射修正、持久能量环、小龙主页技能面板及结构记录。手机端目视验收待用户进行。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 当前接手任务：三科学练
 
@@ -39,16 +39,16 @@ py -m http.server 8000
 
 ## 已发布：v1.2.0 战斗练习关卡
 
-### 本地 v1.2.1：阵位映射与能量环
+### 已推送 v1.2.1：阵位映射、能量环与主页技能面板
 
 - `battle.html` 已修正视觉槽位映射：后排是 L1/L2/L3 与 R1/R2/R3；前排是 L4/L5 与 R4/R5。前排第二格 L5/R5 使用原先更靠近中央、尺寸较大的位置；后排第二格 L2/R2 放回远端较小位置。
 - 保护规则保持：L4/R4 分别保护 1、2；L5/R5 分别保护 2、3。R2/L2 同时受到两名前排保护。
 - 敌方 AI 当前在 `battle.html` 的 `runEnemyTurns()` 里选择 `validTargets(...)[0]`，按单位/阵位顺序选第一个合法目标，不会随机攻击。现在我方只有一只龙，因此只有一个目标；新增队友前再定义优先级。
-- 本地尚未做画面与交互验收；确认前后排视觉位置与保护提示后，再决定是否发布。
+- 手机端目视验收由用户在 GitHub Pages 完成；需要检查主页响应式布局、能量圆环、技能说明点击及登录退出。
 - 已生成透明背景的通用能量槽与能量点 PNG：`assets/battle/actions/energy-reservoir-v2.png` 有十个空槽，`energy-pip.png` 是单点；`assets/battle/battle-assets.json` 已登记。
 - `js/energy-meter.js` 按素材中每个环槽中心的百分比坐标定位十点。战前开始时，当前能量环从战场位置飞到题目顶部；答对并提交后，中心播放充能脉冲，目标空槽出现固定位置的能量点；答错不增加。三道题结束后，能量环带着最新数量飞回战场。FLIP 动画按实时矩形尺寸测量，适配不同设备；消费时最后的点退回中心并消失。
 - 2026-11-18 根据截图重新校准第 2、3、4、8、9、10 槽的百分比坐标；第 1、5、6、7 槽维持原值。后续反馈第 4、8 槽仍偏低，已将两者再上移 3 个百分点。`battle.html` 的模块查询参数已更新，避免浏览器继续使用旧坐标模块缓存。
-- 小龙能量字段为 `users/{uid}/dragon/current.energy`，范围 0–10；新龙初始能量等于十题孵化测验答对数，并用 `energyAssessmentId` 指向同一事务生成的初始测验记录；旧记录首次进入战斗时初始化为 0。答对战前题目后写入 +1（满值不增加），技能按 `data/skills.json` 的 `energyCost` 事务扣除。`firestore.rules` 本地校验初始能量与该测验记录分数一致、能量范围及每次最多 +1；技能允许一次扣除至 0。规则尚未在 Firebase Console 发布。Rules 不能证明客户端提交的答案正确，客户端仍可伪造分数或多次 +1；彻底防作弊需要服务端验证，属于已记录的后续安全问题。
+- 小龙能量字段为 `users/{uid}/dragon/current.energy`，范围 0–10；新龙初始能量等于十题孵化测验答对数，并用 `energyAssessmentId` 指向同一事务生成的初始测验记录；旧记录首次进入战斗时初始化为 0。答对战前题目后写入 +1（满值不增加），技能按 `data/skills.json` 的 `energyCost` 事务扣除。仓库内 `firestore.rules` 校验初始能量与该测验记录分数一致、能量范围及每次最多 +1；技能允许一次扣除至 0。GitHub 推送不部署 Firestore Rules，线上状态需在 Firebase Console 单独确认。Rules 不能证明客户端提交的答案正确，客户端仍可伪造分数或多次 +1；彻底防作弊需要服务端验证，属于已记录的后续安全问题。
 
 - `practice-battles.html` 第二项“进阶练习”在 1 级开放并可开始，阵容为前排 R4/R5 两只毛毛虫、后排 R1/R2/R3 三只月光蛾；第三项为 11 级练习，达到 11 级后可开始。
 - `home.html` 已重排小龙主页：战斗技能与储能环排在小龙两侧；储能环读取 `dragon/current.energy` 并显示 `当前/10`；爪击和按龙种加载的技能一可悬停、键盘聚焦或触摸点击查看说明。技能二、三显示“待进阶后学习”。四个功能入口移动到小龙名称/职业下方、等级资料上方。
