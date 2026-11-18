@@ -4,56 +4,124 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
+    <link rel="stylesheet" href="css/energy-meter.css" />
     <style>
       :root { color: #172554; font-family: "Microsoft YaHei", system-ui, sans-serif; }
       * { box-sizing: border-box; }
-      body { min-height: 100vh; margin: 0; padding: 76px 20px 32px; background: linear-gradient(160deg, #e0f2fe, #f5f3ff); }
-      .dragon-home { width: min(100%, 680px); margin: 0 auto; padding: 34px 28px; text-align: center; background: rgba(255,255,255,.95); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
-      h1 { margin: 0 0 12px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
-      .dragon-stage { position: relative; width: min(100%, 420px); height: 280px; margin: 6px auto 12px; }
-      .dragon-image { display: block; width: 250px; height: 260px; margin: 0 auto; object-fit: contain; }
-      #dragonName { margin: 0; font-size: 1.7rem; color: #7c3aed; }
-      #dragonProfession { min-height: 1.5em; margin: 8px 0 26px; color: #475569; }
-      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-      .stat { padding: 14px 8px; border-radius: 16px; background: #eff6ff; }
-      .stat-label { display: block; color: #475569; font-size: .88rem; }
-      .stat-value { display: block; margin-top: 6px; font-size: 1.15rem; color: #1d4ed8; }
-      .attributes { margin-top: 24px; padding: 18px; border-radius: 18px; background: #f5f3ff; }
-      .attributes h2 { margin: 0 0 13px; font-size: 1.1rem; }
-      .attribute-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .attribute { padding: 12px 8px; border-radius: 14px; background: #fff; }
-      .path-card { position: absolute; z-index: 1; width: 92px; min-height: 58px; padding: 8px 7px; border: 2px solid #bfdbfe; border-radius: 999px; background: linear-gradient(145deg, #fff, #dbeafe); color: #1e3a8a; font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 6px 14px rgba(37,99,235,.12); }
-      .path-card:hover { border-color: #2563eb; background: #bfdbfe; transform: scale(1.05); }
-      .path-icon { display: inline-block; margin-right: 3px; }
-      .path-name { font-size: .86rem; }
-      .path-adventure { top: 14px; left: 0; }
-      .path-battle { top: 14px; right: 0; }
-      .path-cooperation { bottom: 14px; left: 0; }
-      .path-practice { right: 0; bottom: 14px; }
-      .level-test-link { display: inline-block; margin-top: 20px; color: #3730a3; font-weight: 800; }
-      #status { min-height: 1.5em; margin: 16px 0 0; color: #64748b; }
+      body { min-height: 100vh; margin: 0; padding: 76px 16px 28px; background: linear-gradient(160deg, #e0f2fe, #f5f3ff); }
+      button { font: inherit; }
+      .dragon-home { width: min(100%, 720px); margin: 0 auto; padding: 28px 24px; text-align: center; background: rgba(255,255,255,.96); border-radius: 28px; box-shadow: 0 18px 45px rgba(30,64,175,.14); }
+      h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 5vw, 2.5rem); }
+      .showcase { display: grid; grid-template-columns: 190px minmax(180px, 1fr) 108px; align-items: center; width: min(100%, 650px); min-height: 292px; margin: 0 auto; }
+      .skill-column { display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; height: 292px; }
+      .skill-control { position: relative; display: grid; place-items: center; width: 76px; min-height: 82px; padding: 4px; border: 0; border-radius: 18px; color: #17366f; background: transparent; cursor: pointer; touch-action: manipulation; }
+      .skill-control:hover, .skill-control:focus-visible, .skill-control.is-active { background: #eff6ff; outline: 2px solid #93c5fd; outline-offset: 1px; }
+      .skill-control:focus-visible { outline: 3px solid #2563eb; }
+      .skill-control img:not(.energy-meter__frame):not(.energy-meter__point) { display: block; width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 4px 7px rgba(30,64,175,.16)); }
+      .energy-control { width: 188px; min-height: 204px; }
+      .energy-control .energy-meter { --energy-meter-size: 184px; }
+      .energy-count { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 4px 10px; border: 1px solid #bfdbfe; border-radius: 999px; color: #1e3a8a; background: rgba(255,255,255,.94); font-size: .88rem; font-weight: 900; box-shadow: 0 2px 8px #1e3a8a33; }
+      .skill-caption { display: block; margin-top: 2px; font-size: .76rem; font-weight: 800; }
+      .dragon-image { display: block; width: min(100%, 250px); height: 250px; margin: 0 auto; object-fit: contain; }
+      .dragon-control { display: grid; place-items: center; width: 100%; padding: 0; border: 0; border-radius: 22px; background: transparent; cursor: pointer; touch-action: manipulation; }
+      .dragon-control:hover, .dragon-control:focus-visible, .dragon-control.is-active { outline: 2px solid #bfdbfe; outline-offset: 2px; }
+      .dragon-control:focus-visible { outline-width: 3px; outline-color: #2563eb; }
+      .skill-placeholder { width: 54px; height: 54px; display: grid; place-items: center; border: 2px solid #cbd5e1; border-radius: 50%; color: #64748b; background: #f8fafc; font-size: 1.55rem; font-weight: 900; }
+      .skill-placeholder[hidden], .skill-control img[hidden] { display: none; }
+      .skill-info { width: min(100%, 520px); height: 82px; margin: 0 auto 14px; padding: 10px 14px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #c7d2fe; border-radius: 14px; color: #334155; background: #f5f3ff; text-align: left; scrollbar-color: #a5b4fc transparent; scrollbar-width: thin; }
+      .skill-info[hidden] { display: block; visibility: hidden; }
+      .skill-info-title { display: block; margin-bottom: 3px; color: #312e81; }
+      #dragonName { margin: 0; font-size: 1.65rem; color: #7c3aed; }
+      #dragonProfession { min-height: 1.5em; margin: 5px 0 12px; color: #475569; }
+      .path-section { margin: 0 auto 18px; }
+      .path-title { margin: 0 0 8px; color: #475569; font-size: .88rem; }
+      .path-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+      .path-card { min-height: 54px; padding: 8px 5px; border: 1px solid #bfdbfe; border-radius: 16px; background: linear-gradient(145deg, #fff, #dbeafe); color: #1e3a8a; font-weight: 800; cursor: pointer; box-shadow: 0 5px 12px rgba(37,99,235,.09); touch-action: manipulation; }
+      .path-card:hover, .path-card:focus-visible { border-color: #2563eb; background: #bfdbfe; transform: translateY(-1px); }
+      .path-icon { display: block; margin-bottom: 2px; }
+      .path-name { font-size: .88rem; }
+      .stat-label { display: block; color: #475569; font-size: .85rem; }
+      .stat-value { display: block; margin-top: 5px; font-size: 1.08rem; color: #1d4ed8; }
+      .attributes { margin-top: 18px; padding: 16px; border-radius: 18px; background: #f5f3ff; }
+      .attributes h2 { margin: 0 0 11px; font-size: 1.05rem; }
+      .attribute-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+      .attribute { padding: 10px 7px; border-radius: 14px; background: #fff; }
+      .level-test-link { display: inline-block; margin-top: 17px; color: #3730a3; font-weight: 800; }
+      #status { min-height: 1.4em; margin: 13px 0 0; color: #64748b; }
       .hidden { display: none; }
-      @media (max-width: 430px) { body { padding: 68px 12px 20px; } .dragon-home { padding: 28px 16px; } .dragon-stage { height: 250px; } .dragon-image { width: 210px; height: 230px; } .path-card { width: 78px; min-height: 52px; padding: 6px 3px; font-size: .75rem; } }
+      @media (max-width: 520px) {
+        body { padding: 68px 9px 18px; }
+        .dragon-home { padding: 22px 12px; border-radius: 22px; }
+        .showcase { grid-template-columns: 148px minmax(120px, 1fr) 82px; min-height: 260px; }
+        .skill-column { height: 240px; }
+        .skill-control { width: 66px; min-height: 74px; }
+        .energy-control { width: 146px; min-height: 158px; }
+        .energy-control .energy-meter { --energy-meter-size: 140px; }
+        .skill-control img:not(.energy-meter__frame):not(.energy-meter__point) { width: 50px; height: 50px; }
+        .dragon-image { height: 210px; }
+        .skill-info { height: 76px; margin-bottom: 12px; }
+        .path-grid { grid-template-columns: repeat(2, 1fr); }
+        .path-card { min-height: 48px; }
+        .attributes { padding: 13px 10px; }
+      }
+      @media (max-width: 360px) {
+        .showcase { grid-template-columns: 132px minmax(105px, 1fr) 70px; }
+        .skill-control { width: 60px; }
+        .energy-control { width: 130px; }
+        .energy-control .energy-meter { --energy-meter-size: 124px; }
+      }
     </style>
   </head>
   <body>
     <main class="dragon-home" aria-live="polite">
       <h1 id="pageTitle"></h1>
       <section id="dragonPanel" class="hidden">
-        <div class="dragon-stage">
-          <img id="dragonImage" class="dragon-image" alt="" />
-          <button class="path-card path-adventure" type="button" data-feature="adventure"><span class="path-icon" aria-hidden="true">🗺️</span><span id="adventureName" class="path-name"></span></button>
-          <button class="path-card path-battle" type="button" data-feature="battle"><span class="path-icon" aria-hidden="true">⚔️</span><span id="battleName" class="path-name"></span></button>
-          <button class="path-card path-cooperation" type="button" data-feature="cooperation"><span class="path-icon" aria-hidden="true">🤝</span><span id="cooperationName" class="path-name"></span></button>
-          <button class="path-card path-practice" type="button" data-feature="practice"><span class="path-icon" aria-hidden="true">✨</span><span id="practiceName" class="path-name"></span></button>
+        <div class="showcase" aria-label="">
+          <div class="skill-column skill-column-left">
+            <button class="skill-control energy-control" id="energyControl" type="button" data-skill-info="energy">
+              <span id="energyMeter" aria-hidden="true"></span>
+              <span class="energy-count" id="energyCount"></span>
+              <span class="skill-caption" id="energyCaption"></span>
+            </button>
+            <button class="skill-control" id="clawControl" type="button" data-skill-info="claw">
+              <img src="assets/battle/actions/claw-swipe.png" alt="" />
+              <span class="skill-caption" id="clawCaption"></span>
+            </button>
+          </div>
+          <button class="dragon-control" id="dragonControl" type="button" data-skill-info="dragonStats">
+            <img id="dragonImage" class="dragon-image" alt="" />
+          </button>
+          <div class="skill-column skill-column-right">
+            <button class="skill-control" id="skillOneControl" type="button" data-skill-info="skillOne">
+              <img id="skillOneImage" src="" alt="" hidden />
+              <span id="skillOnePlaceholder" class="skill-placeholder" hidden></span>
+              <span class="skill-caption" id="skillOneCaption"></span>
+            </button>
+            <button class="skill-control" id="skillTwoControl" type="button" data-skill-info="skillTwo">
+              <span class="skill-placeholder" aria-hidden="true">Ⅱ</span>
+              <span class="skill-caption" id="skillTwoCaption"></span>
+            </button>
+            <button class="skill-control" id="skillThreeControl" type="button" data-skill-info="skillThree">
+              <span class="skill-placeholder" aria-hidden="true">Ⅲ</span>
+              <span class="skill-caption" id="skillThreeCaption"></span>
+            </button>
+          </div>
         </div>
+        <section id="skillInfo" class="skill-info" role="status" hidden>
+          <strong id="skillInfoTitle" class="skill-info-title"></strong>
+          <span id="skillInfoDescription"></span>
+        </section>
         <h2 id="dragonName"></h2>
         <p id="dragonProfession"></p>
-        <div class="stats">
-          <div class="stat"><span id="levelLabel" class="stat-label"></span><strong id="levelValue" class="stat-value"></strong></div>
-          <div class="stat"><span id="xpLabel" class="stat-label"></span><strong id="xpValue" class="stat-value"></strong></div>
-          <div class="stat"><span id="stageLabel" class="stat-label"></span><strong id="stageValue" class="stat-value"></strong></div>
-        </div>
+        <nav class="path-section" aria-label="">
+          <p class="path-title" id="pathsTitle"></p>
+          <div class="path-grid">
+            <button class="path-card" type="button" data-feature="adventure"><span class="path-icon" aria-hidden="true">🗺️</span><span id="adventureName" class="path-name"></span></button>
+            <button class="path-card" type="button" data-feature="battle"><span class="path-icon" aria-hidden="true">⚔️</span><span id="battleName" class="path-name"></span></button>
+            <button class="path-card" type="button" data-feature="cooperation"><span class="path-icon" aria-hidden="true">🤝</span><span id="cooperationName" class="path-name"></span></button>
+            <button class="path-card" type="button" data-feature="practice"><span class="path-icon" aria-hidden="true">✨</span><span id="practiceName" class="path-name"></span></button>
+          </div>
+        </nav>
         <section class="attributes">
           <h2 id="attributesTitle"></h2>
           <div class="attribute-grid">
@@ -72,24 +140,80 @@
       import { auth, db, onAuthStateChanged, doc, getDoc, collection, getDocs } from "./js/firebase.js";
       import { staminaBreakdown, loadCheckins } from "./js/checkin-client.js?v=20261118-stamina-breakdown";
       import { loadUI, t } from "./js/i18n.js";
+      import { renderEnergyMeter } from "./js/energy-meter.js?v=home-energy-ui-20261118";
 
       const $ = (selector) => document.querySelector(selector);
+      const CAPACITY = 10;
 
-      async function loadDragonLibrary() {
-        const response = await fetch("assets/dragons/dragon-library.json", { cache: "no-store" });
-        if (!response.ok) throw new Error(`Dragon library: ${response.status}`);
+      async function loadJson(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) throw new Error(`${path}: ${response.status}`);
         return response.json();
       }
 
-      function showDragon(dragon, species, practiceBonuses, stamina) {
+      function showInfo(key, title, description, pinned = false) {
+        const panel = $("#skillInfo");
+        panel.dataset.activeKey = key;
+        panel.dataset.pinned = String(pinned);
+        $("#skillInfoTitle").textContent = title;
+        $("#skillInfoDescription").textContent = description;
+        panel.hidden = false;
+        document.querySelectorAll("[data-skill-info]").forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.skillInfo === key);
+        });
+      }
+
+      function hideInfo() {
+        const panel = $("#skillInfo");
+        if (panel.dataset.pinned === "true") return;
+        panel.hidden = true;
+        document.querySelectorAll("[data-skill-info]").forEach((button) => button.classList.remove("is-active"));
+      }
+
+      function bindSkillInfo() {
+        document.querySelectorAll("[data-skill-info]").forEach((button) => {
+          const key = button.dataset.skillInfo;
+          button.addEventListener("pointerenter", () => {
+            if (button.matches(":hover") && button.dataset.title) showInfo(key, button.dataset.title, button.dataset.description);
+          });
+          button.addEventListener("pointerleave", hideInfo);
+          button.addEventListener("focus", () => {
+            if (button.dataset.title) showInfo(key, button.dataset.title, button.dataset.description);
+          });
+          button.addEventListener("blur", hideInfo);
+          button.addEventListener("click", () => {
+            if (!button.dataset.title) return;
+            const panel = $("#skillInfo");
+            const alreadyPinned = panel.dataset.pinned === "true" && panel.dataset.activeKey === key;
+            panel.dataset.pinned = String(!alreadyPinned);
+            showInfo(key, button.dataset.title, button.dataset.description, !alreadyPinned);
+          });
+        });
+      }
+
+      function configureInfo(key, title, description) {
+        const button = document.querySelector(`[data-skill-info="${key}"]`);
+        button.dataset.title = title;
+        button.dataset.description = description;
+        button.title = description;
+        button.setAttribute("aria-label", `${title}. ${description}`);
+      }
+
+      function showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance) {
         $("#dragonImage").src = species.image;
-        $("#dragonImage").alt = dragon.customName || species.name;
+        $("#dragonControl").setAttribute("aria-label", t("home.dragonProgressSummary", {
+          level: dragon.level ?? 1,
+          xp: dragon.xp ?? 0,
+          stage: dragon.stage === "hatchling" ? t("home.stageOne") : t("home.stageValue", { stage: dragon.stage ?? 1 })
+        }));
+        $("#dragonImage").alt = "";
         $("#dragonName").textContent = dragon.customName || species.name;
         $("#dragonProfession").textContent = species.profession || dragon.profession || "";
-        $("#levelValue").textContent = dragon.level ?? 1;
-        $("#xpValue").textContent = dragon.xp ?? 0;
         const stage = dragon.stage === "hatchling" ? 1 : (dragon.stage ?? 1);
-        $("#stageValue").textContent = stage === 1 ? t("home.stageOne") : t("home.stageValue", { stage });
+        const stageDisplay = stage === 1 ? t("home.stageOne") : t("home.stageValue", { stage });
+        configureInfo("dragonStats", dragon.customName || species.name, t("home.dragonProgressSummary", {
+          level: dragon.level ?? 1, xp: dragon.xp ?? 0, stage: stageDisplay
+        }));
         const attributes = [
           ["attackValue", "attack", practiceBonuses.attack],
           ["defenseValue", "defense", practiceBonuses.defense],
@@ -97,31 +221,86 @@
         ];
         for (const [elementId, key, bonus] of attributes) {
           const total = Number(dragon[key] ?? 10);
-          $("#" + elementId).textContent = t("home.attributeBreakdown", {
-            total, base: total - bonus, bonus
-          });
+          $("#" + elementId).textContent = t("home.attributeBreakdown", { total, base: total - bonus, bonus });
         }
-        $("#staminaValue").textContent = t("home.attributeBreakdown", {
-          total: stamina.total, base: stamina.base, bonus: stamina.bonus
+        $("#staminaValue").textContent = t("home.attributeBreakdown", { total: stamina.total, base: stamina.base, bonus: stamina.bonus });
+
+        const energy = Math.max(0, Math.min(CAPACITY, Math.floor(Number(dragon.energy) || 0)));
+        renderEnergyMeter($("#energyMeter"), {
+          currentEnergy: energy,
+          capacity: CAPACITY,
+          label: (current, capacity) => t("home.energyCount", { current, capacity })
         });
+        $("#energyCount").textContent = t("home.energyCount", { current: energy, capacity: CAPACITY });
+        const energyTitle = t("home.energyTitle");
+        configureInfo("energy", energyTitle, t("home.energyDescription", { current: energy, capacity: CAPACITY }));
+
+        const claw = skillsData.skills.find((skill) => skill.id === "claw");
+        const rawDamage = Number(stamina.total) * Number(claw?.powerRatio ?? 0.16);
+        const minDamage = Math.max(1, Math.round(rawDamage * Number(balance.damage.randomMin ?? 0.95)));
+        const maxDamage = Math.max(minDamage, Math.round(rawDamage * Number(balance.damage.randomMax ?? 1.05)));
+        const clawTitle = t("battle.claw");
+        $("#clawCaption").textContent = clawTitle;
+        configureInfo("claw", clawTitle, t("home.clawDescription", { min: minDamage, max: maxDamage }));
+
+        const skillId = skillsData.skillOneBySpecies?.[species.id];
+        const skill = skillsData.skills.find((item) => item.id === skillId);
+        if (skill) {
+          const title = t(skill.nameKey);
+          const action = battleAssets.actions.find((item) => item.id === skill.id);
+          const descriptionKey = `${skill.nameKey}Description`;
+          const values = { turns: skill.durationTurns, delay: skill.delayTurns };
+          const detail = t(descriptionKey, values);
+          const fullDescription = t("home.skillDescription", { cost: skill.energyCost ?? 0, description: detail });
+          if (action?.path) {
+            $("#skillOneImage").src = action.path;
+            $("#skillOneImage").alt = "";
+            $("#skillOneImage").hidden = false;
+            $("#skillOnePlaceholder").hidden = true;
+          } else {
+            $("#skillOneImage").hidden = true;
+            $("#skillOnePlaceholder").textContent = "Ⅰ";
+            $("#skillOnePlaceholder").hidden = false;
+          }
+          $("#skillOneCaption").textContent = title;
+          configureInfo("skillOne", title, fullDescription);
+        } else {
+          const title = t("home.skillOne");
+          $("#skillOneCaption").textContent = title;
+          $("#skillOneImage").hidden = true;
+          $("#skillOnePlaceholder").textContent = "Ⅰ";
+          $("#skillOnePlaceholder").hidden = false;
+          configureInfo("skillOne", title, t("home.skillLocked"));
+        }
+        for (const [key, captionKey] of [["skillTwo", "home.skillTwo"], ["skillThree", "home.skillThree"]]) {
+          const title = t(captionKey);
+          $(key === "skillTwo" ? "#skillTwoCaption" : "#skillThreeCaption").textContent = title;
+          configureInfo(key, title, t("home.skillLocked"));
+        }
         $("#dragonPanel").classList.remove("hidden");
       }
 
       await loadUI();
       document.title = t("home.title");
       $("#pageTitle").textContent = t("home.title");
-      $("#levelLabel").textContent = t("home.level");
-      $("#xpLabel").textContent = t("home.xp");
-      $("#stageLabel").textContent = t("home.stage");
       $("#attributesTitle").textContent = t("home.dragonAttributes");
       $("#attackLabel").textContent = t("home.attack");
       $("#defenseLabel").textContent = t("home.defense");
       $("#speedLabel").textContent = t("home.speed");
       $("#staminaLabel").textContent = t("home.stamina");
       $("#levelTestLink").textContent = t("assessment.title");
+      $("#pathsTitle").textContent = t("home.pathsTitle");
+      $(".showcase").setAttribute("aria-label", t("home.skillArea"));
+      $(".path-section").setAttribute("aria-label", t("home.pathsTitle"));
+      $("#energyCaption").textContent = t("home.energyTitle");
+      $("#clawCaption").textContent = t("battle.claw");
+      $("#skillOneCaption").textContent = t("home.skillOne");
+      $("#skillTwoCaption").textContent = t("home.skillTwo");
+      $("#skillThreeCaption").textContent = t("home.skillThree");
       ["adventure", "battle", "cooperation", "practice"].forEach((feature) => {
         $("#" + feature + "Name").textContent = t("home." + feature);
       });
+      bindSkillInfo();
       document.querySelectorAll("[data-feature]").forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.feature === "practice") {
           location.assign("practice.html");
@@ -134,10 +313,13 @@
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, attemptsSnapshot, library] = await Promise.all([
+          const [dragonSnapshot, attemptsSnapshot, library, skillsData, battleAssets, balance] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
             getDocs(collection(db, "users", user.uid, "attempts")),
-            loadDragonLibrary()
+            loadJson("assets/dragons/dragon-library.json"),
+            loadJson("data/skills.json"),
+            loadJson("assets/battle/battle-assets.json"),
+            loadJson("data/battle-balance.json")
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragon = dragonSnapshot.data();
@@ -152,7 +334,7 @@
           }
           const checkins = await loadCheckins(user.uid);
           const stamina = staminaBreakdown(dragon, checkins);
-          showDragon(dragon, species, practiceBonuses, stamina);
+          showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance);
           $("#status").textContent = "";
         } catch (error) {
           console.error("Unable to load dragon home", error);

@@ -1,0 +1,43 @@
+.energy-meter {
+  position: relative;
+  display: inline-block;
+  width: var(--energy-meter-size, 176px);
+  aspect-ratio: 1;
+  vertical-align: middle;
+  isolation: isolate;
+}
+
+.energy-meter[hidden] { display: none; }
+
+.energy-meter__frame,
+.energy-meter__points {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.energy-meter__frame {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.energy-meter__points { z-index: 1; pointer-events: none; }
+
+.energy-meter__point {
+  position: absolute;
+  width: 22%;
+  height: 22%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 4px rgba(66, 225, 255, .85));
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .energy-meter { width: var(--energy-meter-size, 144px); }
+  .energy-meter__point { width: 22%; height: 22%; }
+}

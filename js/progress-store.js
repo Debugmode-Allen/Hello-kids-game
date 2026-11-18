@@ -19,8 +19,12 @@ export async function saveLevelAssessment(userId, { answers, levels }) {
 }
 
 export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, answers, levels) {
+  if (!Array.isArray(answers) || answers.length !== 10) {
+    throw new RangeError("Initial assessment must contain exactly 10 answers");
+  }
   const candidates = dragons.filter((dragon) => (eggPools[eggId] ?? []).includes(dragon.id));
   const attemptRef = doc(collection(db, "users", userId, "attempts"));
+  const score = answers.filter((answer) => answer.correct).length;
   const history = await getDocs(collection(db, "users", userId, "attempts"));
   const practiceBonuses = { attack: 0, defense: 0, speed: 0 };
   for (const snapshot of history.docs) {
@@ -38,7 +42,6 @@ export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, ans
     }
     if (!available.length) throw new Error("no-available-dragon");
     const dragon = available[Math.floor(Math.random() * available.length)];
-    const score = answers.filter((answer) => answer.correct).length;
     transaction.set(doc(db, "dragonAssignments", dragon.id), { ownerId: userId, assignedAt: new Date().toISOString() });
     transaction.set(doc(db, "users", userId, "dragon", "current"), {
       eggId,
@@ -51,7 +54,9 @@ export async function reserveDragonAndSaveAssessment(userId, eggId, dragons, ans
       attack: 10 + practiceBonuses.attack,
       defense: 10 + practiceBonuses.defense,
       speed: 10 + practiceBonuses.speed,
-      stamina: 100
+      stamina: 100,
+      energy: score,
+      energyAssessmentId: attemptRef.id
     });
     transaction.set(doc(db, "users", userId, "progress", "summary"), { ...levelFields(levels), totalCorrect: score, totalAnswered: answers.length });
     transaction.set(attemptRef, { type: "initial-assessment", eggId, score, answers, levels, createdAt: new Date().toISOString() });

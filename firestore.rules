@@ -28,11 +28,37 @@ service cloud.firestore {
         || (isParent() && resource.data.role == 'child');
       allow create, update, delete: if false;
       match /dragon/{dragonId} {
+        function validEnergy(data) {
+          return !data.keys().hasAny(['energy'])
+            || (data.energy is int && data.energy >= 0 && data.energy <= 10);
+        }
+        function validInitialEnergy(data) {
+          let linkedAttempt = getAfter(/databases/$(database)/documents/users/$(userId)/attempts/$(data.energyAssessmentId));
+          return data.keys().hasAll(['energy', 'energyAssessmentId'])
+            && data.energy is int && data.energy >= 0 && data.energy <= 10
+            && data.energyAssessmentId is string
+            && linkedAttempt.data.type == 'initial-assessment'
+            && linkedAttempt.data.eggId == data.eggId
+            && linkedAttempt.data.score == data.energy
+            && linkedAttempt.data.answers.size() == 10;
+        }
+        function validEnergyTransition() {
+          let energyChanged = request.resource.data.diff(resource.data).affectedKeys().hasAny(['energy']);
+          return !energyChanged || (validEnergy(request.resource.data)
+            && ((!resource.data.keys().hasAny(['energy']) && request.resource.data.energy == 0)
+              || (resource.data.keys().hasAny(['energy'])
+                // 充能每次最多 +1；技能可以扣除任意点数，但不能扣到负数。
+                && (request.resource.data.energy == resource.data.energy + 1
+                  || request.resource.data.energy < resource.data.energy))));
+        }
         allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
         allow create: if isAdmin() || (isOwner(userId)
-          && !request.resource.data.keys().hasAny(['checkinEpoch']));
+          && !request.resource.data.keys().hasAny(['checkinEpoch'])
+          && validEnergy(request.resource.data)
+          && validInitialEnergy(request.resource.data));
         allow update: if isAdmin() || (isOwner(userId)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkinEpoch']));
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkinEpoch'])
+          && validEnergyTransition());
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {

@@ -53,40 +53,6 @@
 .battle-charge[hidden] { display: none; }
 .charge-feedback { min-height: 1.5em; margin: 10px 0 0 !important; }
 
-.skill-control { position: relative; }
-
-.skill-charge-ring {
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  pointer-events: none;
-  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 8px), #000 calc(100% - 7px), #000 calc(100% - 1px), transparent 100%);
-}
-
-.charge-arc {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: conic-gradient(transparent var(--start), var(--arc-fill) var(--start) var(--end), transparent var(--end));
-  --arc-fill: #333b56;
-}
-
-.charge-arc[data-state="ready"] {
-  --arc-fill: #ffe66d;
-  filter: drop-shadow(0 0 4px #ff9900);
-}
-
-.charge-arc[data-state="spent"] {
-  --arc-fill: #cd8f77;
-  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 6px), #000 calc(100% - 5px), #000 calc(100% - 2px), transparent 100%);
-  animation: charge-ember .42s ease-out;
-}
-
-@keyframes charge-ember {
-  from { filter: brightness(1.7); }
-  to { filter: brightness(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .charge-arc[data-state="spent"] { animation: none; }
+@media (max-width: 760px) {
+  .battle-charge { align-content: center; }
 }

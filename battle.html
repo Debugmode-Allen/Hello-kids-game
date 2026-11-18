@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
     <link rel="stylesheet" href="css/battle-effects.css?v=entangling-vines" />
-    <link rel="stylesheet" href="css/learning-quiz.css" />
+    <link rel="stylesheet" href="css/energy-meter.css?v=ring-transfer" />
+    <link rel="stylesheet" href="css/learning-quiz.css?v=ring-transfer" />
     <style>
       :root { font-family: Georgia, "STKaiti", "KaiTi", serif; color: #172554; }
       * { box-sizing: border-box; }
       body { min-height: 100vh; margin: 0; padding: 70px 16px 24px; background: radial-gradient(circle at top, #dbeafe, #bfdbfe); }
       .battle-page { width: min(100%, 1120px); margin: 0 auto; }
       .battlefield { position: relative; min-height: 620px; overflow: hidden; border: 6px solid #f8fafc; border-radius: 28px; background: #7dd3fc center / cover; box-shadow: 0 20px 42px rgba(30,64,175,.25); }
+      .charge-energy-meter { --meter-size: clamp(92px, 12vw, 138px); position: absolute; top: 13%; left: 5%; z-index: 7; width: var(--meter-size); transform-origin: top left; }
+      .charge-energy-meter.is-moving, .charge-energy-meter.is-charging { z-index: 22; }
+      .charge-energy-meter.is-charging { --meter-size: 144px; top: 8px; left: calc(50% - 72px); width: var(--meter-size); }
+      .battle-charge .quiz-card { transform: translateY(clamp(30px, 8vh, 70px)); }
       .battlefield::after { position: absolute; inset: 0; z-index: 0; pointer-events: none; content: ""; background: linear-gradient(180deg, rgba(15,23,42,.16), transparent 30%, transparent 68%, rgba(15,23,42,.14)); }
       .battle-context { position: absolute; top: 14px; right: 18px; left: 18px; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 12px; pointer-events: none; }
       .context-name { width: fit-content; max-width: 190px; padding: 8px 13px; border: 1px solid transparent; border-radius: 12px; background: transparent; box-shadow: none; color: #1e3a8a; font-size: 1rem; font-weight: 800; letter-spacing: .06em; text-shadow: 0 1px 2px rgba(255,255,255,.9); }
@@ -27,10 +32,10 @@
       .turn-indicator[data-side="player"] { border-color: #f3ca71; background: #fff4cd; color: #713e07; }
       .slot { position: absolute; z-index: 1; width: var(--size); height: var(--size); transform: translate(-50%, -50%); transition: transform .16s, filter .16s; }
       .slot::after { position: absolute; bottom: 4%; left: 50%; z-index: 0; width: 100%; height: 18%; box-sizing: border-box; border-radius: 50%; content: ""; transform: translateX(-50%) skewX(-10deg); }
-      .player-rear-1 { --size: 140px; top: 69%; left: 14%; } .player-rear-2 { --size: 122px; top: 66%; left: 30%; } .player-rear-3 { --size: 92px; top: 47%; left: 14%; }
-      .player-front-1 { --size: 108px; top: 48%; left: 35%; } .player-front-2 { --size: 72px; top: 38%; left: 25%; }
-      .enemy-rear-1 { --size: 140px; top: 69%; left: 86%; } .enemy-rear-2 { --size: 122px; top: 66%; left: 70%; } .enemy-rear-3 { --size: 92px; top: 47%; left: 86%; }
-      .enemy-front-1 { --size: 108px; top: 48%; left: 65%; } .enemy-front-2 { --size: 72px; top: 38%; left: 75%; }
+      .player-rear-1 { --size: 140px; top: 69%; left: 14%; } .player-rear-2 { --size: 72px; top: 38%; left: 25%; } .player-rear-3 { --size: 92px; top: 47%; left: 14%; }
+      .player-front-1 { --size: 108px; top: 48%; left: 35%; } .player-front-2 { --size: 122px; top: 66%; left: 30%; }
+      .enemy-rear-1 { --size: 140px; top: 69%; left: 86%; } .enemy-rear-2 { --size: 72px; top: 38%; left: 75%; } .enemy-rear-3 { --size: 92px; top: 47%; left: 86%; }
+      .enemy-front-1 { --size: 108px; top: 48%; left: 65%; } .enemy-front-2 { --size: 122px; top: 66%; left: 70%; }
       .slot.empty { display: block; pointer-events: none; }
       .slot.empty::after { border: 1px dashed rgba(255,255,255,.54); background: rgba(255,255,255,.05); }
       .actor { z-index: 2; display: grid; place-items: center; background: transparent; }
@@ -88,13 +93,16 @@
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
         body { padding: 64px 6px 16px; } .battlefield { min-height: 520px; border-width: 4px; }
+        .charge-energy-meter { --meter-size: clamp(72px, 20vw, 104px); top: 14%; left: 4%; }
+        .charge-energy-meter.is-charging { --meter-size: 96px; top: 6px; left: calc(50% - 48px); }
+        .battle-charge .quiz-card { transform: translateY(clamp(24px, 6vh, 44px)); }
         .battle-context { top: 8px; right: 8px; left: 8px; gap: 4px; grid-template-columns: repeat(2, minmax(0, 1fr)); } .context-name { max-width: 92px; padding: 5px 6px; font-size: .68rem; }
         .queue-wrap { grid-column: 1 / -1; grid-row: 2; }
         .turn-queue { gap: 2px; width: 328px; } .turn-icon { grid-template-rows: 31px 13px; flex: 0 1 31px; min-width: 0; width: 31px; height: 46px; border-radius: 5px; } .turn-icon img { height: 31px; } .turn-icon span { font-size: .45rem; line-height: 11px; }
-        .player-rear-1 { --size: 104px; top: 70%; left: 14%; } .player-rear-2 { --size: 90px; top: 67%; left: 30%; } .player-rear-3 { --size: 68px; top: 49%; left: 14%; }
-        .player-front-1 { --size: 80px; top: 50%; left: 35%; } .player-front-2 { --size: 54px; top: 41%; left: 25%; }
-        .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 90px; top: 67%; left: 70%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
-        .enemy-front-1 { --size: 80px; top: 50%; left: 65%; } .enemy-front-2 { --size: 54px; top: 41%; left: 75%; }
+        .player-rear-1 { --size: 104px; top: 70%; left: 14%; } .player-rear-2 { --size: 54px; top: 41%; left: 25%; } .player-rear-3 { --size: 68px; top: 49%; left: 14%; }
+        .player-front-1 { --size: 80px; top: 50%; left: 35%; } .player-front-2 { --size: 90px; top: 67%; left: 30%; }
+        .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 54px; top: 41%; left: 75%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
+        .enemy-front-1 { --size: 80px; top: 50%; left: 65%; } .enemy-front-2 { --size: 90px; top: 67%; left: 70%; }
         .controls { bottom: 10px; gap: 6px; } .player-controls { left: 9px; } .enemy-controls { right: 9px; } .round-action { width: 55px; height: 55px; } #claw, #skillOne, .skill-locked { width: 66px; height: 66px; }
       }
     </style>
@@ -103,10 +111,9 @@
     <main class="battle-page">
       <section class="battlefield" aria-label="battlefield">
         <div id="battleIntro" class="battle-intro hidden" aria-live="polite"><h1 id="battleIntroTitle" class="battle-intro-title"></h1></div>
+        <div id="chargeEnergyMeter" class="energy-meter charge-energy-meter" hidden></div>
         <div id="battleCharge" class="battle-charge" hidden>
-          <section class="quiz-card" aria-labelledby="chargeTitle">
-            <h2 id="chargeTitle"></h2>
-            <p id="chargeInstructions"></p>
+          <section class="quiz-card">
             <p id="chargeProgress"></p>
             <h2 id="chargeQuestion" tabindex="-1"></h2>
             <div id="chargeOptions" class="quiz-options"></div>
@@ -133,25 +140,19 @@
           <span id="battleName" class="context-name battle-name"></span>
         </div>
 
-        <div class="slot player-rear-1" data-slot="L3"></div><div class="slot player-rear-2" data-slot="L5"></div><div class="slot player-rear-3" data-slot="L1"></div>
+        <!-- 后排三格：L1-L3 / R1-R3；前排两格：L4-L5 / R4-R5。 -->
+        <div class="slot player-rear-1" data-slot="L3"></div><div class="slot player-rear-2" data-slot="L2"></div><div class="slot player-rear-3" data-slot="L1"></div>
         <div class="slot player-front-1" data-slot="L4"></div>
-        <div class="slot player-front-2" data-slot="L2"></div>
+        <div class="slot player-front-2" data-slot="L5"></div>
         <div class="slot enemy-rear-1" data-slot="R3"></div>
-        <div class="slot enemy-rear-2" data-slot="R5"></div>
+        <div class="slot enemy-rear-2" data-slot="R2"></div>
         <div class="slot enemy-rear-3" data-slot="R1"></div>
         <div class="slot enemy-front-1" data-slot="R4"></div>
-        <div class="slot enemy-front-2" data-slot="R2"></div>
+        <div class="slot enemy-front-2" data-slot="R5"></div>
 
         <div class="controls player-controls">
           <button id="claw" class="round-action" type="button"><img src="assets/battle/actions/claw-swipe.png" alt="" /></button>
-          <div class="skill-control">
-            <button id="skillOne" class="round-action skill-placeholder" type="button" disabled><span aria-hidden="true">✦</span></button>
-            <span id="skillChargeRing" class="skill-charge-ring" aria-hidden="true" hidden>
-              <span class="charge-arc" style="--start: 4deg; --end: 116deg"></span>
-              <span class="charge-arc" style="--start: 124deg; --end: 236deg"></span>
-              <span class="charge-arc" style="--start: 244deg; --end: 356deg"></span>
-            </span>
-          </div>
+          <button id="skillOne" class="round-action skill-placeholder" type="button" disabled><span aria-hidden="true">✦</span></button>
           <span class="round-action skill-locked" aria-hidden="true"></span>
           <span class="round-action skill-locked" aria-hidden="true"></span>
           <button id="skip" class="round-action" type="button"><img src="assets/battle/actions/skip-sleep.png" alt="" /></button>
@@ -163,12 +164,13 @@
     </main>
 
     <script type="module">
-      import { auth, db, onAuthStateChanged, doc, getDoc } from "./js/firebase.js";
+      import { auth, db, onAuthStateChanged, doc, getDoc, runTransaction } from "./js/firebase.js";
       import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
       import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=vines-delay-turns";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
+      import { moveEnergyMeter, renderEnergyMeter } from "./js/energy-meter.js?v=slot-centers-20261118b";
 
       const $ = (selector) => document.querySelector(selector);
       const query = new URLSearchParams(location.search);
@@ -182,6 +184,7 @@
       let busy = true;
       let completedTurns = 0;
       let impactImagePath = "";
+      let activeDragonRef = null;
       const spellTextures = new Map();
 
       async function loadJson(path) {
@@ -193,6 +196,43 @@
       function setNotice(key, values = {}) { $("#notice").textContent = t(key, values); }
 
       const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+      function clampEnergy(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? Math.max(0, Math.min(10, Math.floor(parsed))) : 0;
+      }
+
+      async function changeStoredEnergy(delta) {
+        return runTransaction(db, async (transaction) => {
+          const snapshot = await transaction.get(activeDragonRef);
+          if (!snapshot.exists()) throw new Error("Missing dragon record");
+          const data = snapshot.data();
+          const current = clampEnergy(data.energy);
+          const next = Math.max(0, Math.min(10, current + delta));
+          if (delta < 0 && current < -delta) throw new Error("Not enough stored energy");
+          if (data.energy !== current || next !== current) transaction.set(activeDragonRef, { energy: next }, { merge: true });
+          return next;
+        });
+      }
+
+      function updateEnergyDisplay(currentEnergy, previousEnergy, chargeFromCenter = false) {
+        renderEnergyMeter($("#chargeEnergyMeter"), {
+          currentEnergy,
+          previousEnergy,
+          capacity: 10,
+          chargeFromCenter,
+          label: (current, capacity) => t("charge.energyMeterLabel", { current, capacity })
+        });
+      }
+
+      async function persistSkillSpend(skillId) {
+        const cost = Math.max(1, Math.floor(Number(state.skills[skillId]?.energyCost) || 1));
+        const previousEnergy = remainingSkillCharges(state);
+        const currentEnergy = await changeStoredEnergy(-cost);
+        state.skillCharges.earned = currentEnergy + state.skillCharges.spent + cost;
+        updateEnergyDisplay(currentEnergy, previousEnergy);
+        return cost;
+      }
 
       async function showBattleIntro(battleName, progress) {
         const intro = $("#battleIntro");
@@ -211,11 +251,14 @@
         const submit = $("#chargeSubmit");
         const next = $("#chargeNext");
         let correctCount = 0;
-        $("#chargeTitle").textContent = t(skillOne ? "charge.title" : "charge.warmup");
-        $("#chargeInstructions").hidden = !skillOne;
-        $("#chargeInstructions").textContent = t("charge.instructions");
         submit.textContent = t("charge.submit");
         panel.hidden = false;
+        const energyMeter = $("#chargeEnergyMeter");
+        energyMeter.hidden = !skillOne;
+        if (skillOne) {
+          updateEnergyDisplay(state.skillCharges.earned, state.skillCharges.earned);
+          await moveEnergyMeter(energyMeter, true);
+        }
 
         for (const [index, question] of questions.entries()) {
           const last = index === questions.length - 1;
@@ -234,15 +277,39 @@
               selectedAnswer = choice;
               submit.disabled = false;
             });
-            submit.addEventListener("click", () => {
-              submit.hidden = true;
-              for (const option of options) option.disabled = true;
+            submit.addEventListener("click", async () => {
+              submit.disabled = true;
               const correct = selectedAnswer === question.answer;
               correctCount += Number(correct);
-              if (correct && skillOne) state.skillCharges.earned += 1;
+              for (const option of options) option.disabled = true;
+              let energyFull = false;
+              let energySaveFailed = false;
+              if (correct && skillOne) {
+                const previousEnergy = remainingSkillCharges(state);
+                try {
+                  const currentEnergy = await changeStoredEnergy(1);
+                  state.skillCharges.earned = currentEnergy + state.skillCharges.spent;
+                  energyFull = currentEnergy === previousEnergy;
+                  if (!energyFull) {
+                    updateEnergyDisplay(currentEnergy, previousEnergy, true);
+                    await wait(540);
+                  }
+                } catch (error) {
+                  console.error("Unable to save dragon energy", error);
+                  energySaveFailed = true;
+                }
+              }
+              submit.hidden = true;
               renderSkillCharges();
+              const feedback = energySaveFailed
+                ? t("charge.saveError")
+                : energyFull && correct
+                  ? t("charge.full")
+                  : correct && skillOne
+                    ? t("charge.correct")
+                    : t(correct ? "charge.correctNoEnergy" : "charge.incorrect", { answer: question.answer });
               $("#chargeFeedback").textContent = t(last && skillOne ? "charge.result" : "charge.feedback", {
-                feedback: t(correct ? "charge.correct" : "charge.incorrect", { answer: question.answer }),
+                feedback,
                 count: correctCount,
                 total: questions.length,
                 charges: remainingSkillCharges(state)
@@ -254,20 +321,17 @@
             }, { once: true });
           });
         }
+        if (skillOne) await moveEnergyMeter(energyMeter, false);
         panel.hidden = true;
       }
 
       function renderSkillCharges() {
         if (!skillOne) return;
         const { earned, spent } = state.skillCharges;
-        const ring = $("#skillChargeRing");
-        ring.querySelectorAll(".charge-arc").forEach((arc, index) => {
-          arc.dataset.state = index < spent ? "spent" : index < earned ? "ready" : "empty";
-        });
         const description = t(`${skillOne.nameKey}Description`, {
           turns: skillOne.durationTurns, delay: skillOne.delayTurns
         });
-        const counts = t("charge.counts", { remaining: earned - spent, spent, empty: ring.children.length - earned });
+        const counts = t("charge.counts", { remaining: remainingSkillCharges(state), spent, empty: 10 - remainingSkillCharges(state) });
         const button = $("#skillOne");
         button.title = `${description} ${counts}`;
         button.setAttribute("aria-label", button.title);
@@ -548,7 +612,8 @@
         const playerTurn = isPlayerTurn();
         $("#claw").disabled = !playerTurn || busy;
         $("#skip").disabled = !playerTurn || busy;
-        $("#skillOne").disabled = !skillOne || !playerTurn || busy || remainingSkillCharges(state) === 0;
+        const skillCost = skillOne ? Math.max(1, Math.floor(Number(skillOne.energyCost) || 1)) : 1;
+        $("#skillOne").disabled = !skillOne || !playerTurn || busy || remainingSkillCharges(state) < skillCost;
         $("#flee").disabled = state?.status !== "playing" || busy;
         $("#returnHome").classList.remove("visible");
       }
@@ -607,6 +672,18 @@
         }
         busy = true;
         renderControls();
+        if (skillId !== "claw") {
+          try {
+            await persistSkillSpend(skillId);
+          } catch (error) {
+            console.error("Unable to spend dragon energy", error);
+            targeting = null;
+            busy = false;
+            setNotice("battle.energySaveError");
+            render();
+            return;
+          }
+        }
         const roll = Math.random();
         const damage = calculateDamage(state, active, unit, skillId, () => roll);
         if (skillId === "claw") await playAttackAnimation(active, unit, damage);
@@ -653,6 +730,15 @@
           busy = true;
           targeting = null;
           render();
+          try {
+            await persistSkillSpend(skillOne.id);
+          } catch (error) {
+            console.error("Unable to spend dragon energy", error);
+            busy = false;
+            setNotice("battle.energySaveError");
+            render();
+            return;
+          }
           await Promise.all(targets.map((target) => playSpellAnimation(active, target, skillOne.id)));
           useDarkMagic(state, active.id);
           setNotice("battle.darkMagicCast", { name: active.name });
@@ -688,8 +774,9 @@
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
+          activeDragonRef = doc(db, "users", user.uid, "dragon", "current");
           const [dragonSnapshot, progressSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData] = await Promise.all([
-            getDoc(doc(db, "users", user.uid, "dragon", "current")),
+            getDoc(activeDragonRef),
             getDoc(doc(db, "users", user.uid, "progress", "summary")),
             loadJson("assets/dragons/dragon-library.json"),
             loadJson("data/battle-library.json"),
@@ -700,6 +787,7 @@
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragonData = dragonSnapshot.data();
+          const initialEnergy = await changeStoredEnergy(0);
           const species = library.find((item) => item.id === dragonData.speciesId);
           const battle = battleLibrary.battles.find((item) => item.id === requestedBattleId);
           if (battle?.requiredLevel && Number(dragonData.level ?? 1) < battle.requiredLevel) {
@@ -732,7 +820,8 @@
             enemyAssets: battleAssets.enemies,
             balance,
             skills: skillData.skills,
-            skillOneId: skillData.skillOneBySpecies?.[species.id]
+            skillOneId: skillData.skillOneBySpecies?.[species.id],
+            initialEnergy
           });
           skillOne = state.skills[state.skillOneId];
           if (skillOne) {
@@ -745,7 +834,6 @@
             icon.alt = "";
             button.replaceChildren(icon);
             button.classList.remove("skill-placeholder");
-            $("#skillChargeRing").hidden = false;
           }
           render();
           await showBattleIntro(battleContent[battle.nameKey], progressSnapshot.data());

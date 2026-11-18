@@ -84,6 +84,18 @@
       "name": "黑暗术",
       "path": "assets/battle/actions/dark-magic.png",
       "usage": "月龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "energy-reservoir",
+      "name": "龙息能量槽",
+      "path": "assets/battle/actions/energy-reservoir-v2.png",
+      "usage": "通用战斗能量资源图标；圆环有十个空槽，和能量点配合显示储存上限及当前能量。"
+    },
+    {
+      "id": "energy-pip",
+      "name": "龙息能量点",
+      "path": "assets/battle/actions/energy-pip.png",
+      "usage": "通用单点能量图标；可重复排列，配合龙息能量槽显示当前能量。"
     }
   ]
 }

@@ -11,6 +11,7 @@
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
+      "energyCost": 1,
       "powerRatio": 0.12,
       "delayTurns": 2
     },
@@ -20,6 +21,7 @@
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
+      "energyCost": 1,
       "powerRatio": 0.32
     },
     {
@@ -28,6 +30,7 @@
       "type": "status",
       "target": "allEnemies",
       "obeysFrontlineProtection": false,
+      "energyCost": 1,
       "durationTurns": 1
     },
     {

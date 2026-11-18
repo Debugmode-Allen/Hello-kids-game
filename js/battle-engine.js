@@ -39,7 +39,7 @@ function tieBreak(a, b) {
   return a.slot.localeCompare(b.slot);
 }
 
-export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null }) {
+export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null, initialEnergy = 0 }) {
   const dragonUnit = createCombatant({
     id: "dragon", side: "player", slot: "L4", name: dragon.name, image: dragonImage,
     stats: dragon.stats, skillId: "claw"
@@ -58,7 +58,7 @@ export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balanc
     balance,
     skills: Object.fromEntries(skills.map((skill) => [skill.id, skill])),
     skillOneId,
-    skillCharges: { earned: 0, spent: 0 },
+    skillCharges: { earned: Math.max(0, Math.min(10, Math.floor(Number(initialEnergy) || 0))), spent: 0 },
     activeUnitId: null,
     clock: 0
   };
@@ -72,10 +72,11 @@ export function remainingSkillCharges(state) {
 
 function spendSkillCharge(state, attacker, skillId) {
   if (attacker.side !== "player" || skillId === attacker.skillId) return;
-  if (skillId !== state.skillOneId || remainingSkillCharges(state) <= 0) {
-    throw new Error("Skill one has no charge");
+  const cost = Math.max(1, Math.floor(Number(state.skills[skillId]?.energyCost) || 1));
+  if (!state.skills[skillId] || remainingSkillCharges(state) < cost) {
+    throw new Error("Not enough energy for skill");
   }
-  state.skillCharges.spent += 1;
+  state.skillCharges.spent += cost;
 }
 
 export function livingUnits(state, side) {
