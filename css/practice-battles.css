@@ -1,6 +1,43 @@
 .arena-hero { min-height: 220px; }
 .arena-hero .hero-copy { max-width: 68%; }
 .arena-hero .hero-copy h1 { font-size: clamp(1.9rem, 6vw, 3.8rem); }
+.arena-energy-panel {
+  --energy-meter-size: clamp(104px, 12vw, 134px);
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: var(--energy-meter-size);
+  height: var(--energy-meter-size);
+  padding: 0;
+  color: #fffceb;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+.arena-energy-panel:hover,
+.arena-energy-panel:focus-visible { outline: 0; }
+.arena-energy-meter {
+  --energy-meter-size: inherit;
+  position: relative;
+  display: block;
+  width: var(--energy-meter-size);
+  height: var(--energy-meter-size);
+  left: auto;
+  top: auto;
+  transform: none;
+  filter: drop-shadow(0 7px 12px rgba(7, 39, 29, .55));
+}
+.arena-energy-panel:hover .arena-energy-meter,
+.arena-energy-panel:focus-visible .arena-energy-meter { filter: drop-shadow(0 0 10px rgba(103, 232, 249, .88)); }
+.arena-energy-count,
+.arena-energy-hint { position: absolute; top: calc(100% + 4px); left: 50%; width: max-content; max-width: 230px; visibility: hidden; opacity: 0; transform: translateX(-50%); transition: opacity .18s ease; }
+.arena-energy-count { margin: 0; font-size: .92rem; font-weight: 900; letter-spacing: .05em; text-shadow: 0 1px 3px #123424; }
+.arena-energy-hint { top: calc(100% + 25px); margin: 0; font-size: .68rem; font-weight: 700; line-height: 1.35; text-shadow: 0 1px 3px #123424; }
+.arena-energy-panel:hover .arena-energy-count,
+.arena-energy-panel:hover .arena-energy-hint,
+.arena-energy-panel:focus-visible .arena-energy-count,
+.arena-energy-panel:focus-visible .arena-energy-hint { visibility: visible; opacity: 1; }
 .arena-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 17px; }
 .arena-card {
   --arena-ink: #194a36;
@@ -51,6 +88,10 @@ a.arena-action:focus-visible { outline: 3px solid #b47919; outline-offset: 3px; 
 .arena-action.unavailable { border-color: #69746b55; background: #69746b18; color: var(--arena-ink); }
 
 @media (max-width: 650px) {
+  .arena-energy-panel { --energy-meter-size: 86px; top: 56%; left: 59%; }
+  .arena-energy-meter { --energy-meter-size: inherit; }
+  .arena-energy-count { font-size: .76rem; }
+  .arena-energy-hint { font-size: .56rem; }
   .arena-grid { grid-template-columns: 1fr; gap: 10px; }
   .arena-card { display: grid; grid-template-columns: minmax(72px, .8fr) 1.5fr; }
   .arena-scene { height: auto; min-height: 140px; }

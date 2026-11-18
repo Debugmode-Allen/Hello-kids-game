@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>对战模拟</title>
     <link rel="stylesheet" href="css/practice.css" />
-    <link rel="stylesheet" href="css/practice-battles.css" />
+    <link rel="stylesheet" href="css/practice-battles.css?v=arena-energy-center-20261118c" />
+    <link rel="stylesheet" href="css/energy-meter.css?v=rainbow-energy-20261118" />
   </head>
   <body>
     <main class="practice-page">
@@ -16,6 +17,11 @@
           <p id="dragonName" class="dragon-name" hidden></p>
           <p id="dragonLevel" class="dragon-level" hidden></p>
           <p id="status" role="status"></p>
+        </div>
+        <div id="arenaEnergyPanel" class="arena-energy-panel" tabindex="0" hidden>
+          <div id="arenaEnergyMeter" class="arena-energy-meter"></div>
+          <p id="arenaEnergyCount" class="arena-energy-count"></p>
+          <p id="arenaEnergyHint" class="arena-energy-hint"></p>
         </div>
         <img id="dragonImage" class="hero-dragon" alt="" hidden />
       </header>
@@ -67,13 +73,30 @@
     </main>
 
     <script type="module">
-      import { mountPracticePage } from "./js/practice-page.js";
+      import { mountPracticePage } from "./js/practice-page.js?v=arena-energy-20261118";
       import { t } from "./js/i18n.js";
+      import { renderEnergyMeter } from "./js/energy-meter.js?v=rainbow-energy-20261118";
 
       await mountPracticePage({
         titleKey: "practice.simulation",
         optionsLabel: "practice.arenaOptions",
-        onDragonLoaded(level) {
+        onDragonLoaded(level, dragon) {
+          const meter = document.querySelector("#arenaEnergyMeter");
+          try {
+            renderEnergyMeter(meter, {
+              currentEnergy: dragon?.energy,
+              capacity: 10,
+              label: (current, capacity) => t("charge.energyMeterLabel", { current, capacity })
+            });
+            document.querySelector("#arenaEnergyCount").textContent = t("practice.energyCharge", {
+              current: Math.max(0, Math.min(10, Math.floor(Number(dragon?.energy) || 0))), capacity: 10
+            });
+            document.querySelector("#arenaEnergyHint").textContent = t("practice.energyHint");
+            document.querySelector("#arenaEnergyPanel").hidden = false;
+          } catch (error) {
+            console.warn("Unable to render arena energy meter", error);
+            document.querySelector("#arenaEnergyPanel").hidden = true;
+          }
           for (const arena of document.querySelectorAll("[data-unlock-level]")) {
             const required = Number(arena.dataset.unlockLevel);
             const remaining = required - level;

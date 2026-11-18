@@ -118,7 +118,7 @@ export async function mountPracticePage({ titleKey, optionsLabel, onDragonLoaded
       if (progress) progressTasks.push(renderCheckinProgress(progress, user.uid, dragon));
       $("dragonImage").alt = name;
       $("dragonImage").src = species.image;
-      onDragonLoaded?.(level);
+      onDragonLoaded?.(level, dragon);
       await Promise.all(progressTasks);
       for (const id of ["dragonName", "dragonLevel", "dragonImage", "practiceOptions"]) {
         $(id).hidden = false;

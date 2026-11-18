@@ -32,8 +32,28 @@
   height: 22%;
   object-fit: contain;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 0 4px rgba(66, 225, 255, .85));
+  filter: hue-rotate(var(--energy-hue, 0deg)) saturate(1.7) brightness(1.13) drop-shadow(0 0 4px hsl(var(--energy-color, 195) 95% 68% / .9));
   user-select: none;
+  pointer-events: none;
+}
+
+.energy-meter__point[data-energy-index="0"] { --energy-hue: 0deg; --energy-color: 195; }
+.energy-meter__point[data-energy-index="1"] { --energy-hue: 42deg; --energy-color: 237; }
+.energy-meter__point[data-energy-index="2"] { --energy-hue: 90deg; --energy-color: 285; }
+.energy-meter__point[data-energy-index="3"] { --energy-hue: 145deg; --energy-color: 340; }
+.energy-meter__point[data-energy-index="4"] { --energy-hue: 205deg; --energy-color: 40; }
+.energy-meter__point[data-energy-index="5"] { --energy-hue: 255deg; --energy-color: 90; }
+.energy-meter__point[data-energy-index="6"] { --energy-hue: 305deg; --energy-color: 140; }
+.energy-meter__point[data-energy-index="7"] { --energy-hue: 335deg; --energy-color: 170; }
+.energy-meter__point[data-energy-index="8"] { --energy-hue: 18deg; --energy-color: 213; }
+.energy-meter__point[data-energy-index="9"] { --energy-hue: 66deg; --energy-color: 260; }
+
+.skill-energy-preview {
+  position: absolute !important;
+  z-index: 3;
+  width: 46% !important;
+  height: 46% !important;
+  opacity: .62;
   pointer-events: none;
 }
 

@@ -94,8 +94,8 @@
     {
       "id": "energy-pip",
       "name": "龙息能量点",
-      "path": "assets/battle/actions/energy-pip.png",
-      "usage": "通用单点能量图标；可重复排列，配合龙息能量槽显示当前能量。"
+      "path": "assets/battle/actions/energy-pip-rainbow.png",
+      "usage": "通用彩虹单点能量图标；可重复排列，配合龙息能量槽显示当前能量，也用于技能消耗提示。"
     }
   ]
 }

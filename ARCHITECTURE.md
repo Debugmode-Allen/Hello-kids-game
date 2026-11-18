@@ -1,7 +1,7 @@
 # 小小学习家：开发结构
 
-当前 GitHub 版本：`v1.2.2`（主页展示区居中修正与开发交接流程；功能提交 `b915387`）
-GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。用户已确认 v1.2.1 手机测试通过；v1.2.2 已在本地桌面及 390px 窄屏复核主页展示区居中。
+当前 GitHub 版本：`v1.2.3`（战前充能与彩虹能量环互动）
+GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.2.3 已发布；早期 v1.2.1 经手机验收，v1.2.2 曾在桌面和 390px 窄屏复核主页展示区居中。
 
 ## 页面与路由
 
@@ -29,7 +29,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。用
 - `data/skills.json`：技能的目标类型、前排保护规则、威力比例和能量消耗；技能能量消耗可直接编辑。
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
 - `data/parent-dragons.json`：五只家长守护龙的 ID、图片、故事键和主题色；背景介绍放在 `content/story.zh-CN.json`。
-- `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与能量点已登记并接入战斗 UI。
+- `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与新生成的彩虹能量点已登记并接入战斗 UI。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
 
@@ -47,7 +47,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。用
 - `js/admin-dashboard.js`：管理员重置小龙及清除学习历史。
 - `js/subject-practice.js`：处理学科练习、整组计分、每日属性奖励和练习历史写入。
 - `js/battle-engine.js`：纯战斗规则模块；负责阵位保护、速度时间轴、伤害计算、目标合法性、敌人自动行动和胜负状态，不读取 Firebase 或操作页面 DOM。
-- `js/energy-meter.js`：通用能量环 UI。能量点按十个固定槽位定位。战前答题时，整个圆环从战场位置飞到题目顶部；答对后在圆环中心触发充能，并在下一个空槽准确显示能量点；三题结束后圆环飞回战场。移动动画根据当前实际尺寸计算，适配不同设备。
+- `js/energy-meter.js`：通用能量环 UI。能量点按十个固定槽位定位，并以十种彩色宝石显示。对战模拟选关页在主展示区显示当前能量。战前答题时，能量环作为「提交答案」按钮显示在题目操作栏左侧；答对后在环心触发充能，并飞入下一个空槽；答错时短暂出现一颗侧边能量点，震颤后消失。无论完成题目还是直接进入对战，同一个能量环都会飞入战场左上角的能量位，并在战斗中继续显示。可用技能悬停、聚焦或选中时会显示半透明的消耗宝石；施放成功时该宝石放大消散，同时能量环减少对应宝石。操作栏同时提供「跳过本题」和「直接进入对战」。
 - `home.html` 复用 `js/energy-meter.js` 显示小龙持有的神龙能量。主页能量环约 184px，当前数量显示在圆环中心。展示区用对称左右列，保证中间小龙始终水平居中。技能与小龙图像可以悬停、键盘聚焦或触摸点击查看说明；说明栏固定高度，超出内容内部滚动。等级、经验、阶段放在小龙图像的说明中，不在主资料区重复显示。技能一按小龙种类从 `data/skills.json` 与战斗素材清单读取，技能二、三用圆形占位图标并显示待进阶后学习。
 
 ## 对战模块的顶层设计

@@ -1,6 +1,6 @@
 const CAPACITY = 10;
 const RESERVOIR_SRC = new URL("../assets/battle/actions/energy-reservoir-v2.png", import.meta.url).href;
-const POINT_SRC = new URL("../assets/battle/actions/energy-pip.png", import.meta.url).href;
+const POINT_SRC = new URL("../assets/battle/actions/energy-pip-rainbow.png", import.meta.url).href;
 
 // Slot centers are calibrated to the ten gold sockets in energy-reservoir-v2.png.
 // Order: top, then clockwise. Percentages keep the mapping stable at every size.
@@ -52,6 +52,34 @@ function createPoint(position, index, charging, animateFromElement) {
   return point;
 }
 
+/** Show the translucent energy cost above an available skill before it is cast. */
+export function showSkillEnergyPreview(container, visible) {
+  if (!(container instanceof Element)) return;
+  const existing = container.querySelector(".skill-energy-preview");
+  if (!visible) { existing?.remove(); return; }
+  if (existing) return;
+  const preview = createPoint({ x: 50, y: 50 }, "skill-preview", false, null);
+  preview.classList.add("skill-energy-preview");
+  preview.style.left = "50%";
+  preview.style.top = "50%";
+  container.append(preview);
+}
+
+/** Consume the visible skill-cost gem while the matching ring point leaves the meter. */
+export async function consumeSkillEnergyPreview(container) {
+  if (!(container instanceof Element)) return;
+  showSkillEnergyPreview(container, true);
+  const preview = container.querySelector(".skill-energy-preview");
+  if (!preview) return;
+  const animation = preview.animate([
+    { transform: "translate(-50%, -50%) scale(.78)", opacity: .68 },
+    { transform: "translate(-50%, -50%) scale(1.5)", opacity: 1, offset: .42 },
+    { transform: "translate(-50%, -50%) scale(2.35)", opacity: 0 }
+  ], { duration: 560, easing: "cubic-bezier(.2,.72,.28,1)", fill: "forwards" });
+  await animation.finished.catch(() => {});
+  preview.remove();
+}
+
 function animatePoint(point, container, position, direction, delay, sourceElement = null) {
   const enters = direction === "in";
   let from;
@@ -99,6 +127,59 @@ function animateCenterCharge(pointLayer, index) {
     .finished.then(() => center.remove()).catch(() => {});
 }
 
+/** Briefly show an unstable side pip when a submitted answer is incorrect. */
+export function animateFailedCharge(container) {
+  if (!(container instanceof Element)) return;
+  const layer = container.querySelector(".energy-meter__points");
+  if (!layer) return;
+  const point = createPoint(ENERGY_METER_POSITIONS[3], "failed", false, null);
+  point.classList.add("energy-meter__point--failed");
+  layer.append(point);
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  point.animate([
+    { transform: "translate(-50%, -50%) scale(.35)", opacity: 0 },
+    { transform: "translate(-50%, -50%) translateX(-4px) scale(1.08)", opacity: 1, offset: .25 },
+    { transform: "translate(-50%, -50%) translateX(5px) scale(.95)", opacity: 1, offset: .48 },
+    { transform: "translate(-50%, -50%) translateX(-3px) scale(.82)", opacity: .86, offset: .7 },
+    { transform: "translate(-50%, -50%) scale(.2)", opacity: 0 }
+  ], { duration: reducedMotion ? 120 : 520, easing: "ease-in-out", fill: "forwards" })
+    .finished.then(() => point.remove()).catch(() => point.remove());
+}
+
+/** Place a pending crystal in the ring center while an answer is being checked. */
+export function beginAnswerCrystal(container) {
+  if (!(container instanceof Element)) return null;
+  const layer = container.querySelector(".energy-meter__points");
+  if (!layer) return null;
+  layer.querySelector(".energy-meter__point--answer-pending")?.remove();
+  const crystal = createPoint({ x: 50, y: 50 }, "answer-pending", false, null);
+  crystal.classList.add("energy-meter__point--answer-pending");
+  crystal.style.left = "50%";
+  crystal.style.top = "50%";
+  layer.append(crystal);
+  crystal.animate([
+    { transform: "translate(-50%, -50%) scale(.25)", opacity: 0 },
+    { transform: "translate(-50%, -50%) scale(1.22)", opacity: 1, offset: .55 },
+    { transform: "translate(-50%, -50%) scale(1)", opacity: 1 }
+  ], { duration: 260, easing: "ease-out", fill: "forwards" });
+  return crystal;
+}
+
+/** Resolve an uncharged center crystal without redrawing the full energy ring. */
+export function dismissAnswerCrystal(crystal, incorrect = false) {
+  if (!(crystal instanceof Element)) return;
+  const animation = crystal.animate(incorrect ? [
+    { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+    { transform: "translate(-50%, -50%) translateX(-5px) scale(.92)", opacity: .92, offset: .3 },
+    { transform: "translate(-50%, -50%) translateX(6px) scale(.72)", opacity: .58, offset: .58 },
+    { transform: "translate(-50%, -50%) scale(.2)", opacity: 0 }
+  ] : [
+    { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+    { transform: "translate(-50%, -50%) scale(.3)", opacity: 0 }
+  ], { duration: incorrect ? 460 : 220, easing: "ease-in", fill: "forwards" });
+  animation.finished.then(() => crystal.remove()).catch(() => crystal.remove());
+}
+
 /** Move the same ring between its battlefield slot and the pre-battle quiz header. */
 export async function moveEnergyMeter(container, toQuiz) {
   if (!(container instanceof Element) || container.hidden) return;
@@ -122,6 +203,25 @@ export async function moveEnergyMeter(container, toQuiz) {
   await animation.finished.catch(() => {});
   animation.cancel();
   container.classList.remove("is-moving");
+}
+
+/** Move the rendered ring to a persistent battle UI dock without recreating its points. */
+export async function transferEnergyMeter(container, target) {
+  if (!(container instanceof Element) || !(target instanceof Element)) return;
+  const start = container.getBoundingClientRect();
+  target.classList.add("is-energy-arriving");
+  target.append(container);
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  const end = container.getBoundingClientRect();
+  if (start.width && end.width) {
+    const animation = container.animate([
+      { transform: `translate(${start.left - end.left}px, ${start.top - end.top}px) scale(${start.width / end.width})`, opacity: 1 },
+      { transform: "translate(0, 0) scale(1)", opacity: 1 }
+    ], { duration: 760, easing: "cubic-bezier(.2,.72,.28,1)", fill: "both" });
+    await animation.finished.catch(() => {});
+    animation.cancel();
+  }
+  target.classList.remove("is-energy-arriving");
 }
 
 /**
