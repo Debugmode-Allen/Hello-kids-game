@@ -177,6 +177,7 @@
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
       import { beginAnswerCrystal, consumeSkillEnergyPreview, dismissAnswerCrystal, renderEnergyMeter, showSkillEnergyPreview, transferEnergyMeter } from "./js/energy-meter.js?v=answer-crystal-20261118";
+      import { playCue } from "./js/audio-manager.js";
 
       const $ = (selector) => document.querySelector(selector);
       const query = new URLSearchParams(location.search);
@@ -238,6 +239,7 @@
         state.skillCharges.earned = currentEnergy + state.skillCharges.spent + cost;
         const preview = sourceElement ? consumeSkillEnergyPreview(sourceElement) : Promise.resolve();
         updateEnergyDisplay(currentEnergy, previousEnergy);
+        playCue("energy-spend");
         await preview;
         return cost;
       }
@@ -246,6 +248,7 @@
         const intro = $("#battleIntro");
         $("#battleIntroTitle").textContent = battleName;
         intro.classList.remove("hidden", "leaving");
+        playCue("battle-start");
         await wait(850);
         intro.classList.add("leaving");
         await wait(700);
@@ -304,6 +307,7 @@
               $("#chargeSubmitLabel").hidden = true;
               const answerCrystal = beginAnswerCrystal(energyMeter);
               const correct = selectedAnswer === question.answer;
+              playCue(correct ? "answer-correct" : "answer-wrong");
               correctCount += Number(correct);
               for (const option of options) option.disabled = true;
               skip.disabled = true;
@@ -399,6 +403,7 @@
           setTimeout(() => location.assign(returnPage), 3000);
         }
         result.classList.remove("hidden");
+        playCue(state.status === "victory" ? "battle-win" : state.status === "defeat" ? "battle-lose" : "battle-flee");
       }
 
       async function playAttackAnimation(attacker, target, damage) {
@@ -406,6 +411,7 @@
         const targetSlot = slots.get(target.slot);
         if (!attackerSlot || !targetSlot) return;
         attackerSlot.classList.add(attacker.side === "player" ? "attack-right" : "attack-left");
+        playCue("claw-windup");
         await wait(270);
         if (attacker.darknessTurns > 0) {
           const miss = document.createElement("strong");
@@ -418,6 +424,7 @@
           return;
         }
         targetSlot.classList.add("hit-shake");
+        playCue(attacker.side === "player" ? "claw-hit" : "enemy-hit");
         const impact = document.createElement("img");
         impact.className = "impact-mark";
         impact.src = impactImagePath;
@@ -444,10 +451,12 @@
 
       async function playVineAnimation(target, damage) {
         const targetSlot = slots.get(target.slot);
+        playCue("vine-cast");
         const vines = spellEffect("vine-wrap", "entangling-vines", targetSlot);
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
         await wait(reducedMotion ? 0 : 340);
         targetSlot.classList.add("hit-shake", "spell-shake");
+        playCue("vine-bind");
         const number = document.createElement("strong");
         number.className = "damage-number";
         number.textContent = `-${damage}`;
@@ -470,6 +479,7 @@
         const targetSlot = slots.get(target.slot);
         const destination = targetSlot.getBoundingClientRect();
         const fire = skillId === "fire-breath";
+        if (fire) playCue("fire-breath-cast");
         const originX = sprite.left + sprite.width * (fire ? .73 : .78);
         const originY = sprite.top + sprite.height * (fire ? .34 : .48);
         const dx = destination.left + destination.width * .5 - originX;
@@ -497,6 +507,7 @@
         }
 
         const impact = spellEffect(fire ? "flame-burn" : "shadow-arrival", skillId, targetSlot);
+        playCue(fire ? "fire-breath-hit" : "moon-darkness-apply");
         if (fire) {
           targetSlot.classList.add("hit-shake", "spell-shake");
           const number = document.createElement("strong");
@@ -795,6 +806,7 @@
             render();
             return;
           }
+          playCue("moon-darkness-cast");
           await Promise.all(targets.map((target) => playSpellAnimation(active, target, skillOne.id)));
           useDarkMagic(state, active.id);
           setNotice("battle.darkMagicCast", { name: active.name });

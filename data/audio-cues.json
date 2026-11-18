@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "assets": {
+    "bgm-dragon-island": { "path": "assets/audio/bgm/dragon-island-loop.wav", "group": "bgm", "loop": true, "volume": 0.62 },
+    "bgm-study-focus": { "path": "assets/audio/bgm/study-focus-loop.wav", "group": "bgm", "loop": true, "volume": 0.52 },
+    "bgm-battle": { "path": "assets/audio/bgm/battle-loop.wav", "group": "bgm", "loop": true, "volume": 0.58 },
+    "ui-click": { "path": "assets/audio/sfx/ui/click.wav", "group": "sfx", "volume": 0.32, "cooldownMs": 45 },
+    "answer-correct": { "path": "assets/audio/sfx/ui/correct.wav", "group": "sfx", "volume": 0.7 },
+    "answer-wrong": { "path": "assets/audio/sfx/ui/wrong.wav", "group": "sfx", "volume": 0.46 },
+    "energy-gain": { "path": "assets/audio/sfx/ui/energy-gain.wav", "group": "sfx", "volume": 0.72 },
+    "energy-spend": { "path": "assets/audio/sfx/ui/energy-spend.wav", "group": "sfx", "volume": 0.62 },
+    "locked": { "path": "assets/audio/sfx/ui/locked.wav", "group": "sfx", "volume": 0.28, "cooldownMs": 800 },
+    "battle-start": { "path": "assets/audio/sfx/battle/start.wav", "group": "sfx", "volume": 0.75 },
+    "claw-windup": { "path": "assets/audio/sfx/battle/claw-windup.wav", "group": "sfx", "volume": 0.48 },
+    "claw-hit": { "path": "assets/audio/sfx/battle/claw-hit.wav", "group": "sfx", "volume": 0.8, "cooldownMs": 80 },
+    "enemy-hit": { "path": "assets/audio/sfx/battle/enemy-hit.wav", "group": "sfx", "volume": 0.54, "cooldownMs": 80 },
+    "enemy-defeated": { "path": "assets/audio/sfx/battle/defeated.wav", "group": "sfx", "volume": 0.66 },
+    "battle-win": { "path": "assets/audio/sfx/battle/win.wav", "group": "sfx", "volume": 0.85 },
+    "battle-lose": { "path": "assets/audio/sfx/battle/lose.wav", "group": "sfx", "volume": 0.7 },
+    "battle-flee": { "path": "assets/audio/sfx/battle/flee.wav", "group": "sfx", "volume": 0.55 },
+    "fire-breath-cast": { "path": "assets/audio/sfx/skills/fire-cast.wav", "group": "sfx", "volume": 0.7 },
+    "fire-breath-hit": { "path": "assets/audio/sfx/skills/fire-hit.wav", "group": "sfx", "volume": 0.84 },
+    "moon-darkness-cast": { "path": "assets/audio/sfx/skills/moon-cast.wav", "group": "sfx", "volume": 0.64 },
+    "moon-darkness-apply": { "path": "assets/audio/sfx/skills/moon-apply.wav", "group": "sfx", "volume": 0.56 },
+    "vine-cast": { "path": "assets/audio/sfx/skills/vine-cast.wav", "group": "sfx", "volume": 0.64 },
+    "vine-bind": { "path": "assets/audio/sfx/skills/vine-bind.wav", "group": "sfx", "volume": 0.73 }
+  },
+  "scenes": {
+    "index.html": "bgm-dragon-island",
+    "journey.html": "bgm-dragon-island",
+    "home.html": "bgm-dragon-island",
+    "practice.html": "bgm-study-focus",
+    "subject-practice.html": "bgm-study-focus",
+    "assessment.html": "bgm-study-focus",
+    "practice-battles.html": "bgm-battle",
+    "battle.html": "bgm-battle",
+    "parent.html": "bgm-dragon-island",
+    "activities.html": "bgm-dragon-island"
+  }
+}

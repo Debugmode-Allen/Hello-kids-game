@@ -31,6 +31,7 @@ py -m http.server 8000
 - 当前及上一版摘要：`VERSION.md`；更早版本历史：`docs/archive/VERSION-history-before-v1.2.1.md`
 - 当前工作树状态、当前任务、下一步：`CONTINUATION.md`
 - 日常开发和发布流程：`docs/DEVELOPMENT_WORKFLOW.md`
+- 音效开发蓝图：`SOUND_DESIGN_PLAN.md`
 - 旧交接历史归档：`docs/archive/`（只作背景参考，不代表当前状态）
 
 ## 发布

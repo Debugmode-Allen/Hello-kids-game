@@ -1,3 +1,5 @@
+import { playCue } from "./audio-manager.js";
+
 const CAPACITY = 10;
 const RESERVOIR_SRC = new URL("../assets/battle/actions/energy-reservoir-v2.png", import.meta.url).href;
 const POINT_SRC = new URL("../assets/battle/actions/energy-pip-rainbow.png", import.meta.url).href;
@@ -254,6 +256,7 @@ export function renderEnergyMeter(container, {
   container.dataset.capacity = String(maxEnergy);
 
   const visibleCount = Math.max(current, previous);
+  if (current > previous) playCue("energy-gain");
   for (let index = 0; index < visibleCount; index += 1) {
     const position = ENERGY_METER_POSITIONS[index];
     const entering = index >= previous && index < current;

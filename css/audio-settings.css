@@ -1,0 +1,8 @@
+.audio-settings { position: fixed; z-index: 100; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); color: #172554; font: 700 14px/1.25 "Microsoft YaHei", system-ui, sans-serif; }
+.audio-settings__toggle { display: inline-flex; align-items: center; gap: 4px; min-height: 38px; padding: 8px 11px; border: 1px solid #bfdbfe; border-radius: 999px; color: #172554; background: rgba(255,255,255,.94); box-shadow: 0 3px 12px rgba(30,64,175,.2); cursor: pointer; }
+.audio-settings__panel { position: absolute; right: 0; bottom: 46px; width: 190px; padding: 12px; border: 1px solid #bfdbfe; border-radius: 14px; background: rgba(255,255,255,.97); box-shadow: 0 8px 22px rgba(30,64,175,.22); }
+.audio-settings__panel[hidden] { display: none; }
+.audio-settings__panel label { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; margin: 8px 0; }
+.audio-settings__panel label:first-child { display: flex; }
+.audio-settings__panel input[type="range"] { width: 92px; accent-color: #2563eb; }
+.audio-settings__toggle:focus-visible, .audio-settings__panel input:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }

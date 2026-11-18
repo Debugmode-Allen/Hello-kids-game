@@ -13,7 +13,8 @@
       "obeysFrontlineProtection": true,
       "energyCost": 1,
       "powerRatio": 0.12,
-      "delayTurns": 2
+      "delayTurns": 2,
+      "audioCueId": "vine"
     },
     {
       "id": "fire-breath",
@@ -22,7 +23,8 @@
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
       "energyCost": 1,
-      "powerRatio": 0.32
+      "powerRatio": 0.32,
+      "audioCueId": "fire-breath"
     },
     {
       "id": "dark-magic",
@@ -31,7 +33,8 @@
       "target": "allEnemies",
       "obeysFrontlineProtection": false,
       "energyCost": 1,
-      "durationTurns": 1
+      "durationTurns": 1,
+      "audioCueId": "moon-darkness"
     },
     {
       "id": "claw",
