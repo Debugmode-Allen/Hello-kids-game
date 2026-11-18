@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前 GitHub 源码版本为 `v1.2.0`。战斗练习关卡更新已推送；每日学科练习和属性拆分显示也已推送。用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前 GitHub 源码版本为 `v1.2.0`，功能提交 `f71b493`。战斗练习关卡更新已推送；每日学科练习和属性拆分显示也已推送。用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 当前接手任务：三科学练
 
