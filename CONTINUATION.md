@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前 GitHub 发布版本为 `v1.1.0`，提交 `d134c16`（版本记录随后更新）。本地另有 `v1.1.1` 每日学科练习开发，尚未推送；工作前先运行 `git status`，不要覆盖本地未提交改动。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前 GitHub 源码版本为 `v1.1.1`，提交 `4c35eb9`。每日学科练习和属性拆分显示已推送；用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 当前接手任务：三科学练
 
@@ -34,7 +34,7 @@ py -m http.server 8000
 - 练习菜单的三个学科卡片将本项目累计加点（`+N`）放在小龙当前属性值旁边，连续/累计练习天数单独显示在下行；详情页显示“本项目累计 +N”，不显示小龙属性总值。课外打卡原有的连胜/累计点数行继续保留。
 - 小龙主页四维属性显示总值和拆分值，例如 `攻击 11（10+1）`、`体力 115（100+15）`；练习页显示基础值加项目贡献，如 `攻击力 10+1`、`体力 100+15`。管理员“重置小龙”会保留练习历史；重新孵化时，已有数学/英文/中文奖励分别加回攻击/防御/速度。
 - 每日汇总在 `users/{uid}/trainingDays/{YYYY-MM-DD_subject}`；每组记录复用 `users/{uid}/attempts/{attemptId}`，类型为 `subject-practice`。家长页显示组数和最近五次的成绩及时间。
-- `firestore.rules` 的 `trainingDays` 规则已写在本地，尚未发布 Firebase Console。未发布时读写会 `permission-denied`。发布后先用 test 或孩子账户逐科验收：不足 4/5 后继续练习；同日达到 4/5 后只加一次；当日其他题组不再加点；隔天奖励重新可得；孩子刷新主页属性更新；家长看成绩时间；管理员清除学习历史后练习记录也清空。
+- `firestore.rules` 的 `trainingDays` 规则随源码提交；用户已报告规则发布并云端测试通过。可继续回归：不足 4/5 后继续练习；同日达到 4/5 后只加一次；当日其他题组不再加点；隔天奖励重新可得；孩子刷新主页属性更新；家长看成绩时间；管理员清除学习历史后练习记录也清空。
 - 当前实现是浏览器端评分，规则限制日计数与记录配对，但项目现有的孩子端属性写权限仍允许技术用户篡改自己的数据。要完全防作弊需要后续服务端验证；本功能不引入需付费的 Cloud Functions。
 
 ## 在家继续：本次战斗验收
@@ -55,7 +55,7 @@ py -m http.server 8000
 - 家长关联回归测试：用测试孩子核对管理页和练习页都显示 Sarah，Allen 解绑后刷新确认姓名消失，再验证可重新申请及批准。
 - 家长守护龙图片已加入素材库：`thunder-mother.png`、`frost-queen.png`、`embers-lord.png`、`ancestor-of-woods.png`、`star-sea-oracle.png`。名称及背景故事放在 `content/story.zh-CN.json`，清单在 `data/parent-dragons.json`。
 - 守护龙选取需用 Sarah 与其他 parent 账户验收：一位家长选定后，其他家长应看到该龙变暗且标记“已被选择”；刷新后选择仍保留；五只全部选完后应提示联系开发者增加选择。选定后的龙按家长 UID 经 `parentLinks/{childId}` 显示在获批关联孩子的练习页。
-- 本地 `firestore.rules` 新增 `parentDragonChoices` 和 `parentDragonAssignments` 的事务校验规则，已于 2026-11-17 发布至 Firebase Console 默认数据库。代码尚未发布到 GitHub Pages；浏览器验收通过后再部署网页。
+- `firestore.rules` 中的 `parentDragonChoices` 和 `parentDragonAssignments` 事务校验规则已于 2026-11-17 发布至 Firebase Console 默认数据库；相关网页代码已随 `v1.1.1` 推送至 GitHub。浏览器端到端验收状态仍需确认。
 
 ## 手动扩充题库
 
