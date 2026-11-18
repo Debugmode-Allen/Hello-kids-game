@@ -3,7 +3,7 @@
 ## 当前发布版本
 
 - GitHub Pages：<https://debugmode-allen.github.io/Hello-kids-game/>
-- 发布版本：`v1.2.2`，包含主页展示区居中修正、README 与开发交接流程；上一功能版本为 `v1.2.1`（主页/能量功能提交 `d83de12`）。
+- 发布版本：`v1.2.2`，功能提交 `b915387`，包含主页展示区居中修正、README 与开发交接流程；上一功能版本为 `v1.2.1`（主页/能量功能提交 `d83de12`）。
 - 当前规则备份在根目录 `firestore.rules`。GitHub 推送不会部署 Firebase Rules；线上 Rules 需在 Firebase Console 单独确认。
 
 ## 当前工作树
