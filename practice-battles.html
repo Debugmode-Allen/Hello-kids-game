@@ -33,22 +33,34 @@
             <a class="arena-action" href="battle.html?from=practice" data-copy="practice.startMatch"></a>
           </div>
         </article>
-        <article class="arena-card advanced-arena" data-unlock-level="10">
-          <div class="arena-scene preview-scene"></div>
+        <article class="arena-card advanced-arena" data-unlock-level="1">
+          <div class="arena-scene preview-scene">
+            <img class="arena-enemy-preview" src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+          </div>
           <div class="arena-body">
             <p class="arena-requirement"></p>
             <h2 data-copy="practice.advanced"></h2>
             <p class="arena-detail" data-copy="practice.advancedDetail"></p>
-            <span class="arena-action unavailable" data-copy="practice.arenaPreview"></span>
+            <a class="arena-action" href="battle.html?battle=practice-advanced&amp;from=practice" data-copy="practice.startMatch"></a>
           </div>
         </article>
-        <article class="arena-card expert-arena" data-unlock-level="20">
-          <div class="arena-scene preview-scene"></div>
+        <article class="arena-card expert-arena" data-unlock-level="11">
+          <div class="arena-scene preview-scene">
+            <img class="arena-enemy-preview" src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/leaf-caterpillar-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+            <img class="arena-enemy-preview" src="assets/battle/enemies/moon-moth-left.png" alt="" />
+          </div>
           <div class="arena-body">
             <p class="arena-requirement"></p>
-            <h2 data-copy="practice.expert"></h2>
-            <p class="arena-detail" data-copy="practice.expertDetail"></p>
-            <span class="arena-action unavailable" data-copy="practice.arenaPreview"></span>
+            <h2 data-copy="practice.levelEleven"></h2>
+            <p class="arena-detail" data-copy="practice.levelElevenDetail"></p>
+            <a class="arena-action" href="battle.html?battle=practice-level-11&amp;from=practice" data-copy="practice.startMatch"></a>
           </div>
         </article>
       </section>
@@ -69,6 +81,12 @@
               remaining > 0 ? "practice.arenaLocked" : "practice.arenaThresholdMet",
               { level: required, remaining }
             );
+            const action = arena.querySelector("a.arena-action");
+            if (action && remaining > 0) {
+              action.classList.add("unavailable");
+              action.setAttribute("aria-disabled", "true");
+              action.addEventListener("click", (event) => event.preventDefault());
+            }
           }
         }
       });

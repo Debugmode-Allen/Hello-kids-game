@@ -23,6 +23,36 @@
           "powerRatio": 0.364
         }
       ]
+    },
+    {
+      "id": "practice-advanced",
+      "backgroundId": "meadow-dragon-island",
+      "requiredLevel": 1,
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "battle.advanced.name",
+      "descriptionKey": "battle.advanced.description",
+      "enemies": [
+        { "id": "advanced-caterpillar-1", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 40, "attack": 7, "defense": 4, "speed": 5 }, "skillId": "enemy-claw" },
+        { "id": "advanced-caterpillar-2", "speciesId": "leaf-caterpillar", "slot": "R5", "stats": { "stamina": 40, "attack": 7, "defense": 4, "speed": 5 }, "skillId": "enemy-claw" },
+        { "id": "advanced-moth-1", "speciesId": "moon-moth", "slot": "R1", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 },
+        { "id": "advanced-moth-2", "speciesId": "moon-moth", "slot": "R2", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 },
+        { "id": "advanced-moth-3", "speciesId": "moon-moth", "slot": "R3", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 }
+      ]
+    },
+    {
+      "id": "practice-level-11",
+      "backgroundId": "meadow-dragon-island",
+      "requiredLevel": 11,
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "battle.levelEleven.name",
+      "descriptionKey": "battle.levelEleven.description",
+      "enemies": [
+        { "id": "caterpillar-11-1", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 40, "attack": 7, "defense": 4, "speed": 5 }, "skillId": "enemy-claw" },
+        { "id": "caterpillar-11-2", "speciesId": "leaf-caterpillar", "slot": "R5", "stats": { "stamina": 40, "attack": 7, "defense": 4, "speed": 5 }, "skillId": "enemy-claw" },
+        { "id": "moth-11-1", "speciesId": "moon-moth", "slot": "R1", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 },
+        { "id": "moth-11-2", "speciesId": "moon-moth", "slot": "R2", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 },
+        { "id": "moth-11-3", "speciesId": "moon-moth", "slot": "R3", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 }
+      ]
     }
   ]
 }

@@ -171,7 +171,9 @@
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
 
       const $ = (selector) => document.querySelector(selector);
-      const fromPractice = new URLSearchParams(location.search).get("from") === "practice";
+      const query = new URLSearchParams(location.search);
+      const fromPractice = query.get("from") === "practice";
+      const requestedBattleId = query.get("battle") || "practice-meadow";
       const returnPage = fromPractice ? "practice-battles.html" : "home.html";
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
@@ -699,9 +701,14 @@
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragonData = dragonSnapshot.data();
           const species = library.find((item) => item.id === dragonData.speciesId);
-          const battle = battleLibrary.battles.find((item) => item.id === "practice-meadow");
+          const battle = battleLibrary.battles.find((item) => item.id === requestedBattleId);
+          if (battle?.requiredLevel && Number(dragonData.level ?? 1) < battle.requiredLevel) {
+            location.replace("practice-battles.html");
+            return;
+          }
           const background = battleAssets.backgrounds.find((item) => item.id === battle?.backgroundId);
           if (!species || !battle || !background) throw new Error("Missing battle configuration");
+          $("#replayMatch").href = `battle.html?battle=${encodeURIComponent(battle.id)}&from=practice`;
           $(".battlefield").style.backgroundImage = `url("${background.path}")`;
           $("#sceneName").textContent = battleContent[battle.sceneNameKey];
           $("#battleName").textContent = battleContent[battle.nameKey];

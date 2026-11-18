@@ -22,7 +22,7 @@ py -m http.server 8000
 
 把这个项目文件夹作为本地工作目录打开，再让本地 ChatGPT/Codex 先阅读 `ARCHITECTURE.md`、`VERSION.md` 和本文件，就能接续当前工作。
 
-当前 GitHub 源码版本为 `v1.1.1`，提交 `4c35eb9`。每日学科练习和属性拆分显示已推送；用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
+当前 GitHub 源码版本为 `v1.2.0`。战斗练习关卡更新已推送；每日学科练习和属性拆分显示也已推送。用户已报告 Firestore 规则发布且云端测试通过。换电脑后先运行 `git status`；如目录已存在且干净，再执行 `git pull --ff-only`。GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。数值优先修改 `data/battle-balance.json` 和 `data/skills.json`，战斗规则修改放在 `js/battle-engine.js`。
 
 ## 当前接手任务：三科学练
 
@@ -37,7 +37,12 @@ py -m http.server 8000
 - `firestore.rules` 的 `trainingDays` 规则随源码提交；用户已报告规则发布并云端测试通过。可继续回归：不足 4/5 后继续练习；同日达到 4/5 后只加一次；当日其他题组不再加点；隔天奖励重新可得；孩子刷新主页属性更新；家长看成绩时间；管理员清除学习历史后练习记录也清空。
 - 当前实现是浏览器端评分，规则限制日计数与记录配对，但项目现有的孩子端属性写权限仍允许技术用户篡改自己的数据。要完全防作弊需要后续服务端验证；本功能不引入需付费的 Cloud Functions。
 
-## 在家继续：本次战斗验收
+## 已发布：v1.2.0 战斗练习关卡
+
+- `practice-battles.html` 第二项“进阶练习”在 1 级开放并可开始，阵容为前排 R4/R5 两只毛毛虫、后排 R1/R2/R3 三只月光蛾；第三项为 11 级练习，达到 11 级后可开始。
+- 11 级阵容保存在 `data/battle-library.json`，前排 R4/R5 为毛毛虫，后排 R1/R2/R3 为月光蛾；战斗名与描述在 `content/battle.zh-CN.json`。
+- 战斗页根据 `?battle=practice-level-11` 读取该配置。低于 11 级时会回到选关页；重打链接会保持关卡 ID。
+- 本地浏览器端到端验收未执行；发布后请确认选关门槛、五个敌方阵位、开战/重打以及等级不足时的返回行为。
 
 启动本地服务后，从 `http://localhost:8000/index.html` 登录孩子账户，进入「练习 → 对战模拟 → 龙岛草原」。确认练习和选关页显示本账号的小龙与等级。胜利、失败或逃跑后，结算页显示已完成的行动次数和小龙剩余 HP，可重打或返回选关。模拟战不发奖励、经验或属性。
 
@@ -50,8 +55,8 @@ py -m http.server 8000
 
 ## 待接入功能
 
-- 10 级进阶练习、20 级高级练习已在选关页展示，实际敌人和关卡尚待制作。
-- 三科学练目前只展示入口。课外打卡已接入家长配置、孩子提交、家长确认及体力奖励。冒险模块负责经验、等级和常规属性成长。
+- 选关页已有龙岛草原、1 级进阶练习和 11 级练习。战斗从 `data/battle-library.json` 按 `battle` 查询参数读取阵容。
+- 课外打卡已接入家长配置、孩子提交、家长确认及体力奖励。冒险模块负责经验、等级和常规属性成长。
 - 家长关联回归测试：用测试孩子核对管理页和练习页都显示 Sarah，Allen 解绑后刷新确认姓名消失，再验证可重新申请及批准。
 - 家长守护龙图片已加入素材库：`thunder-mother.png`、`frost-queen.png`、`embers-lord.png`、`ancestor-of-woods.png`、`star-sea-oracle.png`。名称及背景故事放在 `content/story.zh-CN.json`，清单在 `data/parent-dragons.json`。
 - 守护龙选取需用 Sarah 与其他 parent 账户验收：一位家长选定后，其他家长应看到该龙变暗且标记“已被选择”；刷新后选择仍保留；五只全部选完后应提示联系开发者增加选择。选定后的龙按家长 UID 经 `parentLinks/{childId}` 显示在获批关联孩子的练习页。

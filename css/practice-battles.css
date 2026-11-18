@@ -15,6 +15,7 @@
   box-shadow: 0 6px 18px #23382112;
 }
 .advanced-arena { --arena-ink: #4c572d; --arena-surface: #f1f3df; }
+.advanced-arena .arena-scene img.arena-enemy-preview { width: 18%; height: 76%; }
 .expert-arena { --arena-ink: #3b496b; --arena-surface: #eef0f6; }
 .arena-scene {
   display: flex;
@@ -28,6 +29,7 @@
 .arena-scene img { width: 40%; height: 100%; object-fit: contain; filter: drop-shadow(0 5px 5px #1330229e); }
 .advanced-arena .preview-scene { background-image: linear-gradient(110deg, #23391de0, #5260298c), url("../assets/battle/backgrounds/meadow-dragon-island.png"); background-position: center, 72% 35%; }
 .expert-arena .preview-scene { background-image: linear-gradient(110deg, #1b264cdd, #475c7b91), url("../assets/battle/backgrounds/meadow-dragon-island.png"); background-position: center, 30% 30%; }
+.expert-arena .arena-scene img.arena-enemy-preview { width: 18%; height: 76%; }
 .arena-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 15px 16px 17px; }
 .arena-requirement { margin: 0 0 6px; font-size: .8rem; font-weight: 750; }
 .arena-body h2 { margin: 0 0 8px; font-size: clamp(1.22rem, 3vw, 1.55rem); }

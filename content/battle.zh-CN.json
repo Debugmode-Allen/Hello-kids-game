@@ -1,5 +1,9 @@
 {
   "battlefield.meadow.name": "龙岛草原",
   "battle.practice.name": "练习战",
-  "battle.practice.description": "在龙岛草原熟悉行动顺序与基础操作。"
+  "battle.practice.description": "在龙岛草原熟悉行动顺序与基础操作。",
+  "battle.advanced.name": "进阶练习",
+  "battle.advanced.description": "前排两只毛毛虫，后排三只月光蛾。",
+  "battle.levelEleven.name": "11级练习",
+  "battle.levelEleven.description": "两只毛毛虫守在前排，三只月光蛾位于后排。"
 }
