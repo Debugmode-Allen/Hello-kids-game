@@ -86,7 +86,7 @@ js/audio-manager.js    # 唯一的加载、解锁、播放、淡入淡出入口
 
 ### 格式、命名与性能
 
-- 当前首批原创程序化素材为浏览器原生可播放的 `.wav`，可由 `tools/generate-audio-assets.mjs` 复现；短音效单个目标小于 100 KB，循环 BGM 目标小于 1.5 MB。发布优化时优先转为 `.ogg`，并保留 `.mp3` 回退。
+- 当前背景音乐与短音效均为浏览器原生可播放的 `.wav`。三个正式 BGM 由用户以 Muse 生成并替换；`tools/generate-audio-assets.mjs` 仅用于复现其余短音效及旧版 BGM，不应用于覆盖当前正式 BGM。发布优化时优先转为 `.ogg`，并保留 `.mp3` 回退。
 - 素材名使用小写连字符：`fire-breath-cast-01.ogg`、`battle-meadow-loop.ogg`；同一事件至少准备 2 个短音变体，减少重复感。
 - 导出前去除首尾静音、设置无缝循环点，并统一响度；最终值仍以配置中的相对音量校准。
 - 不使用带歌词、恐怖尖叫、突发高频或长时间高响度素材；儿童场景以柔和、可预测的反馈为原则。
@@ -110,4 +110,4 @@ js/audio-manager.js    # 唯一的加载、解锁、播放、淡入淡出入口
 
 ## 当前状态
 
-首批实现已落地：`assets/audio/` 内有 3 段循环 BGM 和 20 段短音效，`data/audio-cues.json` 登记素材与事件，`js/audio-manager.js` 提供播放与全局设置，`tools/generate-audio-assets.mjs` 可复现生成 WAV 素材。实施时仍应按项目约定同步更新 `ARCHITECTURE.md`、`VERSION.md`（形成版本时）与 `CONTINUATION.md`。
+首批实现已落地：`assets/audio/` 内有 3 段 Muse 生成的循环 BGM 和 20 段短音效，`data/audio-cues.json` 登记素材与事件，`js/audio-manager.js` 提供播放与全局设置。正式 BGM 保留既有文件名，以保持场景映射不变；旧版 BGM 的本地备份不参与发布。实施时仍应按项目约定同步更新 `ARCHITECTURE.md`、`VERSION.md`（形成版本时）与 `CONTINUATION.md`。

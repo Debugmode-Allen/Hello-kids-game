@@ -15,6 +15,7 @@
 - 怪物偏好见 data/enemy-behaviors.json；毛毛虫最低防御优先，月光蛾最低HP比例优先；缺省/无效/并列随机，先过滤受保护和阵亡目标。
 - 第1世界入口「龙岛草原」位于村庄右侧两河之间。位置在 data/adventure-library.json：left32%、top88.5%、width28%、scale .6。毛毛虫和飞蛾八帧黑影各两组；高亮效果同村庄，点击显示待开放预览。
 - 用户已接受目前布局并确认布阵测试成功。助手运行目标选择与伙伴10项回归测试，另用模拟DOM/事务核对了保存、重载、换位、下阵、失败重试、零速度与保护解除。没有声称完成真实登录的桌面/窄屏目视验收。
+- 用户已本地试听并将三段 Muse 生成的 WAV 替换为正式 BGM：`assets/audio/bgm/dragon-island-loop.wav`、`study-focus-loop.wav` 与 `battle-loop.wav`。路径和场景映射未变；旧版 `*-old.wav` 仅为未跟踪本地备份，不发布。
 
 ## 尚未完成与下一步
 
