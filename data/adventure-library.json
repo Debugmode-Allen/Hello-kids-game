@@ -1,0 +1,63 @@
+{
+  "worlds": [
+    {
+      "id": "meadow",
+      "nameKey": "adventure.region.meadow.name",
+      "ordinalKey": "adventure.worldOne",
+      "image": "assets/adventure/meadow/meadow-entrance-v1.png",
+      "position": {
+        "left": 32,
+        "top": 88.5,
+        "width": 28,
+        "aspectRatio": 1.5,
+        "scale": 0.6
+      },
+      "creatures": [
+        {
+          "type": "caterpillar",
+          "left": 9,
+          "top": 32,
+          "width": 26,
+          "frameSeconds": 2.8,
+          "driftSeconds": 19,
+          "frameDelay": -1.2,
+          "driftDelay": -5
+        },
+        {
+          "type": "caterpillar",
+          "left": 61,
+          "top": 30,
+          "width": 24,
+          "frameSeconds": 3.1,
+          "driftSeconds": 21,
+          "frameDelay": -0.5,
+          "driftDelay": -9
+        },
+        {
+          "type": "moth",
+          "left": 18,
+          "top": 13,
+          "width": 36,
+          "frameSeconds": 1.6,
+          "driftSeconds": 12,
+          "frameDelay": -0.7,
+          "driftDelay": -4
+        },
+        {
+          "type": "moth",
+          "left": 28,
+          "top": 43,
+          "width": 38,
+          "frameSeconds": 1.4,
+          "driftSeconds": 14,
+          "frameDelay": -0.3,
+          "driftDelay": -7
+        }
+      ]
+    }
+  ],
+  "creatureSheets": {
+    "caterpillar": "assets/adventure/meadow/caterpillar-shadows-sheet-v1.png",
+    "moth": "assets/adventure/meadow/moth-shadows-sheet-v1.png"
+  }
+}

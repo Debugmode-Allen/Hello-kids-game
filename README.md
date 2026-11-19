@@ -2,6 +2,12 @@
 
 孩子学习与小龙成长的静态网页游戏。前端使用原生 HTML/CSS/JavaScript，认证与数据存储使用 Firebase Authentication 和 Cloud Firestore，GitHub Pages 托管网页。
 
+## 当前版本
+
+v1.3.0：村庄与龙岛草原入口、小龙信息页、可保存布阵、test木桩伙伴和按类型配置的怪物目标偏好。技能加点、物品使用和冒险关卡仍待开发，详见 CONTINUATION.md。
+
+回归检查：`node --test tests/*.test.mjs`。
+
 ## 本地运行
 
 在项目根目录打开 PowerShell：
@@ -28,7 +34,7 @@ py -m http.server 8000
 先读 `ARCHITECTURE.md`、`VERSION.md` 和 `CONTINUATION.md`，再读 `AGENTS.md` 与 `docs/DEVELOPMENT_WORKFLOW.md`。交接文件指出当前要做的功能和具体文件，避免重复读取完整历史。
 
 - 架构、页面职责、数据和权限：`ARCHITECTURE.md`
-- 当前及上一版摘要：`VERSION.md`；更早版本历史：`docs/archive/VERSION-history-before-v1.2.1.md`
+- 当前及上一版摘要：`VERSION.md`；更早版本历史：`docs/archive/VERSION-history-before-v1.3.0.md`
 - 当前工作树状态、当前任务、下一步：`CONTINUATION.md`
 - 日常开发和发布流程：`docs/DEVELOPMENT_WORKFLOW.md`
 - 音效开发蓝图：`SOUND_DESIGN_PLAN.md`

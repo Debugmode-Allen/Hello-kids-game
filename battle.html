@@ -45,7 +45,7 @@
       .actor.targetable { cursor: pointer; filter: drop-shadow(0 0 5px #fef08a); }
       .actor.targetable::after { border-color: #fef08a; background: rgba(254,240,138,.25); opacity: 1; }
       .actor.protected { filter: brightness(.72) saturate(.7); }
-      .actor.protected::before { position: absolute; top: 25%; left: 50%; z-index: 3; content: "🛡"; transform: translate(-50%, -50%); font-size: clamp(1rem, 2vw, 1.8rem); text-shadow: 0 1px 3px #fff; }
+      .actor.protected::before, .actor.ally-protected::before { position: absolute; top: 25%; left: 50%; z-index: 3; content: "🛡"; transform: translate(-50%, -50%); font-size: clamp(1rem, 2vw, 1.8rem); text-shadow: 0 1px 3px #fff; }
       .slot.attack-right { z-index: 8; animation: lunge-right .62s ease-in-out both; }
       .slot.attack-left { z-index: 8; animation: lunge-left .62s ease-in-out both; }
       .slot.hit-shake { z-index: 7; animation: hit-shake .42s ease-in-out both; }
@@ -147,12 +147,12 @@
         </div>
 
         <!-- 后排三格：L1-L3 / R1-R3；前排两格：L4-L5 / R4-R5。 -->
-        <div class="slot player-rear-1" data-slot="L3"></div><div class="slot player-rear-2" data-slot="L2"></div><div class="slot player-rear-3" data-slot="L1"></div>
+        <div class="slot player-rear-1" data-slot="L3"></div><div class="slot player-rear-2" data-slot="L1"></div><div class="slot player-rear-3" data-slot="L2"></div>
         <div class="slot player-front-1" data-slot="L4"></div>
         <div class="slot player-front-2" data-slot="L5"></div>
         <div class="slot enemy-rear-1" data-slot="R3"></div>
-        <div class="slot enemy-rear-2" data-slot="R2"></div>
-        <div class="slot enemy-rear-3" data-slot="R1"></div>
+        <div class="slot enemy-rear-2" data-slot="R1"></div>
+        <div class="slot enemy-rear-3" data-slot="R2"></div>
         <div class="slot enemy-front-1" data-slot="R4"></div>
         <div class="slot enemy-front-2" data-slot="R5"></div>
 
@@ -173,7 +173,8 @@
       import { auth, db, onAuthStateChanged, doc, getDoc, runTransaction } from "./js/firebase.js";
       import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
-      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=vines-delay-turns";
+      import { deployedCompanions } from "./js/companions.js";
+      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=20261118-enemy-ai";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
       import { beginAnswerCrystal, consumeSkillEnergyPreview, dismissAnswerCrystal, renderEnergyMeter, showSkillEnergyPreview, transferEnergyMeter } from "./js/energy-meter.js?v=answer-crystal-20261118";
@@ -548,6 +549,7 @@
           icon.dataset.queueUnit = unitId;
           const image = document.createElement("img");
           image.src = unit.image;
+          if (unit.facing === "right" && unit.slot.startsWith("R")) image.style.transform = "scaleX(-1)";
           image.alt = unit.name;
           const caption = document.createElement("span");
           caption.textContent = unit.name;
@@ -613,7 +615,7 @@
         slots.forEach((slot, slotId) => {
           const unit = state.units.find((candidate) => candidate.slot === slotId && candidate.alive);
           slot.replaceChildren();
-          slot.classList.remove("actor", "enemy", "targetable", "protected", "highlight");
+          slot.classList.remove("actor", "enemy", "targetable", "protected", "ally-protected", "highlight");
           if (!unit) { slot.classList.add("empty"); return; }
           slot.classList.remove("empty");
           slot.classList.add("actor");
@@ -622,6 +624,7 @@
           const protectedTarget = targeting && state.skills[targeting].obeysFrontlineProtection && unit.side === "enemy" && isProtected(state, unit);
           slot.classList.toggle("targetable", canTarget);
           slot.classList.toggle("protected", protectedTarget);
+          slot.classList.toggle("ally-protected", unit.side === "player" && isProtected(state, unit));
           const button = document.createElement("button");
           button.type = "button";
           button.className = "unit-button";
@@ -702,7 +705,7 @@
             render();
             return;
           }
-          const target = validTargets(state, active.id, active.skillId)[0];
+          const target = selectEnemyTarget(state, active.id, active.skillId);
           if (!target) return;
           const roll = Math.random();
           const damage = calculateDamage(state, active, target, active.skillId, () => roll);
@@ -843,7 +846,7 @@
         if (!user) { location.replace("index.html"); return; }
         try {
           activeDragonRef = doc(db, "users", user.uid, "dragon", "current");
-          const [dragonSnapshot, progressSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData] = await Promise.all([
+          const [dragonSnapshot, progressSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData, companionLibrary, enemyBehaviors] = await Promise.all([
             getDoc(activeDragonRef),
             getDoc(doc(db, "users", user.uid, "progress", "summary")),
             loadJson("assets/dragons/dragon-library.json"),
@@ -851,7 +854,9 @@
             loadJson("content/battle.zh-CN.json"),
             loadJson("assets/battle/battle-assets.json"),
             loadJson("data/battle-balance.json"),
-            loadJson("data/skills.json")
+            loadJson("data/skills.json"),
+            loadJson("data/companions.json"),
+            loadJson("data/enemy-behaviors.json")
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragonData = dragonSnapshot.data();
@@ -876,6 +881,7 @@
           state = createBattle({
             dragon: {
               name: dragonData.customName || species.name,
+              battleSlot: dragonData.battleSlot,
               stats: {
                 stamina: effectiveStamina(dragonData, await loadCheckins(user.uid)),
                 attack: dragonData.attack ?? 10,
@@ -889,7 +895,9 @@
             balance,
             skills: skillData.skills,
             skillOneId: skillData.skillOneBySpecies?.[species.id],
-            initialEnergy
+            initialEnergy,
+            enemyBehaviors,
+            companions: deployedCompanions(companionLibrary, user, dragonData).map((entry) => ({ ...entry, name: t(entry.nameKey) }))
           });
           skillOne = state.skills[state.skillOneId];
           if (skillOne) {

@@ -4,28 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="stylesheet" href="css/adventure.css?v=20261118-map-overview" />
+    <link rel="stylesheet" href="css/adventure.css?v=20261118-meadow-entry" />
   </head>
   <body>
     <main class="adventure-page" aria-live="polite">
-      <header class="adventure-header">
-        <a class="back-link" href="home.html" id="backLink"></a>
-        <section class="dragon-summary" aria-label="">
-          <img id="dragonAvatar" alt="" hidden />
-          <div>
-            <p class="eyebrow" id="dragonName"></p>
-            <strong id="dragonLevel"></strong>
-            <span id="dragonXp"></span>
-          </div>
-        </section>
-      </header>
-
       <section class="map-stage" aria-labelledby="pageTitle">
-        <div class="map-title">
-          <p class="eyebrow" id="mapEyebrow"></p>
-          <h1 id="pageTitle"></h1>
-        </div>
-
+        <header class="adventure-header">
+          <a class="back-link" href="home.html" id="backLink"></a>
+          <div class="map-title"><p class="eyebrow" id="mapEyebrow"></p><h1 id="pageTitle"></h1></div>
+          <section class="dragon-summary"><img id="dragonAvatar" alt="" hidden /><div><p class="eyebrow" id="dragonName"></p><strong id="dragonLevel"></strong><span id="dragonXp"></span></div></section>
+        </header>
+        <div class="map-scroll" id="mapScroll" tabindex="0">
+          <div class="map-world">
+            <div class="village-scene">
+              <a class="village-entry" id="villageEntry" href="village.html"><span id="villageEntryLabel"></span></a>
+              <img class="village-houses" src="assets/adventure/village/dragon-village-v8.png" alt="" />
+              <div class="village-dragon-shadows"></div>
+              <div class="village-dragon-shadows village-dragon-shadows--north"></div>
+              <div class="village-dragon-shadows village-dragon-shadows--east"></div>
+              <div class="village-dragon-shadows village-dragon-shadows--south"></div>
+            </div>
+            <div id="worldLandmarks" class="world-landmarks"></div>
         <div class="map-nodes" id="mapNodes" aria-label=""></div>
 
         <section class="region-panel" aria-live="polite">
@@ -39,10 +38,13 @@
             <span id="regionHint"></span>
           </div>
         </section>
+          </div>
+        </div>
       </section>
 
       <p class="page-status" id="status" role="status"></p>
     </main>
-    <script type="module" src="js/adventure-page.js?v=20261118-map-overview"></script>
+    <dialog id="worldPreview" class="world-preview" aria-labelledby="worldPreviewTitle" aria-describedby="worldPreviewDescription"><form method="dialog"><p id="worldPreviewOrdinal" class="eyebrow"></p><h2 id="worldPreviewTitle"></h2><p id="worldPreviewDescription"></p><button id="worldPreviewClose" type="submit" autofocus></button></form></dialog>
+    <script type="module" src="js/adventure-page.js?v=20261118-meadow-entry"></script>
   </body>
 </html>

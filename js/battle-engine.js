@@ -1,3 +1,5 @@
+import { normalizeBattleSlot } from "./formation.js";
+
 // 纯战斗规则模块：不操作 DOM、不读取 Firebase，便于未来迁移到服务端验证。
 
 export const SLOT_PROTECTION = {
@@ -6,21 +8,21 @@ export const SLOT_PROTECTION = {
 };
 
 export function effectiveSpeed(rawSpeed, speedConfig) {
-  const speed = Math.max(1, Number(rawSpeed) || 1);
+  const speed = Math.max(0, Number(rawSpeed) || 0);
   const linearUntil = speedConfig.linearUntil;
   if (speed <= linearUntil) return speed;
   return linearUntil + (speedConfig.maximumEffectiveSpeed - linearUntil)
     * (speed - linearUntil) / (speed + speedConfig.curveOffset);
 }
 
-export function createCombatant({ id, side, slot, name, image, stats, skillId, powerRatio }) {
+export function createCombatant({ id, side, slot, name, image, stats, skillId, powerRatio, facing = null, targetPreference = "random" }) {
   const stamina = Math.max(1, Number(stats.stamina) || 1);
   return {
-    id, side, slot, name, image, skillId,
+    id, side, slot, name, image, skillId, facing, targetPreference,
     powerRatio,
     attack: Math.max(0, Number(stats.attack) || 0),
     defense: Math.max(0, Number(stats.defense) || 0),
-    speed: Math.max(1, Number(stats.speed) || 1),
+    speed: Math.max(0, Number(stats.speed) || 0),
     maxHp: stamina,
     hp: stamina,
     nextActionAt: 0,
@@ -29,7 +31,7 @@ export function createCombatant({ id, side, slot, name, image, stats, skillId, p
 }
 
 function actionInterval(unit, config) {
-  return config.timelineUnit / effectiveSpeed(unit.speed, config);
+  return unit.speed > 0 ? config.timelineUnit / effectiveSpeed(unit.speed, config) : Infinity;
 }
 
 function tieBreak(a, b) {
@@ -39,22 +41,29 @@ function tieBreak(a, b) {
   return a.slot.localeCompare(b.slot);
 }
 
-export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null, initialEnergy = 0 }) {
+export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null, initialEnergy = 0, companions = [], enemyBehaviors = {} }) {
   const dragonUnit = createCombatant({
-    id: "dragon", side: "player", slot: "L4", name: dragon.name, image: dragonImage,
+    id: "dragon", side: "player", slot: normalizeBattleSlot(dragon.battleSlot), name: dragon.name, image: dragonImage,
     stats: dragon.stats, skillId: "claw"
+  });
+  const usedSlots = new Set([dragonUnit.slot]);
+  const companionUnits = companions.flatMap((companion) => {
+    if (!/^L[1-5]$/.test(companion.slot) || usedSlots.has(companion.slot)) return [];
+    usedSlots.add(companion.slot);
+    return [createCombatant({ id: "companion:" + companion.id, side: "player", slot: companion.slot, name: companion.name, image: companion.image, stats: companion.stats, skillId: "claw", facing: "right" })];
   });
   const enemyUnits = enemies.map((enemy) => {
     const asset = enemyAssets.find((item) => item.id === enemy.speciesId);
     return createCombatant({
       id: enemy.id, side: "enemy", slot: enemy.slot, name: asset?.name || enemy.speciesId,
       image: asset?.path || "", stats: enemy.stats, skillId: enemy.skillId,
+      targetPreference: enemyBehaviors.bySpecies?.[enemy.speciesId]?.targetPreference ?? "random",
       powerRatio: enemy.powerRatio
     });
   });
   const state = {
     status: "playing",
-    units: [dragonUnit, ...enemyUnits],
+    units: [dragonUnit, ...companionUnits, ...enemyUnits],
     balance,
     skills: Object.fromEntries(skills.map((skill) => [skill.id, skill])),
     skillOneId,
@@ -101,8 +110,30 @@ export function validTargets(state, attackerId, skillId) {
     .filter((target) => !skill.obeysFrontlineProtection || !isProtected(state, target));
 }
 
+// Preferences only rank legal, living targets; protection is always applied first.
+export function selectEnemyTarget(state, attackerId, skillId, random = Math.random) {
+  const attacker = unitById(state, attackerId);
+  if (!attacker?.alive || attacker.side !== "enemy") return null;
+  let candidates = validTargets(state, attackerId, skillId);
+  if (!candidates.length) return null;
+  const scores = {
+    "lowest-defense": (target) => target.defense,
+    "lowest-hp-ratio": (target) => target.hp / target.maxHp,
+    "highest-attack": (target) => -target.attack
+  };
+  const score = Object.hasOwn(scores, attacker.targetPreference) ? scores[attacker.targetPreference] : null;
+  if (typeof score === "function") {
+    const best = Math.min(...candidates.map(score));
+    candidates = candidates.filter((target) => score(target) === best);
+  }
+  // Missing/unknown preference and ties are uniformly random, never array-first.
+  const roll = Number(random());
+  const index = Math.min(candidates.length - 1, Math.max(0, Math.floor((Number.isFinite(roll) ? roll : 0) * candidates.length)));
+  return candidates[index];
+}
+
 export function upcomingTurns(state, count = 10) {
-  const preview = livingUnits(state).map((unit) => ({ ...unit }));
+  const preview = livingUnits(state).filter((unit) => Number.isFinite(unit.nextActionAt)).map((unit) => ({ ...unit }));
   const result = [];
   while (preview.length && result.length < count) {
     preview.sort(tieBreak);
@@ -147,7 +178,7 @@ function updateOutcome(state) {
 
 export function beginNextTurn(state) {
   if (state.status !== "playing") return null;
-  const next = livingUnits(state).sort(tieBreak)[0];
+  const next = livingUnits(state).filter((unit) => Number.isFinite(unit.nextActionAt)).sort(tieBreak)[0];
   if (!next) return null;
   state.activeUnitId = next.id;
   return next;

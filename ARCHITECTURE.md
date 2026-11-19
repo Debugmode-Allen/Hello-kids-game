@@ -1,14 +1,16 @@
 # 小小学习家：开发结构
 
-当前 GitHub 版本：`v1.2.4`（龙岛冒险总览）
-GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.2.4 已发布；早期 v1.2.1 经手机验收，v1.2.2 曾在桌面和 390px 窄屏复核主页展示区居中。
+当前 GitHub 版本：`v1.3.0`（村庄布阵、伙伴与草原入口）
+GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本次用户已确认本地布阵与入口效果；助手完成代码和模拟流程检查，未完成真实登录的桌面/窄屏目视验收。
 
 ## 页面与路由
 
 - `index.html`：唯一登录入口。Allen 登录后进入 `admin.html`；孩子第一次登录进入 `journey.html`；已经有小龙的孩子进入 `home.html`。
 - `journey.html`：龙岛故事、选蛋、分级起始测验、孵化、命名。
 - `home.html`：孩子的小龙主页，读取当前龙的能量和技能配置；上方展示龙与两侧战斗技能/能量环，下方在名字和等级资料之间展示四个功能入口。
+- 冒险视口以 `.map-scroll` 承载放大的 `.map-world`，进入时定位南部；三块顶层悬浮 UI 不随地图滚动。`assets/adventure/village/` 提供透明村庄与 4×2 八帧龙影，CSS 帧动画和漂移营造远景飞行；布阵数据字段见下文。
 - `adventure.html`：冒险总览页。以龙岛总地图为背景，显示当前小龙名称、等级和经验，并提供各区域的可选择地图节点；当前仅完成总览与区域预览，不结算关卡进度或奖励。
+- `village.html`：从冒险地图的村庄高亮入口进入的小龙信息页，样式为 `css/village.css`，逻辑为 `js/village-page.js`。读取当前龙、物种库、技能配置和打卡有效体力；包含技能概览、五格布阵及物品待开放页。右下「确认布阵」通过事务更新当前小龙的 battleSlot 和 battleCompanions；新战斗读取该字段，未设置或非法值回退到旧战斗默认 L4。技能加点及物品使用尚待定义规则。
 - `practice.html`：练习二级页，展示当前账号的小龙、对战模拟、数学/中文/英文练习和课外打卡。
 - `subject-practice.html`：共享的五题练习页面，由 `?subject=math|english|chinese` 选择科目。
 - `practice-battles.html`：对战模拟选关。龙岛草原和 1 级开放的进阶练习均可玩；进阶练习与 11 级练习采用前排 R4/R5 两只毛毛虫、后排 R1/R2/R3 三只月光蛾的配置。11 级练习要求小龙等级至少为 11。
@@ -31,6 +33,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
 - `data/parent-dragons.json`：五只家长守护龙的 ID、图片、故事键和主题色；背景介绍放在 `content/story.zh-CN.json`。
 - `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与新生成的彩虹能量点已登记并接入战斗 UI。
+- `data/adventure-library.json`：地图入口贴图位置、比例、文字键与生物装饰组配置。`js/adventure-worlds.js` 读取并渲染，目前在村庄右侧两河之间展示第 1 世界「龙岛草原」；入口图片及毛毛虫/飞蛾 4×2 八帧贴图位于 `assets/adventure/meadow/`，两类各复用两组。整体缩放60%，坐标由配置控制；入口具备鼠标/触摸/键盘高亮，点击显示原生 dialog 的待开放预览。实际关卡、进度或奖励未接入。
 - `assets/adventure/backgrounds/dragon-island-adventure-map-v6.png`：冒险总览使用的裁切后龙岛地图背景；仅承载视觉地形，不保存区域、关卡或奖励规则。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
@@ -67,9 +70,13 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.
 
 行动队列预览接下来最多十次行动。当前行动者在队首高亮，队列下方标出名字。每次行动结算后，队首图标淡出下落，剩余行动左移，新出现的行动从末尾淡入。
 
+阵位编号按后排从上到下 L1/L2/L3（敌方 R1/R2/R3），前排从上到下 L4/L5（R4/R5）。战场旧 class 名 rear-2 对应最上方、rear-3 对应中间、rear-1 对应最下方，不能按 class 数字推断阵位；村庄布阵采用两排示意（后排 1/2/3、前排 4/5），不直接映射战场透视；界面去掉左右前缀，底层 battleSlot 保持 L1–L5 兼容。
+
 阵位保护规则：后排视觉槽位固定是 L1-L3/R1-R3，前排视觉槽位固定是 L4-L5/R4-R5。L4 保护 L1、L2；L5 保护 L2、L3；右侧以 R4/R5 镜像。普通爪击必须先击败仍在保护目标的前排单位，因此 L2 与 R2 是最安全的位置。HTML 的 `data-slot` 必须与视觉行一致；未来“穿透”或“范围”技能通过 `obeysFrontlineProtection` 配置决定是否遵守这条规则。
 
-当前敌方 AI 从 `validTargets()` 返回列表取第一个合法目标，按阵位/单位数组顺序行动，不会随机选择。我方目前只有一只小龙，因此暂时只有一个可选目标；加入多名队员前，需要另行设计目标优先级。
+敌方目标选择由 `js/battle-engine.js` 的 `selectEnemyTarget()` 负责：先通过 `validTargets()` 排除阵亡和受保护目标，再按 `data/enemy-behaviors.json` 的 `bySpecies[speciesId].targetPreference` 排序。同一怪物类型的所有关卡共用偏好。支持 `lowest-defense`（最低防御）、`lowest-hp-ratio`（最低当前/最大 HP 比例）、`highest-attack`（最高攻击）及 `random`；缺失或未知值默认随机，并列目标也等概率随机。目标选择和伤害各自独立取随机数。当前毛毛虫最低防御优先，月光蛾最低 HP 比例优先。
+
+回归检查：`node --test tests/battle-targeting.test.mjs`，覆盖随机回退、并列、三种偏好、前排保护、阵亡过滤与按类型加载。
 
 ### 技能一与状态
 
@@ -113,6 +120,16 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.
 - Spark 方案用 Firestore 事务记录申请和审核。主页、练习和战斗按基础体力、新版已确认奖励和未到期的待确认奖励计算有效体力。拒绝或满 168 小时后不再计入该笔奖励。按洛杉矶自然日和活动 ID 去重，历史和打卡连续天数保留。
 - `admin.html` 审批关联申请，在孩子卡片上显示已关联的家长，并允许管理员解绑。解绑删除关联记录，保留孩子的小龙与学习记录。
 - `practice.html` 和 `js/practice-page.js` 根据孩子当前获批的关联显示家长姓名及所选守护龙；姓名读取关联记录的 `parentName`，图片通过 `parentId` 查找守护龙选择。换绑后以新关联为准。
+
+### 布阵设置
+
+- `data/companions.json` 保存伙伴素材、固定属性和账号授予列表；当前按 Auth 邮箱给 test 账号自动提供木桩（攻 0、防 10、速 0、体 50），不需要改云端账户资料。`js/companions.js` 在村庄和战斗共同筛选授权伙伴、过滤非法或重复阵位。
+- `users/{uid}/dragon/current.battleCompanions` 是伙伴 ID 到阵位的映射，如 `{ "training-dummy": "L4" }`；空对象表示不带伙伴。确认布阵与主龙 battleSlot 在同一事务保存。未上阵伙伴仍显示在选择列表；点击队员再点阵位，可上阵、换位或取消伙伴上阵。
+- 木桩素材默认朝右，与我方小龙一致；角色 facing 元数据支持在 R 阵位镜像。速度 0 的单位仍有 HP、可被攻击并提供前排保护，但 nextActionAt 为 Infinity，不进入预览或实际行动队列。木桩倒下后即时解除保护。我方受保护单位显示护盾。
+- `js/formation.js` 提供 L1–L5 白名单和默认 L4，村庄与战斗引擎共享。
+- `users/{uid}/dragon/current.battleSlot` 保存单只小龙的出战阵位；旧账号无需迁移。仅在点击确认后保存，恢复默认先改选择，再确认写入。进行中的战斗不热更新。
+- 保存事务检查小龙仍存在且物种和 energyAssessmentId 未变化，避免管理员重置/重新孵化期间误写；只更新 battleSlot 和 battleCompanions，不覆盖能量、属性或等级。
+- 当前仓库旧 Rules 已允许本人更新龙文档，因此没有新增集合权限；本次规则备份在原有权限内添加可选 battleSlot 的 L1–L5 校验，以及 battleCompanions 白名单、test 邮箱限定、合法阵位与不和主龙重叠校验，仍需 Firebase Console 单独部署。未验证线上规则。
 
 ## Firestore 数据
 

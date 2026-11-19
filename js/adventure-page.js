@@ -1,6 +1,8 @@
 import { auth, db, onAuthStateChanged, doc, getDoc } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
 
+import { mountWorldLandmarks } from "./adventure-worlds.js?v=20261118-meadow-entry";
+
 const $ = (selector) => document.querySelector(selector);
 
 const regions = [
@@ -63,8 +65,18 @@ async function showDragon(user) {
 }
 
 async function init() {
+  const viewport = $("#mapScroll");
+  const showSouth = () => {
+    viewport.scrollTop = viewport.scrollHeight;
+    viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) * .16;
+  };
+  requestAnimationFrame(showSouth);
+  window.addEventListener("pageshow", showSouth, { once: true });
   await loadUI();
+  mountWorldLandmarks($("#worldLandmarks")).catch((error) => console.error("Unable to show world landmarks", error));
   document.title = t("adventure.title");
+  $("#villageEntry").setAttribute("aria-label", t("village.enter"));
+  $("#villageEntryLabel").textContent = t("village.enter");
   $("#backLink").textContent = t("adventure.back");
   $("#mapEyebrow").textContent = t("adventure.eyebrow");
   $("#pageTitle").textContent = t("adventure.title");

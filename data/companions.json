@@ -1,0 +1,24 @@
+{
+  "companions": [
+    {
+      "id": "training-dummy",
+      "nameKey": "companion.trainingDummy",
+      "descriptionKey": "companion.trainingDummyDescription",
+      "image": "assets/companions/training-dummy-v1.png",
+      "stats": {
+        "attack": 0,
+        "defense": 10,
+        "speed": 0,
+        "stamina": 50
+      }
+    }
+  ],
+  "accountGrants": [
+    {
+      "email": "wang.yilun.allen+test@gmail.com",
+      "companionIds": [
+        "training-dummy"
+      ]
+    }
+  ]
+}

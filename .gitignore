@@ -1,2 +1,5 @@
 firebase-debug*.log
 .firebase/
+
+# Unused generated village drafts; current published sprite is v8.
+assets/adventure/village/dragon-village-v[3-7].png

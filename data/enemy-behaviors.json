@@ -1,0 +1,10 @@
+{
+  "bySpecies": {
+    "leaf-caterpillar": {
+      "targetPreference": "lowest-defense"
+    },
+    "moon-moth": {
+      "targetPreference": "lowest-hp-ratio"
+    }
+  }
+}

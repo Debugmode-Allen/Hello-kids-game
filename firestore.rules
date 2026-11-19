@@ -28,6 +28,18 @@ service cloud.firestore {
         || (isParent() && resource.data.role == 'child');
       allow create, update, delete: if false;
       match /dragon/{dragonId} {
+        function validBattleSlot(data) {
+          return !data.keys().hasAny(['battleSlot'])
+            || data.battleSlot in ['L1', 'L2', 'L3', 'L4', 'L5'];
+        }
+        function validBattleCompanions(data) {
+          let partners = data.get('battleCompanions', {});
+          return partners is map && partners.keys().hasOnly(['training-dummy'])
+            && (partners.size() == 0
+              || (request.auth.token.get('email', '') == 'wang.yilun.allen+test@gmail.com'
+                && partners['training-dummy'] in ['L1', 'L2', 'L3', 'L4', 'L5']
+                && partners['training-dummy'] != data.get('battleSlot', 'L4')));
+        }
         function validEnergy(data) {
           return !data.keys().hasAny(['energy'])
             || (data.energy is int && data.energy >= 0 && data.energy <= 10);
@@ -55,10 +67,14 @@ service cloud.firestore {
         allow create: if isAdmin() || (isOwner(userId)
           && !request.resource.data.keys().hasAny(['checkinEpoch'])
           && validEnergy(request.resource.data)
-          && validInitialEnergy(request.resource.data));
+          && validInitialEnergy(request.resource.data)
+          && validBattleSlot(request.resource.data)
+          && validBattleCompanions(request.resource.data));
         allow update: if isAdmin() || (isOwner(userId)
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkinEpoch'])
-          && validEnergyTransition());
+          && validEnergyTransition()
+          && validBattleSlot(request.resource.data)
+          && validBattleCompanions(request.resource.data));
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {
