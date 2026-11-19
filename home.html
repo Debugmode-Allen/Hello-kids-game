@@ -302,6 +302,10 @@
       });
       bindSkillInfo();
       document.querySelectorAll("[data-feature]").forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.feature === "adventure") {
+          location.assign("adventure.html");
+          return;
+        }
         if (button.dataset.feature === "practice") {
           location.assign("practice.html");
           return;

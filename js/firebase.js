@@ -12,5 +12,5 @@ export const db = getFirestore(app);
 export { onAuthStateChanged, signOut, signInWithEmailAndPassword, doc, getDoc, getDocs, collection, setDoc, deleteDoc, runTransaction, query, where, serverTimestamp };
 
 if (!location.pathname.endsWith("index.html") && location.pathname !== "/") {
-  import("./account-bar.js?v=20261117-parent").then(({ mountAccountBar }) => mountAccountBar());
+  import("./account-bar.js?v=20261118-single-mount").then(({ mountAccountBar }) => mountAccountBar());
 }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link rel="stylesheet" href="css/adventure.css?v=20261118-map-overview" />
+  </head>
+  <body>
+    <main class="adventure-page" aria-live="polite">
+      <header class="adventure-header">
+        <a class="back-link" href="home.html" id="backLink"></a>
+        <section class="dragon-summary" aria-label="">
+          <img id="dragonAvatar" alt="" hidden />
+          <div>
+            <p class="eyebrow" id="dragonName"></p>
+            <strong id="dragonLevel"></strong>
+            <span id="dragonXp"></span>
+          </div>
+        </section>
+      </header>
+
+      <section class="map-stage" aria-labelledby="pageTitle">
+        <div class="map-title">
+          <p class="eyebrow" id="mapEyebrow"></p>
+          <h1 id="pageTitle"></h1>
+        </div>
+
+        <div class="map-nodes" id="mapNodes" aria-label=""></div>
+
+        <section class="region-panel" aria-live="polite">
+          <div class="region-panel__title">
+            <span class="region-panel__badge" id="regionStatus"></span>
+            <h2 id="regionName"></h2>
+          </div>
+          <p id="regionDescription"></p>
+          <div class="region-panel__actions">
+            <button type="button" class="primary-action" id="regionAction"></button>
+            <span id="regionHint"></span>
+          </div>
+        </section>
+      </section>
+
+      <p class="page-status" id="status" role="status"></p>
+    </main>
+    <script type="module" src="js/adventure-page.js?v=20261118-map-overview"></script>
+  </body>
+</html>

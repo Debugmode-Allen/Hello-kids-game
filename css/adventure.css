@@ -1,0 +1,117 @@
+:root {
+  color: #19365b;
+  font-family: "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(180deg, #bdeafb 0%, #e6f8ff 100%);
+}
+
+button, a { font: inherit; }
+
+.adventure-page {
+  position: relative;
+  min-height: 100vh;
+  padding: 14px clamp(12px, 3vw, 34px) 18px;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.adventure-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.back-link, .dragon-summary, .map-title, .region-panel {
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 8px 24px rgba(15, 55, 93, .18);
+  backdrop-filter: blur(8px);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 14px;
+  border-radius: 14px;
+  color: #20518b;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.back-link:hover, .back-link:focus-visible { background: #fff; outline: 3px solid #f9c94f; outline-offset: 2px; }
+
+.dragon-summary { display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 6px 11px 6px 7px; border-radius: 17px; }
+.dragon-summary img { width: 44px; height: 44px; object-fit: contain; }
+.dragon-summary strong, .dragon-summary span, .eyebrow { display: block; }
+.dragon-summary strong { color: #493185; font-size: .95rem; }
+.dragon-summary span, .eyebrow { color: #55708e; font-size: .76rem; font-weight: 700; }
+.eyebrow { margin: 0 0 2px; letter-spacing: .04em; }
+
+.map-stage {
+  position: relative;
+  width: min(100%, 820px, calc((100vh - 92px) * .848));
+  aspect-ratio: 1155 / 1362;
+  margin: 12px auto 0;
+  overflow: hidden;
+  border: 4px solid rgba(255, 255, 255, .86);
+  border-radius: 24px;
+  background: url("../assets/adventure/backgrounds/dragon-island-adventure-map-v6.png") center / 100% 100% no-repeat;
+  box-shadow: 0 13px 30px rgba(14, 67, 113, .24);
+}
+
+.map-title { position: absolute; z-index: 1; top: 14px; left: 50%; width: fit-content; max-width: calc(100% - 30px); margin: 0; padding: 10px 24px 12px; border-radius: 20px; transform: translateX(-50%); text-align: center; }
+.map-title h1 { margin: 0; color: #45317c; font-size: clamp(1.4rem, 4vw, 2.15rem); }
+
+.map-nodes, .region-panel, .page-status { display: none; }
+.map-nodes { position: absolute; inset: 0; }
+.map-node {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #377e5c;
+  box-shadow: 0 5px 0 rgba(18, 68, 45, .45), 0 7px 18px rgba(16, 54, 77, .3);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.map-node::after { position: absolute; right: 50%; bottom: -10px; width: 0; height: 0; border-top: 12px solid currentColor; border-right: 7px solid transparent; border-left: 7px solid transparent; transform: translateX(50%); content: ""; }
+.map-node:hover, .map-node:focus-visible, .map-node.is-selected { transform: translateY(-5px) scale(1.08); outline: 3px solid #ffd86b; outline-offset: 3px; }
+.map-node--open { background: #3c9667; color: #3c9667; }
+.map-node--future { background: #768499; color: #768499; filter: saturate(.55); }
+.map-node__icon { position: relative; z-index: 1; color: #fff; font-size: 1.45rem; line-height: 1; }
+.map-node__label { position: absolute; top: calc(100% + 14px); left: 50%; width: max-content; max-width: 126px; transform: translateX(-50%); color: #17385f; font-size: .78rem; font-weight: 900; text-shadow: 0 1px 2px #fff, 0 0 4px #fff; }
+
+.region-panel { position: absolute; right: 0; bottom: 0; width: min(100%, 380px); padding: 17px 19px; border-radius: 20px; }
+.region-panel__title { display: flex; align-items: center; gap: 8px; }
+.region-panel h2 { margin: 0; color: #2d5486; font-size: 1.14rem; }
+.region-panel p { margin: 8px 0 13px; color: #3f5d79; font-size: .88rem; line-height: 1.55; }
+.region-panel__badge { padding: 3px 8px; border-radius: 999px; color: #fff; background: #3c9667; font-size: .72rem; font-weight: 900; }
+.region-panel__actions { display: flex; align-items: center; gap: 10px; }
+.primary-action { min-height: 38px; padding: 7px 13px; border: 0; border-radius: 11px; color: #fff; background: #336fc2; box-shadow: 0 4px 0 #22579f; font-weight: 900; cursor: pointer; }
+.primary-action:hover, .primary-action:focus-visible { background: #245fae; outline: 3px solid #f9c94f; outline-offset: 2px; }
+.region-panel__actions span { color: #5c7189; font-size: .74rem; font-weight: 700; }
+.page-status { min-height: 1.3em; max-width: 1040px; margin: 8px auto 0; color: #fff; font-size: .82rem; font-weight: 800; text-align: center; text-shadow: 0 1px 4px #17385f; }
+
+@media (max-width: 600px) {
+  .adventure-page { padding: 12px 10px 16px; }
+  .map-stage { width: min(100%, calc((100vh - 86px) * .848)); margin-top: 10px; border-width: 3px; border-radius: 19px; }
+  .map-title { padding: 8px 16px 10px; }
+  .map-node { width: 48px; height: 48px; border-width: 2px; }
+  .map-node__label { max-width: 94px; font-size: .67rem; }
+  .region-panel { right: 50%; bottom: 0; width: min(100%, 390px); transform: translateX(50%); }
+  .dragon-summary { padding-right: 8px; }
+}

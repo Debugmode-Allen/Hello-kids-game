@@ -1,13 +1,19 @@
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./firebase.js?v=20261117-parent";
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
 
 export async function mountAccountBar() {
-  if (document.querySelector("#accountBar")) return;
+  if (document.querySelector("#accountBar") || window.__accountBarSubscribed) return;
+  window.__accountBarSubscribed = true;
   await loadUI();
   onAuthStateChanged(auth, async (user) => {
     if (!user) return;
+    if (document.querySelector("#accountBar") || window.__accountBarMounting) return;
+    window.__accountBarMounting = true;
     const profile = await getDoc(doc(db, "users", user.uid));
-    if (!profile.exists()) return;
+    if (!profile.exists() || document.querySelector("#accountBar")) {
+      window.__accountBarMounting = false;
+      return;
+    }
     const bar = document.createElement("div");
     bar.id = "accountBar";
     bar.innerHTML = `<span>${profile.data().name}</span><button type="button">${t("account.logout")}</button>`;
@@ -16,5 +22,6 @@ export async function mountAccountBar() {
     bar.querySelector("button").addEventListener("click", () => signOut(auth));
     document.querySelectorAll("#logout, .logout").forEach((element) => element.remove());
     document.body.append(bar);
+    window.__accountBarMounting = false;
   });
 }

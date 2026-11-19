@@ -1,13 +1,14 @@
 # 小小学习家：开发结构
 
-当前 GitHub 版本：`v1.2.3`（战前充能与彩虹能量环互动）
-GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.2.3 已发布；早期 v1.2.1 经手机验收，v1.2.2 曾在桌面和 390px 窄屏复核主页展示区居中。
+当前 GitHub 版本：`v1.2.4`（龙岛冒险总览）
+GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.2.4 已发布；早期 v1.2.1 经手机验收，v1.2.2 曾在桌面和 390px 窄屏复核主页展示区居中。
 
 ## 页面与路由
 
 - `index.html`：唯一登录入口。Allen 登录后进入 `admin.html`；孩子第一次登录进入 `journey.html`；已经有小龙的孩子进入 `home.html`。
 - `journey.html`：龙岛故事、选蛋、分级起始测验、孵化、命名。
 - `home.html`：孩子的小龙主页，读取当前龙的能量和技能配置；上方展示龙与两侧战斗技能/能量环，下方在名字和等级资料之间展示四个功能入口。
+- `adventure.html`：冒险总览页。以龙岛总地图为背景，显示当前小龙名称、等级和经验，并提供各区域的可选择地图节点；当前仅完成总览与区域预览，不结算关卡进度或奖励。
 - `practice.html`：练习二级页，展示当前账号的小龙、对战模拟、数学/中文/英文练习和课外打卡。
 - `subject-practice.html`：共享的五题练习页面，由 `?subject=math|english|chinese` 选择科目。
 - `practice-battles.html`：对战模拟选关。龙岛草原和 1 级开放的进阶练习均可玩；进阶练习与 11 级练习采用前排 R4/R5 两只毛毛虫、后排 R1/R2/R3 三只月光蛾的配置。11 级练习要求小龙等级至少为 11。
@@ -30,6 +31,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
 - `data/parent-dragons.json`：五只家长守护龙的 ID、图片、故事键和主题色；背景介绍放在 `content/story.zh-CN.json`。
 - `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与新生成的彩虹能量点已登记并接入战斗 UI。
+- `assets/adventure/backgrounds/dragon-island-adventure-map-v6.png`：冒险总览使用的裁切后龙岛地图背景；仅承载视觉地形，不保存区域、关卡或奖励规则。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
 
@@ -49,6 +51,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。v1.
 - `js/battle-engine.js`：纯战斗规则模块；负责阵位保护、速度时间轴、伤害计算、目标合法性、敌人自动行动和胜负状态，不读取 Firebase 或操作页面 DOM。
 - `js/energy-meter.js`：通用能量环 UI。能量点按十个固定槽位定位，并以十种彩色宝石显示。对战模拟选关页在主展示区显示当前能量。战前答题时，能量环作为「提交答案」按钮显示在题目操作栏左侧；答对后在环心触发充能，并飞入下一个空槽；答错时短暂出现一颗侧边能量点，震颤后消失。无论完成题目还是直接进入对战，同一个能量环都会飞入战场左上角的能量位，并在战斗中继续显示。可用技能悬停、聚焦或选中时会显示半透明的消耗宝石；施放成功时该宝石放大消散，同时能量环减少对应宝石。操作栏同时提供「跳过本题」和「直接进入对战」。
 - `js/audio-manager.js`：全站唯一音频入口。页面首次点击、触摸或键盘交互后按页面场景淡入 BGM；短音效按事件 ID 播放且在静音或加载失败时安全降级。右下角固定声音面板保存设备本地的总开关、BGM 音量和音效音量，不写入 Firestore。
+- `js/adventure-page.js`：加载冒险总览 UI 文案、当前小龙资料及龙岛区域节点；当前地图节点是展示层选择，不读取或写入冒险进度。
 - `data/audio-cues.json`：背景音乐、交互、战斗和技能音效的素材路径、分组、相对音量、限频和页面场景映射；逻辑只引用事件 ID，不直接硬编码声音路径。`assets/audio/` 存放由 `tools/generate-audio-assets.mjs` 复现的 WAV 素材。
 - `home.html` 复用 `js/energy-meter.js` 显示小龙持有的神龙能量。主页能量环约 184px，当前数量显示在圆环中心。展示区用对称左右列，保证中间小龙始终水平居中。技能与小龙图像可以悬停、键盘聚焦或触摸点击查看说明；说明栏固定高度，超出内容内部滚动。等级、经验、阶段放在小龙图像的说明中，不在主资料区重复显示。技能一按小龙种类从 `data/skills.json` 与战斗素材清单读取，技能二、三用圆形占位图标并显示待进阶后学习。
 
