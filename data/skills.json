@@ -2,12 +2,21 @@
   "skillOneBySpecies": {
     "red-fire": "fire-breath",
     "purple-moon": "dark-magic",
-    "green-forest": "entangling-vines"
+    "green-forest": "entangling-vines",
+    "blue-water": "tidal-healing",
+    "gold-sun": "sunlight-encouragement",
+    "white-frost": "crystal-freeze",
+    "orange-desert": "piercing-sand",
+    "pink-garden": "petal-regrowth",
+    "gray-rock": "stone-armor",
+    "indigo-star": "star-chain"
   },
   "skills": [
     {
       "id": "entangling-vines",
       "nameKey": "battle.entanglingVines",
+      "descriptionKey": "battle.entanglingVinesDescription",
+      "iconGlyph": "🍃",
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
@@ -19,6 +28,8 @@
     {
       "id": "fire-breath",
       "nameKey": "battle.fireBreath",
+      "descriptionKey": "battle.fireBreathDescription",
+      "iconGlyph": "🔥",
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
@@ -29,12 +40,94 @@
     {
       "id": "dark-magic",
       "nameKey": "battle.darkMagic",
+      "descriptionKey": "battle.darkMagicDescription",
+      "iconGlyph": "🌙",
       "type": "status",
       "target": "allEnemies",
       "obeysFrontlineProtection": false,
       "energyCost": 1,
+      "statusEffect": "blind",
       "durationTurns": 1,
       "audioCueId": "moon-darkness"
+    },
+    {
+      "id": "tidal-healing",
+      "nameKey": "battle.tidalHealing",
+      "descriptionKey": "battle.tidalHealingDescription",
+      "iconGlyph": "💧",
+      "type": "heal",
+      "target": "singleAlly",
+      "energyCost": 1,
+      "healRatio": 0.4
+    },
+    {
+      "id": "sunlight-encouragement",
+      "nameKey": "battle.sunlightEncouragement",
+      "descriptionKey": "battle.sunlightEncouragementDescription",
+      "iconGlyph": "☀️",
+      "type": "buff",
+      "target": "allAllies",
+      "energyCost": 1,
+      "attackBuffRatio": 0.25,
+      "durationTurns": 3
+    },
+    {
+      "id": "crystal-freeze",
+      "nameKey": "battle.crystalFreeze",
+      "descriptionKey": "battle.crystalFreezeDescription",
+      "iconGlyph": "❄️",
+      "type": "control",
+      "target": "allEnemies",
+      "obeysFrontlineProtection": false,
+      "energyCost": 1,
+      "controlTurns": 1
+    },
+    {
+      "id": "piercing-sand",
+      "nameKey": "battle.piercingSand",
+      "descriptionKey": "battle.piercingSandDescription",
+      "iconGlyph": "🌪️",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": false,
+      "energyCost": 1,
+      "powerRatio": 0.28
+    },
+    {
+      "id": "petal-regrowth",
+      "nameKey": "battle.petalRegrowth",
+      "descriptionKey": "battle.petalRegrowthDescription",
+      "iconGlyph": "🌸",
+      "type": "healOverTime",
+      "target": "allAllies",
+      "energyCost": 1,
+      "healRatio": 0.2,
+      "durationTurns": 2
+    },
+    {
+      "id": "stone-armor",
+      "nameKey": "battle.stoneArmor",
+      "descriptionKey": "battle.stoneArmorDescription",
+      "iconGlyph": "🛡️",
+      "type": "guard",
+      "target": "self",
+      "energyCost": 1,
+      "shieldRatio": 0.4,
+      "defenseBuffRatio": 0.2,
+      "durationTurns": 1
+    },
+    {
+      "id": "star-chain",
+      "nameKey": "battle.starChain",
+      "descriptionKey": "battle.starChainDescription",
+      "iconGlyph": "✨",
+      "type": "damage",
+      "target": "singleEnemy",
+      "obeysFrontlineProtection": true,
+      "energyCost": 1,
+      "powerRatio": 0.22,
+      "chainCount": 2,
+      "chainPowerRatios": [0.14, 0.09]
     },
     {
       "id": "claw",

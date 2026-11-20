@@ -248,15 +248,25 @@
         if (skill) {
           const title = t(skill.nameKey);
           const action = battleAssets.actions.find((item) => item.id === skill.id);
-          const descriptionKey = `${skill.nameKey}Description`;
-          const values = { turns: skill.durationTurns, delay: skill.delayTurns };
-          const detail = t(descriptionKey, values);
+          const detail = t(skill.descriptionKey || `${skill.nameKey}Description`, {
+            turns: skill.durationTurns, delay: skill.delayTurns,
+            healRatio: Math.round((skill.healRatio || 0) * 100)
+          });
           const fullDescription = t("home.skillDescription", { cost: skill.energyCost ?? 0, description: detail });
           if (action?.path) {
-            $("#skillOneImage").src = action.path;
-            $("#skillOneImage").alt = "";
-            $("#skillOneImage").hidden = false;
-            $("#skillOnePlaceholder").hidden = true;
+            const image = $("#skillOneImage");
+            const placeholder = $("#skillOnePlaceholder");
+            image.onerror = () => {
+              image.hidden = true;
+              placeholder.textContent = skill.iconGlyph || "Ⅰ";
+              placeholder.hidden = false;
+            };
+            image.onload = () => { image.hidden = false; placeholder.hidden = true; };
+            image.src = action.path;
+            image.alt = "";
+            placeholder.textContent = skill.iconGlyph || "Ⅰ";
+            image.hidden = false;
+            placeholder.hidden = true;
           } else {
             $("#skillOneImage").hidden = true;
             $("#skillOnePlaceholder").textContent = "Ⅰ";

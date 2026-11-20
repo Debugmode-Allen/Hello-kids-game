@@ -169,10 +169,29 @@ async function confirmFormation() {
   }
 }
 
-function skillCard(name, description, badge, locked = false) {
+function skillCard(name, description, badge, locked = false, iconPath = "", iconGlyph = "") {
   const card = document.createElement("article");
   card.className = "skill-card" + (locked ? " skill-card--locked" : "");
-  for (const [tag, value, className] of [["h3", name, ""], ["p", badge, "skill-badge"], ["p", description, ""]]) {
+  const heading = document.createElement("h3");
+  if (iconPath) {
+    const image = document.createElement("img");
+    const fallback = document.createElement("span");
+    image.src = iconPath;
+    image.alt = "";
+    fallback.className = "skill-glyph";
+    fallback.textContent = iconGlyph || "✦";
+    fallback.hidden = true;
+    image.onerror = () => { image.remove(); fallback.hidden = false; };
+    heading.append(image, fallback);
+  } else if (iconGlyph) {
+    const fallback = document.createElement("span");
+    fallback.className = "skill-glyph";
+    fallback.textContent = iconGlyph;
+    heading.append(fallback);
+  }
+  heading.append(document.createTextNode(name));
+  card.append(heading);
+  for (const [tag, value, className] of [["p", badge, "skill-badge"], ["p", description, ""]]) {
     const element = document.createElement(tag);
     element.className = className;
     element.textContent = value;
@@ -184,15 +203,16 @@ function skillCard(name, description, badge, locked = false) {
 async function showDragon(user) {
   $("villageContent").hidden = true;
   $("status").textContent = t("village.loading");
-  const [snapshot, libraryResponse, skillResponse, companionResponse] = await Promise.all([
+  const [snapshot, libraryResponse, skillResponse, companionResponse, assetsResponse] = await Promise.all([
     getDoc(doc(db, "users", user.uid, "dragon", "current")),
     fetch("assets/dragons/dragon-library.json", { cache: "no-store" }),
     fetch("data/skills.json", { cache: "no-store" }),
-    fetch("data/companions.json", { cache: "no-store" })
+    fetch("data/companions.json", { cache: "no-store" }),
+    fetch("assets/battle/battle-assets.json", { cache: "no-store" })
   ]);
   if (!snapshot.exists()) { location.replace("journey.html"); return; }
-  if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok) throw new Error("Village data unavailable");
-  const [library, skills, companionLibrary] = await Promise.all([libraryResponse.json(), skillResponse.json(), companionResponse.json()]);
+  if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok || !assetsResponse.ok) throw new Error("Village data unavailable");
+  const [library, skills, companionLibrary, battleAssets] = await Promise.all([libraryResponse.json(), skillResponse.json(), companionResponse.json(), assetsResponse.json()]);
   const dragon = snapshot.data();
   availableCompanions = companionsForAccount(companionLibrary, user);
   companionSlots = Object.fromEntries(deployedCompanions(companionLibrary, user, dragon).map((entry) => [entry.id, entry.slot]));
@@ -235,8 +255,8 @@ async function showDragon(user) {
   skillCard(t("battle.claw"), t("village.clawHint"), t("village.basic"));
   const skill = skills.skills.find((entry) => entry.id === skills.skillOneBySpecies[dragon.speciesId]);
   if (skill) {
-    const descriptionKeys = { "fire-breath": "village.skillFire", "dark-magic": "village.skillMoon", "entangling-vines": "village.skillVine" };
-    skillCard(t(skill.nameKey), t(descriptionKeys[skill.id] || "village.noSkill"), t("village.energyCost", { cost: skill.energyCost ?? 0 }));
+    const iconPath = battleAssets.actions.find((entry) => entry.id === skill.id)?.path || "";
+    skillCard(t(skill.nameKey), t(skill.descriptionKey || "village.noSkill", { turns: skill.durationTurns, delay: skill.delayTurns }), t("village.energyCost", { cost: skill.energyCost ?? 0 }), false, iconPath, skill.iconGlyph);
   }
   skillCard(t("village.skillLocked"), t(skill ? "village.skillLockedHint" : "village.noSkill"), t("village.pending"), true);
   renderFormation();

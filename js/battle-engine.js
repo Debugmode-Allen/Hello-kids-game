@@ -25,6 +25,15 @@ export function createCombatant({ id, side, slot, name, image, stats, skillId, p
     speed: Math.max(0, Number(stats.speed) || 0),
     maxHp: stamina,
     hp: stamina,
+    shieldHp: 0,
+    attackBuffRatio: 0,
+    attackBuffTurns: 0,
+    defenseBuffRatio: 0,
+    defenseBuffTurns: 0,
+    shieldTurns: 0,
+    healOverTimeRatio: 0,
+    healOverTimeTurns: 0,
+    controlTurns: 0,
     nextActionAt: 0,
     alive: true
   };
@@ -106,8 +115,13 @@ export function validTargets(state, attackerId, skillId) {
   const attacker = unitById(state, attackerId);
   const skill = state.skills[skillId];
   if (!attacker || !skill) return [];
-  return livingUnits(state, attacker.side === "player" ? "enemy" : "player")
-    .filter((target) => !skill.obeysFrontlineProtection || !isProtected(state, target));
+  const targetSide = skill.target === "singleAlly" || skill.target === "allAllies" || skill.target === "self"
+    ? attacker.side
+    : attacker.side === "player" ? "enemy" : "player";
+  return livingUnits(state, targetSide)
+    .filter((target) => skill.target !== "self" || target.id === attacker.id)
+    .filter((target) => !(skill.type === "heal" && target.hp >= target.maxHp))
+    .filter((target) => targetSide === attacker.side || !skill.obeysFrontlineProtection || !isProtected(state, target));
 }
 
 // Preferences only rank legal, living targets; protection is always applied first.
@@ -146,28 +160,45 @@ export function upcomingTurns(state, count = 10) {
 
 function damageMultiplier(attacker, defender, damageConfig) {
   const cap = damageConfig.statSoftCap;
-  const attackScore = attacker.attack / (attacker.attack + cap);
-  const defenseScore = defender.defense / (defender.defense + cap);
+  const attack = attacker.attack * (1 + (attacker.attackBuffRatio || 0));
+  const defense = defender.defense * (1 + (defender.defenseBuffRatio || 0));
+  const attackScore = attack / (attack + cap);
+  const defenseScore = defense / (defense + cap);
   const raw = 1 + damageConfig.advantageScale * (attackScore - defenseScore);
   return Math.min(damageConfig.maximumMultiplier, Math.max(damageConfig.minimumMultiplier, raw));
 }
 
-export function calculateDamage(state, attacker, defender, skillId, random = Math.random) {
+export function calculateDamage(state, attacker, defender, skillId, random = Math.random, powerRatioOverride = null) {
   const skill = state.skills[skillId];
   if (!skill) throw new Error(`Unknown skill: ${skillId}`);
   if (attacker.darknessTurns > 0) return 0;
-  const ratio = attacker.powerRatio ?? skill.powerRatio;
+  const ratio = powerRatioOverride ?? attacker.powerRatio ?? skill.powerRatio;
   const basePower = skill.fixedPower ?? attacker.maxHp * ratio;
   const config = state.balance.damage;
   const variance = config.randomMin + (config.randomMax - config.randomMin) * random();
   return Math.max(config.minimumDamage, Math.round(basePower * damageMultiplier(attacker, defender, config) * variance));
 }
 
-function finishTurn(state, unit) {
+function tickTurnStatus(unit) {
+  const effects = { healed: 0 };
   if (unit.darknessTurns > 0) unit.darknessTurns -= 1;
+  if (unit.attackBuffTurns > 0 && --unit.attackBuffTurns === 0) unit.attackBuffRatio = 0;
+  if (unit.defenseBuffTurns > 0 && --unit.defenseBuffTurns === 0) unit.defenseBuffRatio = 0;
+  if (unit.shieldTurns > 0 && --unit.shieldTurns === 0) unit.shieldHp = 0;
+  if (unit.healOverTimeTurns > 0) {
+    effects.healed = Math.min(unit.maxHp - unit.hp, Math.max(1, Math.round(unit.maxHp * unit.healOverTimeRatio)));
+    unit.hp += effects.healed;
+    if (--unit.healOverTimeTurns === 0) unit.healOverTimeRatio = 0;
+  }
+  return effects;
+}
+
+function finishTurn(state, unit) {
+  const effects = tickTurnStatus(unit);
   state.clock = unit.nextActionAt;
   unit.nextActionAt += actionInterval(unit, state.balance.speed);
   state.activeUnitId = null;
+  return effects;
 }
 
 function updateOutcome(state) {
@@ -184,39 +215,118 @@ export function beginNextTurn(state) {
   return next;
 }
 
-export function useDamageSkill(state, attackerId, targetId, skillId = "claw", random = Math.random) {
-  const skill = state.skills[skillId];
+function applyIncomingDamage(target, damage) {
+  const absorbed = Math.min(target.shieldHp || 0, damage);
+  target.shieldHp = Math.max(0, (target.shieldHp || 0) - absorbed);
+  const hpDamage = Math.min(target.hp, Math.max(0, damage - absorbed));
+  target.hp = Math.max(0, target.hp - hpDamage);
+  target.alive = target.hp > 0;
+  return { hpDamage, absorbed };
+}
+
+function applySkillTargets(state, attacker, skill, targetId) {
+  if (skill.target === "singleEnemy" || skill.target === "singleAlly") {
+    const target = unitById(state, targetId);
+    return target && validTargets(state, attacker.id, skill.id).some((entry) => entry.id === target.id) ? [target] : [];
+  }
+  return validTargets(state, attacker.id, skill.id);
+}
+
+function updateBuff(unit, field, turnsField, value, turns) {
+  unit[field] = Math.max(unit[field] || 0, value);
+  unit[turnsField] = Math.max(unit[turnsField] || 0, turns);
+}
+
+export function useSkill(state, attackerId, targetId = null, skillId = null, random = Math.random) {
   const attacker = unitById(state, attackerId);
-  const target = unitById(state, targetId);
-  if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !target?.alive) {
+  const selectedSkillId = skillId || attacker?.skillId;
+  const skill = state.skills[selectedSkillId];
+  if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !skill) {
     throw new Error("Invalid action");
   }
-  if (skill?.type !== "damage" || !validTargets(state, attackerId, skillId).some((candidate) => candidate.id === targetId)) {
-    throw new Error("Protected target");
-  }
+  const targets = applySkillTargets(state, attacker, skill, targetId);
+  if (!targets.length) throw new Error("Invalid target");
   const missed = attacker.darknessTurns > 0;
-  const damage = calculateDamage(state, attacker, target, skillId, random);
-  spendSkillCharge(state, attacker, skillId);
-  target.hp = Math.max(0, target.hp - damage);
-  target.alive = target.hp > 0;
-  finishTurn(state, attacker);
-  const delayedTurns = !missed && target.alive ? (skill.delayTurns ?? 0) : 0;
-  if (delayedTurns) target.nextActionAt += delayedTurns * actionInterval(target, state.balance.speed);
-  updateOutcome(state);
-  return { attacker, target, skill, damage, missed, delayedTurns, outcome: state.status };
+  spendSkillCharge(state, attacker, selectedSkillId);
+
+  if (skill.type === "damage") {
+    const hitTargets = [targets[0]];
+    if (skill.target !== "singleEnemy") hitTargets.splice(0, hitTargets.length, ...targets);
+    if (skill.chainCount > 0) {
+      const others = validTargets(state, attacker.id, selectedSkillId)
+        .filter((target) => target.id !== targets[0].id)
+        .sort((a, b) => a.slot.localeCompare(b.slot));
+      hitTargets.push(...others.slice(0, skill.chainCount));
+    }
+    const hits = hitTargets.map((target, index) => {
+      const ratio = index === 0 ? null : skill.chainPowerRatios?.[index - 1] ?? skill.powerRatio;
+      const damage = missed ? 0 : calculateDamage(state, attacker, target, selectedSkillId, random, ratio);
+      const applied = applyIncomingDamage(target, damage);
+      return { target, damage, hpDamage: applied.hpDamage, shieldDamage: applied.absorbed };
+    });
+    const turnEffects = finishTurn(state, attacker);
+    const delayedTurns = !missed && skill.delayTurns && targets[0].alive ? skill.delayTurns : 0;
+    if (delayedTurns) targets[0].nextActionAt += delayedTurns * actionInterval(targets[0], state.balance.speed);
+    const outcome = updateOutcome(state);
+    return {
+      attacker, target: targets[0], skill, targets: hitTargets, hits,
+      damage: hits[0]?.hpDamage || 0,
+      shieldDamage: hits[0]?.shieldDamage || 0,
+      missed, delayedTurns, turnEffects, outcome
+    };
+  }
+
+  const turnEffects = finishTurn(state, attacker);
+  const applied = [];
+  for (const target of targets) {
+    if (skill.type === "heal") {
+      const amount = Math.max(1, Math.round(target.maxHp * skill.healRatio));
+      const healed = Math.min(target.maxHp - target.hp, amount);
+      target.hp += healed;
+      applied.push({ target, healed });
+    } else if (skill.type === "buff") {
+      updateBuff(target, "attackBuffRatio", "attackBuffTurns", skill.attackBuffRatio, skill.durationTurns);
+      applied.push({ target, buff: "attack", turns: skill.durationTurns });
+    } else if (skill.type === "status" && skill.statusEffect === "blind") {
+      target.darknessTurns = Math.max(target.darknessTurns || 0, skill.durationTurns);
+      applied.push({ target, status: "blind", turns: skill.durationTurns });
+    } else if (skill.type === "control") {
+      target.controlTurns = Math.max(target.controlTurns || 0, skill.controlTurns);
+      applied.push({ target, status: "control", turns: skill.controlTurns });
+    } else if (skill.type === "healOverTime") {
+      updateBuff(target, "healOverTimeRatio", "healOverTimeTurns", skill.healRatio, skill.durationTurns);
+      applied.push({ target, status: "regeneration", turns: skill.durationTurns });
+    } else if (skill.type === "guard") {
+      target.shieldHp = Math.max(target.shieldHp || 0, Math.round(target.maxHp * skill.shieldRatio));
+      target.shieldTurns = Math.max(target.shieldTurns || 0, skill.durationTurns);
+      updateBuff(target, "defenseBuffRatio", "defenseBuffTurns", skill.defenseBuffRatio, skill.durationTurns);
+      applied.push({ target, status: "guard", shieldHp: target.shieldHp, turns: skill.durationTurns });
+    } else {
+      throw new Error(`Unsupported skill type: ${skill.type}`);
+    }
+  }
+  return { attacker, target: targets[0], targets, skill, applied, turnEffects, outcome: updateOutcome(state) };
+}
+
+export function useDamageSkill(state, attackerId, targetId, skillId = "claw", random = Math.random) {
+  return useSkill(state, attackerId, targetId, skillId, random);
 }
 
 export function useDarkMagic(state, attackerId) {
-  const attacker = unitById(state, attackerId);
   const skill = state.skills["dark-magic"];
-  const targets = validTargets(state, attackerId, "dark-magic");
-  if (state.status !== "playing" || state.activeUnitId !== attackerId || !attacker?.alive || !targets.length) {
-    throw new Error("Invalid dark magic action");
+  if (!skill) throw new Error("Unknown skill: dark-magic");
+  const result = useSkill(state, attackerId, null, "dark-magic");
+  return { targets: result.targets, skill: result.skill };
+}
+
+export function consumeControlledTurn(state, unitId) {
+  const unit = unitById(state, unitId);
+  if (state.status !== "playing" || state.activeUnitId !== unitId || !unit?.alive || unit.controlTurns <= 0) {
+    throw new Error("Unit is not controlled");
   }
-  spendSkillCharge(state, attacker, "dark-magic");
-  for (const target of targets) target.darknessTurns = skill.durationTurns;
-  finishTurn(state, attacker);
-  return { targets, skill };
+  unit.controlTurns -= 1;
+  const turnEffects = finishTurn(state, unit);
+  return { unit, turnEffects, outcome: updateOutcome(state) };
 }
 
 export function skipTurn(state, unitId) {

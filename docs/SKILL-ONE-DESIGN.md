@@ -1,0 +1,97 @@
+# 七只小龙的技能一与图片需求
+
+状态：已接入技能配置、战斗规则与主页/小龙信息页展示。七个技能目标素材为 14 张图片；已有 `tidal-healing.png`、`sunlight-encouragement.png`、`crystal-freeze.png` 三个图标，其余四个图标与七个战斗特效待用户/Muse 后续加入。技能不写入账户存档，按龙种资料实时映射。
+
+## 技能名称与效果方向
+
+| 小龙 | 技能 ID | 技能名称 | 设计效果 |
+|---|---|---|---|
+| 澜歌（海浪） | `tidal-healing` | 潮汐疗愈 | 选择一名受伤队友，恢复最大体力的 40%；消耗 1 点能量。 |
+| 曜阳（阳光） | `sunlight-encouragement` | 日光鼓舞 | 全体队友攻击力提升 25%，持续各自 3 次行动；消耗 1 点能量。 |
+| 霜铃（冰晶） | `crystal-freeze` | 冰晶定身 | 全体敌人跳过下一次行动；消耗 1 点能量。 |
+| 砂跃（沙丘） | `piercing-sand` | 飞沙贯阵 | 单体突刺，威力比例 0.28，无视前排保护；消耗 1 点能量。 |
+| 花语（花园） | `petal-regrowth` | 花露滋养 | 全体队友每完成一次自己的行动，恢复最大体力的 20%，持续各自 2 次行动；消耗 1 点能量。 |
+| 岩芽（岩石） | `stone-armor` | 岩铠守护 | 自己获得最大体力 40% 的护盾、防御提升 20%，持续到自己完成下一次行动；消耗 1 点能量。 |
+| 星遥（星空） | `star-chain` | 星轨弹射 | 单体主目标威力比例 0.22，按阵位顺序弹射至最多 2 名其他合法敌人，后续威力比例 0.14 和 0.09；遵守前排保护；消耗 1 点能量。 |
+
+技能状态持续时间按各目标自己的行动次数结算。盾值先吸收伤害，剩余部分再扣体力；护盾持续时间结束后，剩余盾值清除。弹射不重复命中，且只在前排保护规则允许的存活目标中选择。
+
+## Muse 统一出图规则
+
+生成前先查看以下现有素材，作为同项目画风参考：
+
+- `assets/battle/actions/fire-breath.png`
+- `assets/battle/actions/dark-magic.png`
+- `assets/battle/actions/entangling-vines.png`
+- `assets/battle/effects/fire-breath-stream.png`
+- `assets/battle/effects/dark-magic-mist.png`
+- `assets/battle/effects/entangling-vines-wrap.png`
+
+为每个技能分别生成一张图标和一张战斗特效图，共 14 张透明 PNG。保留现有素材（尤其 `fire-breath.png`、`dark-magic.png`）的明亮、温暖、清楚易读的 2D 奇幻绘本感；色彩对应小龙元素，轮廓简洁，在手机屏幕上缩小后仍能辨认。效果友善、适合儿童，不要恐怖、血腥或写实暴力。
+
+### 技能图标
+
+- 正方形构图，建议 1024×1024；构图和现有技能图标一致：小龙与对应技能效果同框，主体充满圆形安全区域，缩小后仍能辨认。
+- 参考对应小龙资料图，保持龙的颜色、脸型和主要特征一致；可以表现龙头、上半身和施法动作，不画敌人、文字、字母、数字、按钮边框或完整战场场景。
+- 使用真正透明的 RGBA 背景，不要用白底或棋盘格伪装透明。
+
+### 战斗特效
+
+- 横向宽幅，建议 1024×512，使用真正透明的 RGBA 背景。
+- 玩家小龙位于左侧、敌人位于右侧；攻击类特效主要朝左至右流动。治疗与增益效果以目标位置为中心，不强制做成射线。
+- 仅生成可叠加的能量、光效、粒子或护盾，不要重复画小龙或怪物；不要画战场、地面、血条、UI 或文字。
+- 主体轮廓清楚、外围渐隐，留出透明空间。避免满幅烟雾遮挡战斗角色。
+- 每个技能只交付单张静态图；不要生成分镜、九宫格、Sprite sheet 或多版本拼贴。
+
+### 素材 ID 与输出路径
+
+| 技能 | 图标 | 特效 |
+|---|---|---|
+| `tidal-healing` | `assets/battle/actions/tidal-healing.png` | `assets/battle/effects/tidal-healing.png` |
+| `sunlight-encouragement` | `assets/battle/actions/sunlight-encouragement.png` | `assets/battle/effects/sunlight-encouragement.png` |
+| `crystal-freeze` | `assets/battle/actions/crystal-freeze.png` | `assets/battle/effects/crystal-freeze.png` |
+| `piercing-sand` | `assets/battle/actions/piercing-sand.png` | `assets/battle/effects/piercing-sand.png` |
+| `petal-regrowth` | `assets/battle/actions/petal-regrowth.png` | `assets/battle/effects/petal-regrowth.png` |
+| `stone-armor` | `assets/battle/actions/stone-armor.png` | `assets/battle/effects/stone-armor.png` |
+| `star-chain` | `assets/battle/actions/star-chain.png` | `assets/battle/effects/star-chain.png` |
+
+图片尚未加入仓库时，主页、村庄和战斗按钮显示配置里的元素符号作为备用图标；战斗特效使用 CSS 柔光兜底，不阻止技能使用。
+
+## 各技能画面描述
+
+以下描述分别用于生成对应技能图标和战斗特效；均遵守上面的统一规则。
+
+### 潮汐疗愈（澜歌）
+
+- **图标：** 参考 `blue-water-dragon.png`，画一只蓝色小龙的友善头像，旁边有蓝青水滴环绕发光水珠，呈现温柔的疗愈感；不要使用十字医疗符号。
+- **特效：** 清澈的蓝青色水流环绕目标位置形成一圈柔和水环，细小水珠向中心汇聚，再化作轻柔的光点散开；不要出现角色或场景。
+
+### 日光鼓舞（曜阳）
+
+- **图标：** 参考 `gold-sun-dragon.png`，画一只金色小龙的友善头像，旁边有向外绽放的小太阳与简洁星点，表达受到鼓舞的活力。
+- **特效：** 金色晨光从上方柔和洒落，在多个目标位置各形成小型明亮光环；光线温暖、鼓舞人心，不像攻击光束或爆炸。
+
+### 冰晶定身（霜铃）
+
+- **图标：** 参考 `white-frost-dragon.png`，画一只白色小龙的友善头像，旁边是一枚包着雪花的浅蓝冰晶，边角圆润，表现暂时冻结行动。
+- **特效：** 一圈浅蓝冰晶光环扩展并短暂包住多个目标位置，出现小雪花与柔和冰雾；不要画尖刺、角色或冻结的人物剪影。
+
+### 飞沙贯阵（砂跃）
+
+- **图标：** 参考 `orange-desert-dragon.png`，画一只橙色小龙的友善头像，吐出一道金橙沙流穿过淡色防护弧线，表达快速突刺与穿透。
+- **特效：** 集中的金橙色沙流从左向右快速穿过画面，前端尖而明亮、尾部由沙粒渐隐；方向笔直清楚，不要画地面或角色。
+
+### 花露滋养（花语）
+
+- **图标：** 参考 `pink-garden-dragon.png`，画一只粉色小龙的友善头像，旁边有带发光露珠的粉绿小花，表现持续滋养与恢复。
+- **特效：** 粉金色花瓣和细小露珠围绕目标位置缓慢盘旋，连续出现柔和的绿色与金色回复微光；感觉平和、持续，不要画人物或场景。
+
+### 岩铠守护（岩芽）
+
+- **图标：** 参考 `gray-rock-dragon.png`，画一只灰色小龙的友善头像，旁边有圆润岩石护甲与金绿色地脉纹路，表现防护和坚固。
+- **特效：** 一层半透明的岩石护盾在目标位置展开，外沿有柔和金绿色光线；护盾表面是圆润岩片与地脉纹样，不要使用尖刺或裂地效果。
+
+### 星轨弹射（星遥）
+
+- **图标：** 参考 `indigo-star-dragon.png`，画一只靛蓝小龙的友善头像，旁边有两到三颗沿弯曲星轨排列的星星，表达能量弹向下一个目标。
+- **特效：** 明亮蓝紫星光从左向右飞行，在一个目标位置形成闪光后沿清楚的弧形轨迹弹向第二个目标位置；少量星点尾迹，背景保持透明，不画完整星空。

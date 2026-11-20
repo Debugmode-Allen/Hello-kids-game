@@ -40,6 +40,34 @@
     {
       "skillId": "dark-magic",
       "path": "assets/battle/effects/dark-magic-mist.png"
+    },
+    {
+      "skillId": "tidal-healing",
+      "path": "assets/battle/effects/tidal-healing.png"
+    },
+    {
+      "skillId": "sunlight-encouragement",
+      "path": "assets/battle/effects/sunlight-encouragement.png"
+    },
+    {
+      "skillId": "crystal-freeze",
+      "path": "assets/battle/effects/crystal-freeze.png"
+    },
+    {
+      "skillId": "piercing-sand",
+      "path": "assets/battle/effects/piercing-sand.png"
+    },
+    {
+      "skillId": "petal-regrowth",
+      "path": "assets/battle/effects/petal-regrowth.png"
+    },
+    {
+      "skillId": "stone-armor",
+      "path": "assets/battle/effects/stone-armor.png"
+    },
+    {
+      "skillId": "star-chain",
+      "path": "assets/battle/effects/star-chain.png"
     }
   ],
   "actions": [
@@ -84,6 +112,48 @@
       "name": "黑暗术",
       "path": "assets/battle/actions/dark-magic.png",
       "usage": "月龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "tidal-healing",
+      "name": "潮汐疗愈",
+      "path": "assets/battle/actions/tidal-healing.png",
+      "usage": "海浪龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "sunlight-encouragement",
+      "name": "日光鼓舞",
+      "path": "assets/battle/actions/sunlight-encouragement.png",
+      "usage": "阳光龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "crystal-freeze",
+      "name": "冰晶定身",
+      "path": "assets/battle/actions/crystal-freeze.png",
+      "usage": "冰晶龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "piercing-sand",
+      "name": "飞沙贯阵",
+      "path": "assets/battle/actions/piercing-sand.png",
+      "usage": "沙丘龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "petal-regrowth",
+      "name": "花露滋养",
+      "path": "assets/battle/actions/petal-regrowth.png",
+      "usage": "花园龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "stone-armor",
+      "name": "岩铠守护",
+      "path": "assets/battle/actions/stone-armor.png",
+      "usage": "岩石龙技能一的圆形战斗按钮图标。"
+    },
+    {
+      "id": "star-chain",
+      "name": "星轨弹射",
+      "path": "assets/battle/actions/star-chain.png",
+      "usage": "星空龙技能一的圆形战斗按钮图标。"
     },
     {
       "id": "energy-reservoir",

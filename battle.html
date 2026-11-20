@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="stylesheet" href="css/battle-effects.css?v=entangling-vines" />
+    <link rel="stylesheet" href="css/battle-effects.css?v=seven-dragon-skills" />
     <link rel="stylesheet" href="css/energy-meter.css?v=rainbow-energy-20261118" />
     <link rel="stylesheet" href="css/learning-quiz.css?v=answer-crystal-20261118" />
     <style>
@@ -44,6 +44,8 @@
       .actor.highlight::after { opacity: 1; }
       .actor.targetable { cursor: pointer; filter: drop-shadow(0 0 5px #fef08a); }
       .actor.targetable::after { border-color: #fef08a; background: rgba(254,240,138,.25); opacity: 1; }
+      .actor:not(.enemy).targetable { filter: drop-shadow(0 0 6px #86efac); }
+      .actor:not(.enemy).targetable::after { border-color: #86efac; background: rgba(134,239,172,.24); }
       .actor.protected { filter: brightness(.72) saturate(.7); }
       .actor.protected::before, .actor.ally-protected::before { position: absolute; top: 25%; left: 50%; z-index: 3; content: "🛡"; transform: translate(-50%, -50%); font-size: clamp(1rem, 2vw, 1.8rem); text-shadow: 0 1px 3px #fff; }
       .slot.attack-right { z-index: 8; animation: lunge-right .62s ease-in-out both; }
@@ -69,7 +71,7 @@
       #claw, #skillOne { width: 84px; height: 84px; }
       .round-action img { width: 100%; height: 100%; object-fit: cover; }
       .skill-placeholder { background: radial-gradient(circle at 30% 25%, #ddd6fe, #7c3aed 52%, #312e81); color: #fff; }
-      .skill-placeholder span { font-family: "Microsoft YaHei", sans-serif; font-size: 2rem; text-shadow: 0 2px 5px #312e81; }
+      .skill-button-fallback { font-family: "Microsoft YaHei", sans-serif; font-size: 2rem; line-height: 1; text-shadow: 0 2px 5px #312e81; }
       /* 后续技能二、三尚未解锁：保留与前两个技能相同的空间，
          但完全不可见，避免“跳过”按钮紧贴技能一。 */
       .skill-locked { visibility: hidden; width: 84px; height: 84px; border: 2px dashed rgba(255,255,255,.7); background: rgba(49,46,129,.22); box-shadow: none; opacity: .75; }
@@ -102,7 +104,7 @@
         .player-front-1 { --size: 80px; top: 50%; left: 35%; } .player-front-2 { --size: 90px; top: 67%; left: 30%; }
         .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 54px; top: 41%; left: 75%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
         .enemy-front-1 { --size: 80px; top: 50%; left: 65%; } .enemy-front-2 { --size: 90px; top: 67%; left: 70%; }
-        .controls { bottom: 10px; gap: 6px; } .player-controls { left: 9px; } .enemy-controls { right: 9px; } .round-action { width: 55px; height: 55px; } #claw, #skillOne, .skill-locked { width: 66px; height: 66px; }
+        .controls { bottom: 10px; gap: 6px; } .player-controls { left: 9px; } .enemy-controls { right: 9px; } .round-action { width: 55px; height: 55px; } #claw, #skillOne, .skill-locked { width: 66px; height: 66px; } .skill-button-fallback { font-size: 1.6rem; }
       }
     </style>
   </head>
@@ -174,7 +176,7 @@
       import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
       import { deployedCompanions } from "./js/companions.js";
-      import { beginNextTurn, calculateDamage, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDarkMagic, useDamageSkill, validTargets } from "./js/battle-engine.js?v=20261118-enemy-ai";
+      import { beginNextTurn, calculateDamage, consumeControlledTurn, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDamageSkill, useSkill, validTargets } from "./js/battle-engine.js?v=seven-dragon-skills";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
       import { beginAnswerCrystal, consumeSkillEnergyPreview, dismissAnswerCrystal, renderEnergyMeter, showSkillEnergyPreview, transferEnergyMeter } from "./js/energy-meter.js?v=answer-crystal-20261118";
@@ -372,12 +374,12 @@
       function renderSkillCharges() {
         if (!skillOne) return;
         const { earned, spent } = state.skillCharges;
-        const description = t(`${skillOne.nameKey}Description`, {
+        const description = t(skillOne.descriptionKey || `${skillOne.nameKey}Description`, {
           turns: skillOne.durationTurns, delay: skillOne.delayTurns
         });
         const counts = t("charge.counts", { remaining: remainingSkillCharges(state), spent, empty: 10 - remainingSkillCharges(state) });
         const button = $("#skillOne");
-        button.title = `${description} ${counts}`;
+        button.title = `${t(skillOne.nameKey)}：${description} ${counts}`;
         button.setAttribute("aria-label", button.title);
       }
 
@@ -432,7 +434,11 @@
         impact.alt = "";
         const damageNumber = document.createElement("strong");
         damageNumber.className = "damage-number";
-        damageNumber.textContent = `-${damage}`;
+        const shieldDamage = Math.min(target.shieldHp || 0, damage);
+        const hpDamage = Math.min(target.hp, Math.max(0, damage - shieldDamage));
+        damageNumber.textContent = shieldDamage
+          ? hpDamage ? `-${hpDamage} 🛡-${shieldDamage}` : `🛡-${shieldDamage}`
+          : `-${damage}`;
         targetSlot.append(impact, damageNumber);
         await wait(980);
         impact.remove();
@@ -444,7 +450,9 @@
       function spellEffect(className, skillId, container) {
         const effect = document.createElement("span");
         effect.className = className;
-        effect.style.setProperty("--spell-texture", `url("${spellTextures.get(skillId)}")`);
+        const texture = spellTextures.get(skillId);
+        effect.style.setProperty("--spell-texture", texture ? `url("${texture}")` : "none");
+        effect.dataset.skillId = skillId;
         effect.setAttribute("aria-hidden", "true");
         container.append(effect);
         return effect;
@@ -480,6 +488,7 @@
         const targetSlot = slots.get(target.slot);
         const destination = targetSlot.getBoundingClientRect();
         const fire = skillId === "fire-breath";
+        const dark = skillId === "dark-magic";
         if (fire) playCue("fire-breath-cast");
         const originX = sprite.left + sprite.width * (fire ? .73 : .78);
         const originY = sprite.top + sprite.height * (fire ? .34 : .48);
@@ -489,7 +498,7 @@
 
         let plume;
         if (!reducedMotion) {
-          plume = spellEffect(fire ? "fire-stream" : "shadow-flight", skillId, field);
+          plume = spellEffect(fire ? "fire-stream" : "spell-flight", skillId, field);
           plume.style.left = `${originX - fieldRect.left - field.clientLeft}px`;
           plume.style.top = `${originY - fieldRect.top - field.clientTop}px`;
           if (fire) {
@@ -507,8 +516,9 @@
           }
         }
 
-        const impact = spellEffect(fire ? "flame-burn" : "shadow-arrival", skillId, targetSlot);
-        playCue(fire ? "fire-breath-hit" : "moon-darkness-apply");
+        const impact = spellEffect(fire ? "flame-burn" : "spell-arrival", skillId, targetSlot);
+        if (fire) playCue("fire-breath-hit");
+        else if (dark) playCue("moon-darkness-apply");
         if (fire) {
           targetSlot.classList.add("hit-shake", "spell-shake");
           const number = document.createElement("strong");
@@ -523,6 +533,41 @@
           await wait(reducedMotion ? 160 : 440);
         }
         impact.remove();
+      }
+
+      async function playSkillResult(result) {
+        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (result.skill.id === "dark-magic") playCue("moon-darkness-cast");
+        if (result.hits?.length) {
+          for (const hit of result.hits) {
+            if (result.skill.id === "entangling-vines") await playVineAnimation(hit.target, hit.hpDamage);
+            else await playSpellAnimation(result.attacker, hit.target, result.skill.id, hit.hpDamage);
+            if (hit.hpDamage && !["fire-breath", "entangling-vines"].includes(result.skill.id)) {
+              showFloatingLabel(hit.target, `-${hit.hpDamage}`, "skill-damage");
+            }
+            if (hit.shieldDamage) showFloatingLabel(hit.target, `🛡 -${hit.shieldDamage}`, "shield-number");
+          }
+        }
+        if (result.applied?.length) {
+          for (const effect of result.applied) {
+            const slot = slots.get(effect.target.slot);
+            const overlay = spellEffect("support-arrival", result.skill.id, slot);
+            if (effect.healed) showFloatingLabel(effect.target, `+${effect.healed}`, "heal-number");
+            if (effect.shieldHp) showFloatingLabel(effect.target, `🛡 ${effect.shieldHp}`, "shield-number");
+            await wait(reducedMotion ? 90 : 410);
+            overlay.remove();
+          }
+        }
+      }
+
+      function showFloatingLabel(unit, text, className) {
+        const slot = slots.get(unit.slot);
+        if (!slot) return;
+        const label = document.createElement("strong");
+        label.className = `damage-number ${className}`;
+        label.textContent = text;
+        slot.append(label);
+        setTimeout(() => label.remove(), 1150);
       }
 
       function currentUnit() { return unitById(state, state?.activeUnitId); }
@@ -645,6 +690,26 @@
           hpReadout.className = "hp-readout";
           hpReadout.textContent = t("battle.hpValue", { current: unit.hp, max: unit.maxHp });
           button.append(image, health, hpReadout);
+          const statuses = [];
+          if (unit.controlTurns > 0) statuses.push(["❄️", t("battle.controlBadge")]);
+          if (unit.attackBuffTurns > 0) statuses.push(["⬆️", t("battle.attackBoostBadge")]);
+          if (unit.defenseBuffTurns > 0) statuses.push(["🛡️", t("battle.defenseBoostBadge")]);
+          if (unit.healOverTimeTurns > 0) statuses.push(["🌸", t("battle.regenerationBadge")]);
+          if (unit.shieldHp > 0) statuses.push(["🔰", t("battle.shieldBadge", { amount: unit.shieldHp })]);
+          if (statuses.length) {
+            const statusRow = document.createElement("span");
+            statusRow.className = "unit-statuses";
+            for (const [glyph, label] of statuses) {
+              const badge = document.createElement("span");
+              badge.className = "unit-status";
+              badge.textContent = glyph;
+              badge.title = label;
+              badge.setAttribute("aria-label", label);
+              statusRow.append(badge);
+            }
+            button.append(statusRow);
+            button.setAttribute("aria-label", `${unit.name}，${statuses.map(([, label]) => label).join("，")}`);
+          }
           button.addEventListener("mouseenter", () => setHighlight(unit.id, true));
           button.addEventListener("mouseleave", () => setHighlight(unit.id, false));
           button.addEventListener("click", () => onUnitClick(unit));
@@ -663,11 +728,12 @@
 
       function renderControls() {
         const playerTurn = isPlayerTurn();
+        const dragonTurn = currentUnit()?.id === "dragon";
         $("#claw").disabled = !playerTurn || busy;
         $("#skip").disabled = !playerTurn || busy;
         const skillCost = skillOne ? Math.max(1, Math.floor(Number(skillOne.energyCost) || 1)) : 1;
-        $("#skillOne").disabled = !skillOne || !playerTurn || busy || remainingSkillCharges(state) < skillCost;
-        if ((!skillOne || !playerTurn || busy || remainingSkillCharges(state) < skillCost)
+        $("#skillOne").disabled = !skillOne || !playerTurn || !dragonTurn || busy || remainingSkillCharges(state) < skillCost;
+        if ((!skillOne || !playerTurn || !dragonTurn || busy || remainingSkillCharges(state) < skillCost)
           && targeting !== skillOne?.id) {
           showSkillEnergyPreview($("#skillOne"), false);
         }
@@ -705,12 +771,23 @@
             render();
             return;
           }
+          if (active.controlTurns > 0) {
+            consumeControlledTurn(state, active.id);
+            setNotice("battle.controlSkipped", { name: active.name });
+            const overlay = spellEffect("support-arrival", "crystal-freeze", slots.get(active.slot));
+            await wait(matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 440);
+            overlay.remove();
+            await finishDisplayedTurn();
+            if (state.status !== "playing") showBattleResult();
+            continue;
+          }
           const target = selectEnemyTarget(state, active.id, active.skillId);
           if (!target) return;
           const roll = Math.random();
           const damage = calculateDamage(state, active, target, active.skillId, () => roll);
           await playAttackAnimation(active, target, damage);
           const result = useDamageSkill(state, active.id, target.id, active.skillId, () => roll);
+          if (result.turnEffects?.healed) showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number");
           setNotice(result.missed ? "battle.darkMagicMiss" : "battle.enemyTurn", {
             name: active.name, skill: t(result.skill.nameKey), damage: result.damage
           });
@@ -719,12 +796,13 @@
       }
 
       async function onUnitClick(unit) {
-        if (busy || !targeting || !isPlayerTurn() || unit.side !== "enemy") return;
+        if (busy || !targeting || !isPlayerTurn()) return;
         const active = currentUnit();
         const skillId = targeting;
         const valid = validTargets(state, active.id, skillId);
         if (!valid.some((candidate) => candidate.id === unit.id)) {
-          setNotice(isProtected(state, unit) ? "battle.protected" : "battle.chooseTarget");
+          setNotice(unit.side === "enemy" && isProtected(state, unit) ? "battle.protected"
+            : state.skills[skillId]?.target === "singleAlly" ? "battle.chooseAllyTarget" : "battle.chooseTarget");
           return;
         }
         busy = true;
@@ -742,16 +820,33 @@
           }
         }
         const roll = Math.random();
-        const damage = calculateDamage(state, active, unit, skillId, () => roll);
-        if (skillId === "claw") await playAttackAnimation(active, unit, damage);
-        else if (skillId === "entangling-vines") await playVineAnimation(unit, damage);
-        else await playSpellAnimation(active, unit, skillId, damage);
-        const result = useDamageSkill(state, active.id, unit.id, skillId, () => roll);
+        let result;
+        if (skillId === "claw") {
+          const damage = calculateDamage(state, active, unit, skillId, () => roll);
+          await playAttackAnimation(active, unit, damage);
+          result = useDamageSkill(state, active.id, unit.id, skillId, () => roll);
+        } else {
+          result = useSkill(state, active.id, unit.id, skillId, () => roll);
+          await playSkillResult(result);
+        }
+        if (result.turnEffects?.healed) showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number");
         targeting = null;
-        const notice = t("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: result.damage });
-        $("#notice").textContent = result.delayedTurns
-          ? `${notice} ${t("battle.vinesDelay", { target: unit.name, delay: result.delayedTurns })}`
-          : notice;
+        if (result.skill.type === "heal") {
+          setNotice("battle.skillHealNotice", {
+            name: active.name, skill: t(result.skill.nameKey), target: unit.name,
+            amount: result.applied?.[0]?.healed || 0
+          });
+        } else if (result.skill.type === "damage") {
+          const totalDamage = result.hits?.reduce((sum, hit) => sum + hit.hpDamage, 0) ?? result.damage;
+          const notice = t("battle.playerAttack", { name: active.name, skill: t(result.skill.nameKey), target: unit.name, damage: totalDamage });
+          $("#notice").textContent = result.delayedTurns
+            ? `${notice} ${t("battle.vinesDelay", { target: unit.name, delay: result.delayedTurns })}`
+            : notice;
+        } else {
+          setNotice(result.skill.target === "allEnemies" ? "battle.skillEnemyNotice" : "battle.skillTeamNotice", {
+            name: active.name, skill: t(result.skill.nameKey)
+          });
+        }
         await finishDisplayedTurn();
         if (result.outcome === "playing") await runEnemyTurns();
       }
@@ -786,17 +881,20 @@
           render();
         });
         $("#skillOne").addEventListener("click", async () => {
-          if (!skillOne || busy || !isPlayerTurn() || remainingSkillCharges(state) === 0) return;
-          if (skillOne.target === "singleEnemy") {
+          if (!skillOne || busy || !isPlayerTurn() || currentUnit()?.id !== "dragon" || remainingSkillCharges(state) < Math.max(1, Number(skillOne.energyCost) || 1)) return;
+          if (skillOne.target === "singleEnemy" || skillOne.target === "singleAlly") {
             targeting = skillOne.id;
             showSkillEnergyPreview(skillButton, true);
-            setNotice("battle.chooseTarget");
+            setNotice(skillOne.target === "singleAlly" ? "battle.chooseAllyTarget" : "battle.chooseTarget");
             render();
             return;
           }
           const active = currentUnit();
           const targets = validTargets(state, active.id, skillOne.id);
-          if (!targets.length) return;
+          if (!targets.length) {
+            if (skillOne.target === "singleAlly") setNotice("battle.noHealTarget");
+            return;
+          }
           busy = true;
           targeting = null;
           render();
@@ -809,10 +907,11 @@
             render();
             return;
           }
-          playCue("moon-darkness-cast");
-          await Promise.all(targets.map((target) => playSpellAnimation(active, target, skillOne.id)));
-          useDarkMagic(state, active.id);
-          setNotice("battle.darkMagicCast", { name: active.name });
+          const result = useSkill(state, active.id, null, skillOne.id);
+          await playSkillResult(result);
+          setNotice(result.skill.target === "allEnemies" ? "battle.skillEnemyNotice" : "battle.skillTeamNotice", {
+            name: active.name, skill: t(result.skill.nameKey)
+          });
           await finishDisplayedTurn();
           await runEnemyTurns();
         });
@@ -901,15 +1000,19 @@
           });
           skillOne = state.skills[state.skillOneId];
           if (skillOne) {
-            const texture = new Image();
-            texture.src = spellTextures.get(skillOne.id);
-            await texture.decode();
             const button = $("#skillOne");
+            const action = battleAssets.actions.find((entry) => entry.id === skillOne.id);
             const icon = document.createElement("img");
-            icon.src = battleAssets.actions.find((action) => action.id === skillOne.id).path;
+            const fallback = document.createElement("span");
             icon.alt = "";
-            button.replaceChildren(icon);
-            button.classList.remove("skill-placeholder");
+            icon.onerror = () => { icon.hidden = true; fallback.hidden = false; };
+            icon.onload = () => { icon.hidden = false; fallback.hidden = true; };
+            if (action?.path) icon.src = action.path;
+            else icon.hidden = true;
+            fallback.className = "skill-button-fallback";
+            fallback.textContent = skillOne.iconGlyph || "✦";
+            fallback.hidden = Boolean(action?.path);
+            button.replaceChildren(icon, fallback);
           }
           render();
           await showBattleIntro(battleContent[battle.nameKey], progressSnapshot.data());

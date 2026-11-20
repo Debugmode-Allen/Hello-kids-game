@@ -2,7 +2,7 @@
 
 ## 当前版本与发布
 
-- 版本：v1.3.0（2026-11-18），发布分支 main；版本存档标签 v1.3.0。
+- 版本：v1.4.0（2026-11-19），发布分支 main；版本存档标签 v1.4.0。
 - 页面：<https://debugmode-allen.github.io/Hello-kids-game/>。Git push 后由 GitHub Pages 自动部署，若仍见旧界面请 Ctrl+F5 刷新。
 - Firestore Rules：仓库规则已更新，尚未部署到 Firebase Console；GitHub发布不等于规则发布。用户已确认本地布阵保存和实战测试成功。
 
@@ -22,11 +22,18 @@
 1. 技能加点、物品库存/使用规则尚未定义，信息页当前为待开放状态。
 2. 草原入口尚未连接实际冒险关卡；接下来定义关卡、解锁、进度、经验及成长奖励，继续使用配置与规则分层。
 3. 在云端抽查本版本入口、布阵保存及战斗；单独在 Firebase Console 发布并确认 firestore.rules。助手未取得线上规则部署状态。
-4. 补充桌面/窄屏实机视听验收，音频首版尚有试听待办。
+4. 补充桌面/窄屏实机视听验收；BGM 已试听替换，需在页面上复核最终效果。
+5. 技能一已在本版本发布；剩余四个新增技能图标和七个战斗特效可回家后手动放入 `assets/battle/actions/` 与 `assets/battle/effects/`，再做图片格式和页面目视验收。
+
+## 本次交接记录
+
+- 技能一已映射十种小龙：单体疗愈、全体攻击增益、全体冻结、穿透突刺、全体持续治疗、自身护盾/防御、递减弹射。规则和数值见 `data/skills.json` 与 `docs/SKILL-ONE-DESIGN.md`。
+- 已发布版本：v1.4.0。Muse 已提供潮汐疗愈、日光鼓舞、冰晶定身三个技能图标；缺图时主页/战斗按钮使用符号回退，战斗特效使用 CSS 柔光回退。
+- 本次未完成真实登录页面的桌面/窄屏目视验收：当前环境无法启动本地 Python HTTP 服务；未运行测试套件。
 
 ## 素材与日常开发
 
 - 当前引用图片已随版本发布；assets/adventure/village/dragon-village-v3.png 至 v7.png 是未使用的本地草稿，不加入提交，不删除。
 - 本地启动：在项目目录运行 py -m http.server 8000，打开 http://localhost:8000/index.html。本地登录使用线上同一个 Firebase 项目。
 - 接手先读 ARCHITECTURE.md、VERSION.md、本文及 AGENTS.md；发布流程见 docs/DEVELOPMENT_WORKFLOW.md。
-- 本次发布前过程已归档到 docs/archive/CONTINUATION-before-v1.3.0-2026-11-18.md，不代表当前状态。
+- v1.3.0 发布前交接归档：`docs/archive/CONTINUATION-before-v1.3.0-2026-11-18.md`；本次 v1.4.0 发布前的交接已存为 `docs/archive/CONTINUATION-before-v1.4.0-2026-11-19.md`。
