@@ -23,13 +23,16 @@ export function validateProgression(progression) {
 
 export function progressForXp(totalXp, progression) {
   const levels = validateProgression(progression);
-  const xp = integer(totalXp);
-  let current = levels[0];
-  for (const entry of levels) {
+  const maxLevel = Math.max(1, Math.min(levels.length, integer(progression?.maxLevel, levels.length)));
+  const unlockedLevels = levels.slice(0, maxLevel);
+  const capXp = unlockedLevels.at(-1).totalXp;
+  const xp = Math.min(integer(totalXp), capXp);
+  let current = unlockedLevels[0];
+  for (const entry of unlockedLevels) {
     if (entry.totalXp > xp) break;
     current = entry;
   }
-  const next = levels[current.level] ?? null;
+  const next = current.level < maxLevel ? unlockedLevels[current.level] : null;
   return {
     xp,
     level: current.level,

@@ -15,11 +15,11 @@ export function effectiveSpeed(rawSpeed, speedConfig) {
     * (speed - linearUntil) / (speed + speedConfig.curveOffset);
 }
 
-export function createCombatant({ id, side, slot, name, image, stats, skillId, powerRatio, facing = null, targetPreference = "random" }) {
+export function createCombatant({ id, side, slot, name, image, stats, skillId, powerRatio, scaling = null, facing = null, targetPreference = "random" }) {
   const stamina = Math.max(1, Number(stats.stamina) || 1);
   return {
     id, side, slot, name, image, skillId, facing, targetPreference,
-    powerRatio,
+    powerRatio, scaling,
     attack: Math.max(0, Number(stats.attack) || 0),
     defense: Math.max(0, Number(stats.defense) || 0),
     speed: Math.max(0, Number(stats.speed) || 0),
@@ -32,6 +32,7 @@ export function createCombatant({ id, side, slot, name, image, stats, skillId, p
     defenseBuffTurns: 0,
     shieldTurns: 0,
     healOverTimeRatio: 0,
+    healOverTimeAmount: 0,
     healOverTimeTurns: 0,
     controlTurns: 0,
     nextActionAt: 0,
@@ -70,7 +71,7 @@ export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balanc
       id: enemy.id, side: "enemy", slot: enemy.slot, name: asset?.name || enemy.speciesId,
       image: asset?.path || "", stats: enemy.stats, skillId: enemy.skillId,
       targetPreference: enemyBehaviors.bySpecies?.[enemy.speciesId]?.targetPreference ?? "random",
-      powerRatio: enemy.powerRatio
+      powerRatio: enemy.powerRatio, scaling: enemy.scaling
     });
   });
   const state = {
@@ -171,12 +172,25 @@ function damageMultiplier(attacker, defender, damageConfig) {
   return Math.min(damageConfig.maximumMultiplier, Math.max(damageConfig.minimumMultiplier, raw));
 }
 
-export function calculateDamage(state, attacker, defender, skillId, random = Math.random, powerRatioOverride = null) {
+function scaledStatValue(unit, scaling, fallback = 0) {
+  if (scaling && typeof scaling === "object") {
+    return Object.entries(scaling).reduce((total, [stat, coefficient]) => total + (Number(unit[stat]) || 0) * (Number(coefficient) || 0), 0);
+  }
+  return fallback;
+}
+
+function scaledTurns(unit, scaling, base = 0, divisor = 1, minimum = 0, maximum = Infinity) {
+  const value = base + Math.ceil(scaledStatValue(unit, scaling) / Math.max(1, Number(divisor) || 1));
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+export function calculateDamage(state, attacker, defender, skillId, random = Math.random, scalingOverride = null) {
   const skill = state.skills[skillId];
   if (!skill) throw new Error(`Unknown skill: ${skillId}`);
   if (attacker.darknessTurns > 0) return 0;
-  const ratio = powerRatioOverride ?? attacker.powerRatio ?? skill.powerRatio;
-  const basePower = skill.fixedPower ?? attacker.maxHp * ratio;
+  const scaling = scalingOverride ?? attacker.scaling ?? skill.scaling;
+  const legacyRatio = typeof scaling === "number" ? scaling : attacker.powerRatio ?? skill.powerRatio;
+  const basePower = skill.fixedPower ?? scaledStatValue(attacker, scaling, attacker.maxHp * (Number(legacyRatio) || 0));
   const config = state.balance.damage;
   const variance = config.randomMin + (config.randomMax - config.randomMin) * random();
   return Math.max(config.minimumDamage, Math.round(basePower * damageMultiplier(attacker, defender, config) * variance));
@@ -189,9 +203,9 @@ function tickTurnStatus(unit) {
   if (unit.defenseBuffTurns > 0 && --unit.defenseBuffTurns === 0) unit.defenseBuffRatio = 0;
   if (unit.shieldTurns > 0 && --unit.shieldTurns === 0) unit.shieldHp = 0;
   if (unit.healOverTimeTurns > 0) {
-    effects.healed = Math.min(unit.maxHp - unit.hp, Math.max(1, Math.round(unit.maxHp * unit.healOverTimeRatio)));
+    effects.healed = Math.min(unit.maxHp - unit.hp, Math.max(1, unit.healOverTimeAmount || Math.round(unit.maxHp * unit.healOverTimeRatio)));
     unit.hp += effects.healed;
-    if (--unit.healOverTimeTurns === 0) unit.healOverTimeRatio = 0;
+    if (--unit.healOverTimeTurns === 0) { unit.healOverTimeRatio = 0; unit.healOverTimeAmount = 0; }
   }
   return effects;
 }
@@ -262,13 +276,14 @@ export function useSkill(state, attackerId, targetId = null, skillId = null, ran
       hitTargets.push(...others.slice(0, skill.chainCount));
     }
     const hits = hitTargets.map((target, index) => {
-      const ratio = index === 0 ? null : skill.chainPowerRatios?.[index - 1] ?? skill.powerRatio;
-      const damage = missed ? 0 : calculateDamage(state, attacker, target, selectedSkillId, random, ratio);
+      const scaling = index === 0 ? null : skill.chainScaling?.[index - 1] ?? skill.chainPowerRatios?.[index - 1] ?? skill.scaling;
+      const damage = missed ? 0 : calculateDamage(state, attacker, target, selectedSkillId, random, scaling);
       const applied = applyIncomingDamage(target, damage);
       return { target, damage, hpDamage: applied.hpDamage, shieldDamage: applied.absorbed };
     });
     const turnEffects = finishTurn(state, attacker);
-    const delayedTurns = !missed && skill.delayTurns && targets[0].alive ? skill.delayTurns : 0;
+    const delayedTurns = !missed && targets[0].alive
+      ? scaledTurns(attacker, skill.delayScaling, skill.delayBase ?? skill.delayTurns ?? 0, skill.delayDivisor ?? 1, 0, skill.delayMax ?? Infinity) : 0;
     if (delayedTurns) targets[0].nextActionAt += delayedTurns * actionInterval(targets[0], state.balance.speed);
     const outcome = updateOutcome(state);
     return {
@@ -283,26 +298,32 @@ export function useSkill(state, attackerId, targetId = null, skillId = null, ran
   const applied = [];
   for (const target of targets) {
     if (skill.type === "heal") {
-      const amount = Math.max(1, Math.round(target.maxHp * skill.healRatio));
+      const amount = Math.max(1, Math.round(scaledStatValue(attacker, skill.healScaling, target.maxHp * skill.healRatio)));
       const healed = Math.min(target.maxHp - target.hp, amount);
       target.hp += healed;
       applied.push({ target, healed });
     } else if (skill.type === "buff") {
-      updateBuff(target, "attackBuffRatio", "attackBuffTurns", skill.attackBuffRatio, skill.durationTurns);
+      const ratio = Math.min(skill.attackBuffMax ?? Infinity, (skill.attackBuffBase ?? skill.attackBuffRatio ?? 0) + scaledStatValue(attacker, skill.attackBuffScaling));
+      updateBuff(target, "attackBuffRatio", "attackBuffTurns", ratio, skill.durationTurns);
       applied.push({ target, buff: "attack", turns: skill.durationTurns });
     } else if (skill.type === "status" && skill.statusEffect === "blind") {
-      target.darknessTurns = Math.max(target.darknessTurns || 0, skill.durationTurns);
-      applied.push({ target, status: "blind", turns: skill.durationTurns });
+      const turns = scaledTurns(attacker, skill.durationScaling, skill.durationBase ?? 0, skill.durationDivisor ?? 1, 1, skill.durationMax ?? Infinity);
+      target.darknessTurns = Math.max(target.darknessTurns || 0, turns);
+      applied.push({ target, status: "blind", turns });
     } else if (skill.type === "control") {
-      target.controlTurns = Math.max(target.controlTurns || 0, skill.controlTurns);
-      applied.push({ target, status: "control", turns: skill.controlTurns });
+      const turns = scaledTurns(attacker, skill.controlScaling, skill.controlBase ?? 0, skill.controlDivisor ?? 1, 1, skill.controlMax ?? Infinity);
+      target.controlTurns = Math.max(target.controlTurns || 0, turns);
+      applied.push({ target, status: "control", turns });
     } else if (skill.type === "healOverTime") {
-      updateBuff(target, "healOverTimeRatio", "healOverTimeTurns", skill.healRatio, skill.durationTurns);
+      const amount = Math.max(1, Math.round(scaledStatValue(attacker, skill.healOverTimeScaling, target.maxHp * skill.healRatio)));
+      target.healOverTimeAmount = Math.max(target.healOverTimeAmount || 0, amount);
+      target.healOverTimeTurns = Math.max(target.healOverTimeTurns || 0, skill.durationTurns);
       applied.push({ target, status: "regeneration", turns: skill.durationTurns });
     } else if (skill.type === "guard") {
-      target.shieldHp = Math.max(target.shieldHp || 0, Math.round(target.maxHp * skill.shieldRatio));
+      target.shieldHp = Math.max(target.shieldHp || 0, Math.round(scaledStatValue(attacker, skill.shieldScaling, target.maxHp * skill.shieldRatio)));
       target.shieldTurns = Math.max(target.shieldTurns || 0, skill.durationTurns);
-      updateBuff(target, "defenseBuffRatio", "defenseBuffTurns", skill.defenseBuffRatio, skill.durationTurns);
+      const ratio = Math.min(skill.defenseBuffMax ?? Infinity, (skill.defenseBuffBase ?? skill.defenseBuffRatio ?? 0) + scaledStatValue(attacker, skill.defenseBuffScaling));
+      updateBuff(target, "defenseBuffRatio", "defenseBuffTurns", ratio, skill.durationTurns);
       applied.push({ target, status: "guard", shieldHp: target.shieldHp, turns: skill.durationTurns });
     } else {
       throw new Error(`Unsupported skill type: ${skill.type}`);

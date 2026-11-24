@@ -32,7 +32,8 @@
       .skill-info[hidden] { display: block; visibility: hidden; }
       .skill-info-title { display: block; margin-bottom: 3px; color: #312e81; }
       #dragonName { margin: 0; font-size: 1.65rem; color: #7c3aed; }
-      #dragonProfession { min-height: 1.5em; margin: 5px 0 12px; color: #475569; }
+      #dragonProfession { min-height: 1.5em; margin: 5px 0 7px; color: #475569; }
+      .level-progress { width: min(100%, 320px); margin: 0 auto 12px; padding: 7px 10px 9px; border: 1px solid #d8c7ff; border-radius: 13px; background: linear-gradient(135deg, #faf7ff, #eff6ff); color: #504078; }.level-progress__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .76rem; font-weight: 800; }.level-progress__top strong { color: #6d28d9; font-size: .9rem; }.level-progress__track { height: 9px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: #d7c7eb; box-shadow: inset 0 1px 2px #7c3aed33; }.level-progress__fill { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8b5cf6, #c084fc 56%, #f0abfc); transition: width .55s ease; }
       .path-section { margin: 0 auto 18px; }
       .path-title { margin: 0 0 8px; color: #475569; font-size: .88rem; }
       .path-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
@@ -113,6 +114,10 @@
         </section>
         <h2 id="dragonName"></h2>
         <p id="dragonProfession"></p>
+        <section class="level-progress" aria-label="">
+          <div class="level-progress__top"><strong id="dragonLevel"></strong><span id="dragonXpProgress"></span></div>
+          <div id="dragonXpTrack" class="level-progress__track" role="progressbar"><span id="dragonXpFill" class="level-progress__fill"></span></div>
+        </section>
         <nav class="path-section" aria-label="">
           <p class="path-title" id="pathsTitle"></p>
           <div class="path-grid">
@@ -141,6 +146,7 @@
       import { staminaBreakdown, loadCheckins } from "./js/checkin-client.js?v=20261118-stamina-breakdown";
       import { loadUI, t } from "./js/i18n.js";
       import { renderEnergyMeter } from "./js/energy-meter.js?v=rainbow-energy-20261118";
+      import { progressForXp } from "./js/dragon-progression.js?v=progress-display";
 
       const $ = (selector) => document.querySelector(selector);
       const CAPACITY = 10;
@@ -199,20 +205,28 @@
         button.setAttribute("aria-label", `${title}. ${description}`);
       }
 
-      function showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance) {
+      function showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance, progression) {
+        const levelProgress = progressForXp(dragon.xp, progression);
         $("#dragonImage").src = species.image;
         $("#dragonControl").setAttribute("aria-label", t("home.dragonProgressSummary", {
-          level: dragon.level ?? 1,
-          xp: dragon.xp ?? 0,
+          level: levelProgress.level,
+          xp: levelProgress.isMaxLevel ? t("home.xpMax") : t("home.xpProgress", { current: levelProgress.xpIntoLevel, need: levelProgress.xpForNextLevel }),
           stage: dragon.stage === "hatchling" ? t("home.stageOne") : t("home.stageValue", { stage: dragon.stage ?? 1 })
         }));
         $("#dragonImage").alt = "";
         $("#dragonName").textContent = dragon.customName || species.name;
         $("#dragonProfession").textContent = species.profession || dragon.profession || "";
+        $("#dragonLevel").textContent = t("home.levelValue", { level: levelProgress.level });
+        $("#dragonXpProgress").textContent = levelProgress.isMaxLevel ? t("home.xpMax") : t("home.xpProgress", { current: levelProgress.xpIntoLevel, need: levelProgress.xpForNextLevel });
+        $("#dragonXpFill").style.width = `${levelProgress.isMaxLevel ? 100 : levelProgress.xpIntoLevel / levelProgress.xpForNextLevel * 100}%`;
+        $("#dragonXpTrack").setAttribute("aria-label", $("#dragonXpProgress").textContent);
+        $("#dragonXpTrack").setAttribute("aria-valuemin", "0");
+        $("#dragonXpTrack").setAttribute("aria-valuemax", String(levelProgress.isMaxLevel ? 1 : levelProgress.xpForNextLevel));
+        $("#dragonXpTrack").setAttribute("aria-valuenow", String(levelProgress.isMaxLevel ? 1 : levelProgress.xpIntoLevel));
         const stage = dragon.stage === "hatchling" ? 1 : (dragon.stage ?? 1);
         const stageDisplay = stage === 1 ? t("home.stageOne") : t("home.stageValue", { stage });
         configureInfo("dragonStats", dragon.customName || species.name, t("home.dragonProgressSummary", {
-          level: dragon.level ?? 1, xp: dragon.xp ?? 0, stage: stageDisplay
+          level: levelProgress.level, xp: levelProgress.isMaxLevel ? t("home.xpMax") : t("home.xpProgress", { current: levelProgress.xpIntoLevel, need: levelProgress.xpForNextLevel }), stage: stageDisplay
         }));
         const attributes = [
           ["attackValue", "attack", practiceBonuses.attack],
@@ -327,13 +341,14 @@
       onAuthStateChanged(auth, async (user) => {
         if (!user) { location.replace("index.html"); return; }
         try {
-          const [dragonSnapshot, attemptsSnapshot, library, skillsData, battleAssets, balance] = await Promise.all([
+          const [dragonSnapshot, attemptsSnapshot, library, skillsData, battleAssets, balance, progression] = await Promise.all([
             getDoc(doc(db, "users", user.uid, "dragon", "current")),
             getDocs(collection(db, "users", user.uid, "attempts")),
             loadJson("assets/dragons/dragon-library.json"),
             loadJson("data/skills.json"),
             loadJson("assets/battle/battle-assets.json"),
-            loadJson("data/battle-balance.json")
+            loadJson("data/battle-balance.json"),
+            loadJson("data/dragon-progression.json")
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragon = dragonSnapshot.data();
@@ -348,7 +363,7 @@
           }
           const checkins = await loadCheckins(user.uid);
           const stamina = staminaBreakdown(dragon, checkins);
-          showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance);
+          showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance, progression);
           $("#status").textContent = "";
         } catch (error) {
           console.error("Unable to load dragon home", error);

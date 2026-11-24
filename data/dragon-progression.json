@@ -1,8 +1,8 @@
 {
   "version": 1,
   "xpModel": "total-xp",
-  "maxLevel": 30,
-  "notes": "totalXp 是达到该等级所需的累计经验；xpToNext 是从该等级升至下一等级所需经验。修改数值时请保持 level 连续、totalXp 递增，并让下一行 totalXp = 本行 totalXp + 本行 xpToNext。",
+  "maxLevel": 10,
+  "notes": "当前等级上限为 10。totalXp 是达到该等级所需的累计经验；xpToNext 是从该等级升至下一等级所需经验。达到等级上限后累计经验会封顶在该等级门槛，防止反复冒险造成数值膨胀。未来提高 maxLevel 可启用后续已预留的等级行。修改数值时请保持 level 连续、totalXp 递增，并让下一行 totalXp = 本行 totalXp + 本行 xpToNext。",
   "levels": [
     { "level": 1, "totalXp": 0, "xpToNext": 30 },
     { "level": 2, "totalXp": 30, "xpToNext": 40 },

@@ -9,6 +9,7 @@ test("the stored progression matrix has consecutive, consistent thresholds", () 
   const levels = validateProgression(progression);
   assert.equal(levels.length, 30);
   assert.equal(levels.at(-1).totalXp, 15696);
+  assert.equal(progression.maxLevel, 10);
 });
 
 test("total XP carries across a smooth level transition", () => {
@@ -21,9 +22,10 @@ test("total XP carries across a smooth level transition", () => {
   assert.equal(after.levelsGained, 1);
 });
 
-test("experience above the final threshold keeps the dragon at maximum level", () => {
-  const progress = addDragonXp({ xp: 15690 }, 99, progression);
-  assert.equal(progress.level, 30);
+test("experience at the configured level cap cannot inflate further", () => {
+  const progress = addDragonXp({ xp: 860 }, 99, progression);
+  assert.equal(progress.level, 10);
   assert.equal(progress.isMaxLevel, true);
-  assert.equal(progress.xp, 15789);
+  assert.equal(progress.xp, 866);
+  assert.equal(progress.gainedXp, 6);
 });

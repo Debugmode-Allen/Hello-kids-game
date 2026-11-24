@@ -19,10 +19,13 @@
       "iconGlyph": "🍃",
       "type": "damage",
       "target": "singleEnemy",
-      "obeysFrontlineProtection": true,
+      "obeysFrontlineProtection": false,
       "energyCost": 1,
-      "powerRatio": 0.12,
-      "delayTurns": 2,
+      "scaling": { "attack": 1.2 },
+      "delayScaling": { "attack": 0.5, "speed": 0.5 },
+      "delayBase": 1,
+      "delayDivisor": 12,
+      "delayMax": 3,
       "audioCueId": "vine"
     },
     {
@@ -34,7 +37,7 @@
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
       "energyCost": 1,
-      "powerRatio": 0.32,
+      "scaling": { "attack": 3.2 },
       "audioCueId": "fire-breath"
     },
     {
@@ -47,7 +50,9 @@
       "obeysFrontlineProtection": false,
       "energyCost": 1,
       "statusEffect": "blind",
-      "durationTurns": 1,
+      "durationScaling": { "attack": 0.5, "speed": 0.5 },
+      "durationDivisor": 12,
+      "durationMax": 2,
       "audioCueId": "moon-darkness"
     },
     {
@@ -58,7 +63,7 @@
       "type": "heal",
       "target": "singleAlly",
       "energyCost": 1,
-      "healRatio": 0.4
+      "healScaling": { "attack": 2, "defense": 2 }
     },
     {
       "id": "sunlight-encouragement",
@@ -68,7 +73,9 @@
       "type": "buff",
       "target": "allAllies",
       "energyCost": 1,
-      "attackBuffRatio": 0.25,
+      "attackBuffBase": 0.15,
+      "attackBuffScaling": { "attack": 0.01 },
+      "attackBuffMax": 0.45,
       "durationTurns": 3
     },
     {
@@ -80,7 +87,9 @@
       "target": "allEnemies",
       "obeysFrontlineProtection": false,
       "energyCost": 1,
-      "controlTurns": 1
+      "controlScaling": { "attack": 0.5, "speed": 0.5 },
+      "controlDivisor": 12,
+      "controlMax": 2
     },
     {
       "id": "piercing-sand",
@@ -91,7 +100,7 @@
       "target": "singleEnemy",
       "obeysFrontlineProtection": false,
       "energyCost": 1,
-      "powerRatio": 0.28
+      "scaling": { "attack": 2.8 }
     },
     {
       "id": "petal-regrowth",
@@ -101,7 +110,7 @@
       "type": "healOverTime",
       "target": "allAllies",
       "energyCost": 1,
-      "healRatio": 0.2,
+      "healOverTimeScaling": { "attack": 1, "defense": 1 },
       "durationTurns": 2
     },
     {
@@ -112,8 +121,10 @@
       "type": "guard",
       "target": "self",
       "energyCost": 1,
-      "shieldRatio": 0.4,
-      "defenseBuffRatio": 0.2,
+      "shieldScaling": { "defense": 4 },
+      "defenseBuffBase": 0.1,
+      "defenseBuffScaling": { "defense": 0.01 },
+      "defenseBuffMax": 0.4,
       "durationTurns": 1
     },
     {
@@ -125,9 +136,9 @@
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
       "energyCost": 1,
-      "powerRatio": 0.22,
+      "scaling": { "attack": 2.2 },
       "chainCount": 2,
-      "chainPowerRatios": [0.14, 0.09]
+      "chainScaling": [{ "attack": 1.4 }, { "attack": 0.9 }]
     },
     {
       "id": "claw",
@@ -135,7 +146,7 @@
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
-      "powerRatio": 0.16
+      "scaling": { "attack": 1.6 }
     },
     {
       "id": "enemy-claw",
@@ -143,7 +154,7 @@
       "type": "damage",
       "target": "singleEnemy",
       "obeysFrontlineProtection": true,
-      "powerRatio": 0.5
+      "scaling": { "attack": 3.5 }
     }
   ]
 }
