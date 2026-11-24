@@ -5,5 +5,17 @@
   "battle.advanced.name": "进阶练习",
   "battle.advanced.description": "前排两只毛毛虫，后排三只月光蛾。",
   "battle.levelEleven.name": "11级练习",
-  "battle.levelEleven.description": "两只毛毛虫守在前排，三只月光蛾位于后排。"
+  "battle.levelEleven.description": "两只毛毛虫守在前排，三只月光蛾位于后排。",
+  "chapter.battle.caterpillarName": "草原毛毛虫",
+  "chapter.battle.caterpillarDescription": "一只叶帽毛毛虫挡住了路。",
+  "chapter.battle.mothName": "草原月光蛾",
+  "chapter.battle.mothDescription": "一只月光蛾从草丛中飞出。",
+  "chapter.battle.patrolName": "草原巡逻队",
+  "chapter.battle.patrolDescription": "毛毛虫与月光蛾组成的小队正在巡逻。",
+  "chapter.battle.caterpillarPairName": "双毛毛虫伏击",
+  "chapter.battle.caterpillarPairDescription": "两只毛毛虫占住了前排。",
+  "chapter.battle.mothPairName": "双月光蛾伏击",
+  "chapter.battle.mothPairDescription": "两只月光蛾从两侧袭来。",
+  "chapter.battle.bossName": "草原守卫战",
+  "chapter.battle.bossDescription": "两只毛毛虫守住前排，三只月光蛾在后方掩护。"
 }

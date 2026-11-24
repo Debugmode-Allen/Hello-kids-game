@@ -53,6 +53,73 @@
         { "id": "moth-11-2", "speciesId": "moon-moth", "slot": "R2", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 },
         { "id": "moth-11-3", "speciesId": "moon-moth", "slot": "R3", "stats": { "stamina": 55, "attack": 8, "defense": 6, "speed": 7 }, "skillId": "enemy-claw", "powerRatio": 0.364 }
       ]
+    },
+    {
+      "id": "adventure-meadow-caterpillar",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.caterpillarName",
+      "descriptionKey": "chapter.battle.caterpillarDescription",
+      "enemies": [
+        { "id": "meadow-caterpillar", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 28, "attack": 4, "defense": 2, "speed": 4 }, "skillId": "enemy-claw" }
+      ]
+    },
+    {
+      "id": "adventure-meadow-moth",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.mothName",
+      "descriptionKey": "chapter.battle.mothDescription",
+      "enemies": [
+        { "id": "meadow-moth", "speciesId": "moon-moth", "slot": "R5", "stats": { "stamina": 32, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 }
+      ]
+    },
+    {
+      "id": "adventure-meadow-patrol",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.patrolName",
+      "descriptionKey": "chapter.battle.patrolDescription",
+      "enemies": [
+        { "id": "meadow-patrol-caterpillar", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 28, "attack": 4, "defense": 2, "speed": 4 }, "skillId": "enemy-claw" },
+        { "id": "meadow-patrol-moth", "speciesId": "moon-moth", "slot": "R5", "stats": { "stamina": 32, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 }
+      ]
+    },
+    {
+      "id": "adventure-meadow-caterpillar-pair",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.caterpillarPairName",
+      "descriptionKey": "chapter.battle.caterpillarPairDescription",
+      "enemies": [
+        { "id": "meadow-pair-caterpillar-1", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 26, "attack": 4, "defense": 2, "speed": 4 }, "skillId": "enemy-claw" },
+        { "id": "meadow-pair-caterpillar-2", "speciesId": "leaf-caterpillar", "slot": "R5", "stats": { "stamina": 26, "attack": 4, "defense": 2, "speed": 4 }, "skillId": "enemy-claw" }
+      ]
+    },
+    {
+      "id": "adventure-meadow-moth-pair",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.mothPairName",
+      "descriptionKey": "chapter.battle.mothPairDescription",
+      "enemies": [
+        { "id": "meadow-pair-moth-1", "speciesId": "moon-moth", "slot": "R4", "stats": { "stamina": 30, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 },
+        { "id": "meadow-pair-moth-2", "speciesId": "moon-moth", "slot": "R5", "stats": { "stamina": 30, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 }
+      ]
+    },
+    {
+      "id": "adventure-meadow-boss",
+      "backgroundId": "meadow-dragon-island",
+      "sceneNameKey": "battlefield.meadow.name",
+      "nameKey": "chapter.battle.bossName",
+      "descriptionKey": "chapter.battle.bossDescription",
+      "enemies": [
+        { "id": "meadow-boss-caterpillar-1", "speciesId": "leaf-caterpillar", "slot": "R4", "stats": { "stamina": 30, "attack": 4, "defense": 3, "speed": 4 }, "skillId": "enemy-claw" },
+        { "id": "meadow-boss-caterpillar-2", "speciesId": "leaf-caterpillar", "slot": "R5", "stats": { "stamina": 30, "attack": 4, "defense": 3, "speed": 4 }, "skillId": "enemy-claw" },
+        { "id": "meadow-boss-moth-1", "speciesId": "moon-moth", "slot": "R1", "stats": { "stamina": 32, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 },
+        { "id": "meadow-boss-moth-2", "speciesId": "moon-moth", "slot": "R2", "stats": { "stamina": 32, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 },
+        { "id": "meadow-boss-moth-3", "speciesId": "moon-moth", "slot": "R3", "stats": { "stamina": 32, "attack": 4, "defense": 3, "speed": 5 }, "skillId": "enemy-claw", "powerRatio": 0.25 }
+      ]
     }
   ]
 }

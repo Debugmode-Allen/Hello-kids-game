@@ -16,6 +16,11 @@ test("dummy is granted only to test and overlapping deployment is rejected", () 
   assert.equal(deployedCompanions(library, testUser, { battleSlot: "L4", battleCompanions: { "training-dummy": "L4" } }).length, 0);
   assert.equal(deployedCompanions(library, testUser, { battleSlot: "L2", battleCompanions: { "training-dummy": "R4" } }).length, 0);
 });
+test("a dummy earned from an adventure profile is available to a non-test account", () => {
+  const user = { email: "explorer@example.com" };
+  assert.equal(companionsForAccount(library, user, { companionIds: ["training-dummy"] }).length, 1);
+  assert.equal(deployedCompanions(library, user, { battleSlot: "L2", battleCompanions: { "training-dummy": "L4" } }, { companionIds: ["training-dummy"] }).length, 1);
+});
 test("dummy has fixed stats and never gets an action", () => {
   const state = setup(); const dummy = state.units.find((unit) => unit.id === "companion:training-dummy");
   assert.deepEqual([dummy.attack, dummy.defense, dummy.speed, dummy.maxHp], [0, 10, 0, 50]);
@@ -23,6 +28,13 @@ test("dummy has fixed stats and never gets an action", () => {
   assert(!upcomingTurns(state, 100).includes(dummy.id));
   state.units.find((unit) => unit.id === "dragon").alive = false;
   assert.equal(beginNextTurn(state).id, "enemy");
+});
+test("an adventure HP override is optional and does not reduce a new battle to 1 HP", () => {
+  const fresh = setup();
+  assert.equal(fresh.units.find((unit) => unit.id === "dragon").hp, 100);
+  const dragon = { name: "Dragon", battleSlot: "L2", stats: { attack: 10, defense: 10, speed: 10, stamina: 100 } };
+  const resumed = createBattle({ dragon, dragonImage: "", startingHp: 37, enemies: [], enemyAssets: [], balance: json("../data/battle-balance.json"), skills: json("../data/skills.json").skills });
+  assert.equal(resumed.units.find((unit) => unit.id === "dragon").hp, 37);
 });
 test("frontline dummy takes damage first; defeat removes protection", () => {
   const state = setup(); const dragon = state.units[0]; const dummy = state.units.find((unit) => unit.id === "companion:training-dummy");

@@ -36,7 +36,9 @@ service cloud.firestore {
           let partners = data.get('battleCompanions', {});
           return partners is map && partners.keys().hasOnly(['training-dummy'])
             && (partners.size() == 0
-              || (request.auth.token.get('email', '') == 'wang.yilun.allen+test@gmail.com'
+              || ((request.auth.token.get('email', '') == 'wang.yilun.allen+test@gmail.com'
+                || (exists(/databases/$(database)/documents/users/$(userId)/adventure/profile)
+                  && get(/databases/$(database)/documents/users/$(userId)/adventure/profile).data.get('companionIds', []).hasAny(['training-dummy'])))
                 && partners['training-dummy'] in ['L1', 'L2', 'L3', 'L4', 'L5']
                 && partners['training-dummy'] != data.get('battleSlot', 'L4')));
         }
@@ -61,6 +63,8 @@ service cloud.firestore {
               || (resource.data.keys().hasAny(['energy'])
                 // 充能每次最多 +1；技能可以扣除任意点数，但不能扣到负数。
                 && (request.resource.data.energy == resource.data.energy + 1
+                  // Adventure chests may restore every empty energy slot at once.
+                  || (request.resource.data.energy == 10 && resource.data.energy < 10)
                   || request.resource.data.energy < resource.data.energy))));
         }
         allow read: if isOwner(userId) || isAdmin() || isLinkedParent(userId);
@@ -75,6 +79,14 @@ service cloud.firestore {
           && validEnergyTransition()
           && validBattleSlot(request.resource.data)
           && validBattleCompanions(request.resource.data));
+        allow delete: if isAdmin();
+      }
+      match /adventureRuns/{runId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if isAdmin();
+      }
+      match /adventure/{adventureId} {
+        allow read, create, update: if isOwner(userId);
         allow delete: if isAdmin();
       }
       match /progress/{progressId} {

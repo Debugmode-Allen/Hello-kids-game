@@ -9,7 +9,9 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本
 - `journey.html`：龙岛故事、选蛋、分级起始测验、孵化、命名。
 - `home.html`：孩子的小龙主页，读取当前龙的能量和技能配置；上方展示龙与两侧战斗技能/能量环，下方在名字和等级资料之间展示四个功能入口。
 - 冒险视口以 `.map-scroll` 承载放大的 `.map-world`，进入时定位南部；三块顶层悬浮 UI 不随地图滚动。`assets/adventure/village/` 提供透明村庄与 4×2 八帧龙影，CSS 帧动画和漂移营造远景飞行；布阵数据字段见下文。
-- `adventure.html`：冒险总览页。以龙岛总地图为背景，显示当前小龙名称、等级和经验，并提供各区域的可选择地图节点；当前仅完成总览与区域预览，不结算关卡进度或奖励。
+- `adventure.html`：冒险总览页。以龙岛总地图为背景，显示当前小龙名称、等级和经验；草原入口进入第一章迷宫。
+- `chapter.html`：第一章「龙岛草原」的 6×8 随机迷宫。迷雾以玩家当前位置为中心沿可通行路径显示最远三格；未清除的怪物、Boss、宝箱或治疗水晶会显示自身并阻断之后的视线，墙也会阻断。Boss、宝箱与治疗水晶在迷雾中保留低亮度位置标记；怪物、宝箱或治疗水晶被清除后立即以当前位置重算视线。通往 Boss 的唯一路径随机放置五组怪物，进入格子后由 `battle.html` 战斗，胜利才会通过。迷宫角色显示当前小龙头像。每场战斗后的 HP 只回写到本章迷宫快照，不影响小龙基础体力；治疗水晶回复该冒险最大 HP 的 50%，宝箱立即补满神龙能量。Boss 固定为前排两只毛毛虫、后排三只月光蛾；胜利奖励木桩伙伴。
+- 从龙岛进入存在进行中快照的第一章时，`chapter.html` 显示继续挑战或重新生成地图的选择层；战斗返回不显示选择层。若保存的章节已通关，则从龙岛再次进入时直接生成新地图。
 - `village.html`：从冒险地图的村庄高亮入口进入的小龙信息页，样式为 `css/village.css`，逻辑为 `js/village-page.js`。读取当前龙、物种库、技能配置和打卡有效体力；包含技能概览、五格布阵及物品待开放页。右下「确认布阵」通过事务更新当前小龙的 battleSlot 和 battleCompanions；新战斗读取该字段，未设置或非法值回退到旧战斗默认 L4。技能加点及物品使用尚待定义规则。
 - `practice.html`：练习二级页，展示当前账号的小龙、对战模拟、数学/中文/英文练习和课外打卡。
 - `subject-practice.html`：共享的五题练习页面，由 `?subject=math|english|chinese` 选择科目。
@@ -33,7 +35,9 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本
 - `assets/dragons/dragon-library.json`：小龙名字、元素、职业、描述和图片路径；它是小龙资料库。
 - `data/parent-dragons.json`：五只家长守护龙的 ID、图片、故事键和主题色；背景介绍放在 `content/story.zh-CN.json`。
 - `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与新生成的彩虹能量点已登记并接入战斗 UI。
-- `data/adventure-library.json`：地图入口贴图位置、比例、文字键与生物装饰组配置。`js/adventure-worlds.js` 读取并渲染，目前在村庄右侧两河之间展示第 1 世界「龙岛草原」；入口图片及毛毛虫/飞蛾 4×2 八帧贴图位于 `assets/adventure/meadow/`，两类各复用两组。整体缩放60%，坐标由配置控制；入口具备鼠标/触摸/键盘高亮，点击显示原生 dialog 的待开放预览。实际关卡、进度或奖励未接入。
+- `data/adventure-library.json`：地图入口贴图位置、比例、文字键与生物装饰组配置。`js/adventure-worlds.js` 读取并渲染，目前在村庄右侧两河之间展示第 1 世界「龙岛草原」；入口图片及毛毛虫/飞蛾 4×2 八帧贴图位于 `assets/adventure/meadow/`，两类各复用两组。整体缩放60%，坐标由配置控制；草原入口具备鼠标/触摸/键盘高亮，点击进入第一章，其余后续世界仍使用待开放预览。
+- `data/adventure-chapters.json`：章节的格子尺寸、战斗配置、随机怪物组、`visionRange`、恢复比例与首领奖励。`js/adventure-run.js` 用带约束的深度优先迷宫生成，确保起点到 Boss 连通；第一章将五组随机怪物放在唯一主路径上，并保存探索过的三格视线范围。
+- `data/dragon-progression.json`：小龙等级与累计经验矩阵。每行的 `totalXp` 是达到该等级的累计经验，`xpToNext` 是升到下一等级所需经验；目前为 1–30 级曲线。只在这里调整成长节奏，并保持相邻行的累计经验连续。`js/dragon-progression.js` 负责校验矩阵、由总经验反查等级，以及结算经验时保留跨级余量。
 - `assets/adventure/backgrounds/dragon-island-adventure-map-v6.png`：冒险总览使用的裁切后龙岛地图背景；仅承载视觉地形，不保存区域、关卡或奖励规则。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。
@@ -142,7 +146,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本
 
 `users/{uid}` 仅保存 `name` 和 `role`。
 
-- `users/{uid}/dragon/current`：小龙物种、孩子命名、职业、等级、经验、阶段、四维属性（`attack`、`defense`、`speed`、`stamina`）和能量 `energy`（0–10）。新小龙初始值为属性 10、10、10、100，能量等于 10 题孵化测验的答对题数；`energyAssessmentId` 关联本次 `initial-assessment` 记录。
+- `users/{uid}/dragon/current`：小龙物种、孩子命名、职业、等级、累计经验 `xp`、阶段、四维属性（`attack`、`defense`、`speed`、`stamina`）和能量 `energy`（0–10）。新小龙初始值为等级 1、经验 0、属性 10、10、10、100，能量等于 10 题孵化测验的答对题数；`energyAssessmentId` 关联本次 `initial-assessment` 记录。冒险结算通过事务按 `data/dragon-progression.json` 同时更新 `xp` 和 `level`，经验始终保存为累计值；每升一级，攻击/防御/速度各 +2，体力 +20。
 - `users/{uid}/progress/summary`：属于孩子账户的各学科等级、经验和答题汇总，不属于小龙属性。
 - 管理员可以补录或修改孩子的 `progress/summary` 中三科年级及总题数、答对题数。管理员编辑保留各次测验的历史记录，战前抽题读取更新后的年级。
 - `users/{uid}/attempts/{attemptId}`：每次测试的题目结果和推荐等级。
@@ -156,8 +160,10 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。本
 - `parentRequests/{requestId}`：家长申请和管理员审核历史，每次重提生成独立记录。
 - `parentLinks/{childId}`：每个孩子的唯一关联记录。申请时为待审核占位，管理员批准后生效，拒绝或解绑时释放。孩子只可读取自己的已批准关联。
 - `users/{uid}/parentActivities/current` 和 `users/{uid}/activityCheckins/{checkinId}`：保存活动设置和每日打卡状态。
+- `users/{uid}/adventureRuns/{chapterId}`：第一章随机迷宫的完整快照，包括随机种子、通路、五组怪物的战斗/经验配置、位置、独立于小龙基础体力的玩家当前/最大 HP 与本次经验；离开后可恢复同一张地图。
+- `users/{uid}/adventure/profile`：冒险领取的伙伴 ID 列表。Boss 首次胜利时将 `training-dummy` 写入 `companionIds`；村庄和战斗页均读取它来提供可上阵伙伴。
 
-仓库根目录的 `firestore.rules` 是当前规则的备份。本版本包含能量规则：限定 `dragon/current.energy` 为 0–10 整数；创建小龙时要求能量等于同一事务新增的 10 题 `initial-assessment` 分数；每次充能最多 +1，技能消耗可以降至 0。GitHub 推送不会自动部署 Firestore Rules；线上规则需在 Firebase Console 单独确认/发布。Rules 不能验证孩子是否真的答对，客户端仍可连续伪造 +1；服务端答案验证仍待以后实现。
+仓库根目录的 `firestore.rules` 是当前规则的备份。本版本包含能量规则：限定 `dragon/current.energy` 为 0–10 整数；创建小龙时要求能量等于同一事务新增的 10 题 `initial-assessment` 分数；每次充能最多 +1，宝箱可直接补至 10，技能消耗可以降至 0。木桩伙伴可由测试账号授予或由本人 `adventure/profile.companionIds` 持有后上阵。GitHub 推送不会自动部署 Firestore Rules；线上规则需在 Firebase Console 单独确认/发布。Rules 不能验证孩子是否真的答对，客户端仍可连续伪造 +1；服务端答案验证仍待以后实现。
 
 ## 本地运行与验收
 

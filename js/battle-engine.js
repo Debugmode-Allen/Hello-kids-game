@@ -50,12 +50,15 @@ function tieBreak(a, b) {
   return a.slot.localeCompare(b.slot);
 }
 
-export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null, initialEnergy = 0, companions = [], enemyBehaviors = {} }) {
+export function createBattle({ dragon, dragonImage, enemies, enemyAssets, balance, skills, skillOneId = null, initialEnergy = 0, companions = [], enemyBehaviors = {}, startingHp = null }) {
   const dragonUnit = createCombatant({
     id: "dragon", side: "player", slot: normalizeBattleSlot(dragon.battleSlot), name: dragon.name, image: dragonImage,
     stats: dragon.stats, skillId: "claw"
   });
   const usedSlots = new Set([dragonUnit.slot]);
+  if (startingHp !== null && startingHp !== undefined && Number.isFinite(Number(startingHp))) {
+    dragonUnit.hp = Math.max(1, Math.min(dragonUnit.maxHp, Math.floor(Number(startingHp))));
+  }
   const companionUnits = companions.flatMap((companion) => {
     if (!/^L[1-5]$/.test(companion.slot) || usedSlots.has(companion.slot)) return [];
     usedSlots.add(companion.slot);

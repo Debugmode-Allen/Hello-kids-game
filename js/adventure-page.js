@@ -1,7 +1,7 @@
 import { auth, db, onAuthStateChanged, doc, getDoc } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
 
-import { mountWorldLandmarks } from "./adventure-worlds.js?v=20261118-meadow-entry";
+import { mountWorldLandmarks } from "./adventure-worlds.js?v=meadow-chapter";
 
 const $ = (selector) => document.querySelector(selector);
 

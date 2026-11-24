@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link rel="stylesheet" href="css/chapter.css?v=full-adventure-v5" />
+  </head>
+  <body>
+    <main class="chapter-page" aria-live="polite">
+      <header class="chapter-header">
+        <a href="adventure.html" id="backLink" class="back-link"></a>
+        <section><p id="chapterEyebrow"></p><h1 id="chapterTitle"></h1></section>
+        <section class="loot-summary"><span id="experienceValue"></span><span id="hpValue"></span></section>
+      </header>
+      <section class="maze-shell" aria-labelledby="chapterTitle">
+        <div id="mazeGrid" class="maze-grid" role="grid"></div>
+        <aside class="chapter-panel">
+          <p id="chapterMessage"></p>
+          <button type="button" id="encounterAction" hidden></button>
+          <button type="button" id="restartAction" hidden></button>
+        </aside>
+      </section>
+      <section id="resumeDialog" class="resume-dialog" hidden aria-modal="true" role="dialog" aria-labelledby="resumeTitle">
+        <div class="resume-dialog__card">
+          <h2 id="resumeTitle"></h2><p id="resumeMessage"></p>
+          <div><button id="resumeRun" type="button"></button><button id="newRun" type="button"></button></div>
+        </div>
+      </section>
+      <p id="status" class="status" role="status"></p>
+    </main>
+    <script type="module" src="js/chapter-page.js?v=full-adventure-v7"></script>
+  </body>
+</html>

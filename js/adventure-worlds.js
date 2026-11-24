@@ -47,6 +47,10 @@ export async function mountWorldLandmarks(host) {
     entry.setAttribute("aria-describedby", caption.id);
     entry.setAttribute("aria-haspopup", "dialog");
     entry.addEventListener("click", () => {
+      if (world.id === "meadow") {
+        location.assign("chapter.html?chapter=meadow-1");
+        return;
+      }
       const dialog = document.getElementById("worldPreview");
       document.getElementById("worldPreviewTitle").textContent = t(world.nameKey);
       document.getElementById("worldPreviewOrdinal").textContent = t(world.ordinalKey);

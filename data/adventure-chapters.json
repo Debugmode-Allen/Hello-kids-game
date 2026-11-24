@@ -1,0 +1,27 @@
+{
+  "chapters": [
+    {
+      "id": "meadow-1",
+      "worldId": "meadow",
+      "titleKey": "chapter.meadow.title",
+      "subtitleKey": "chapter.meadow.subtitle",
+      "mode": "adventure",
+      "revealAll": false,
+      "visionRange": 3,
+      "rows": 8,
+      "columns": 6,
+      "bossBattleId": "adventure-meadow-boss",
+      "bossExperience": 21,
+      "monsterGroupCount": 5,
+      "encounterGroups": [
+        { "battleId": "adventure-meadow-caterpillar", "experience": 3 },
+        { "battleId": "adventure-meadow-moth", "experience": 5 },
+        { "battleId": "adventure-meadow-patrol", "experience": 8 },
+        { "battleId": "adventure-meadow-caterpillar-pair", "experience": 6 },
+        { "battleId": "adventure-meadow-moth-pair", "experience": 10 }
+      ],
+      "rewards": { "companionId": "training-dummy" },
+      "restHealRatio": 0.5
+    }
+  ]
+}

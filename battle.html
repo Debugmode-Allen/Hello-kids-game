@@ -91,6 +91,15 @@
       .result-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
       .result-actions a { padding: 9px 13px; border: 1px solid #c7d2fe; border-radius: 11px; background: #fff; color: #312e81; font-weight: 800; text-decoration: none; }
       .result-actions[hidden] { display: none; }
+      .adventure-progress { margin: 16px 0 8px; padding: 13px; border: 1px solid #fef3c7aa; border-radius: 16px; background: linear-gradient(135deg, #fff7d4, #f5d77a); color: #5d3a03; text-align: left; box-shadow: inset 0 1px #fff8; }
+      .adventure-progress[hidden], .level-up-panel[hidden] { display: none; }
+      .adventure-progress__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 900 .82rem/1.2 "Microsoft YaHei", sans-serif; }
+      .adventure-xp-track { height: 13px; margin-top: 8px; overflow: hidden; border: 2px solid #9d6714; border-radius: 99px; background: #6c4315; box-shadow: inset 0 1px 2px #0005; }
+      .adventure-xp-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #73d6ff, #e9fcff 58%, #fff59c); box-shadow: 0 0 12px #fff; transition: width 1.25s cubic-bezier(.16,.82,.23,1); }
+      .adventure-xp-gain { margin: 8px 0 0; color: #8b4d00; font: 900 1rem/1 "Microsoft YaHei", sans-serif; text-align: center; }
+      .level-up-panel { margin-top: 12px; padding: 12px; border: 2px solid #fff5a8; border-radius: 16px; background: radial-gradient(circle at top, #fff8bf, #e39923 70%, #a95014); color: #fff; text-align: center; animation: level-pop .55s cubic-bezier(.18,.85,.25,1.24) both; text-shadow: 0 2px 2px #7a2606; }
+      .level-up-panel strong { display: block; font-size: 1.34rem; }.level-up-panel span { display: block; margin-top: 5px; font: 800 .78rem/1.35 "Microsoft YaHei", sans-serif; }
+      @keyframes level-pop { from { opacity: 0; transform: scale(.45) translateY(18px); } to { opacity: 1; transform: scale(1) translateY(0); } }
       button:hover { filter: brightness(1.1); transform: translateY(-2px); } button:focus-visible { outline: 3px solid #fef08a; outline-offset: 2px; }
       .notice { min-height: 1.5em; margin: 12px 0 0; color: #334155; text-align: center; }
       @media (max-width: 760px) {
@@ -133,6 +142,12 @@
         <div id="battleResult" class="battle-result hidden" aria-live="polite">
           <section class="result-card">
             <h2 id="resultTitle"></h2><p id="resultSummary"></p><p id="resultReturning"></p>
+            <section id="adventureProgress" class="adventure-progress" hidden>
+              <div class="adventure-progress__top"><strong id="adventureLevel"></strong><span id="adventureXpText"></span></div>
+              <div class="adventure-xp-track"><div id="adventureXpFill" class="adventure-xp-fill"></div></div>
+              <p id="adventureXpGain" class="adventure-xp-gain"></p>
+            </section>
+            <section id="levelUpPanel" class="level-up-panel" hidden><strong id="levelUpTitle"></strong><span id="levelUpStats"></span></section>
             <div id="resultActions" class="result-actions" hidden>
               <a id="replayMatch" href="battle.html?from=practice"></a>
               <a id="backToArenas" href="practice-battles.html"></a>
@@ -176,6 +191,7 @@
       import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
       import { deployedCompanions } from "./js/companions.js";
+      import { addDragonXp, progressForXp } from "./js/dragon-progression.js";
       import { beginNextTurn, calculateDamage, consumeControlledTurn, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDamageSkill, useSkill, validTargets } from "./js/battle-engine.js?v=seven-dragon-skills";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
@@ -185,16 +201,34 @@
       const $ = (selector) => document.querySelector(selector);
       const query = new URLSearchParams(location.search);
       const fromPractice = query.get("from") === "practice";
+      const fromAdventure = query.get("from") === "adventure";
+      const adventureRun = query.get("run");
+      const adventureNode = query.get("node");
+      const adventureRewardXp = Math.max(0, Math.floor(Number(query.get("xp")) || 0));
       const requestedBattleId = query.get("battle") || "practice-meadow";
-      const returnPage = fromPractice ? "practice-battles.html" : "home.html";
+      function localAdventureProfile(userId) {
+        try { return JSON.parse(localStorage.getItem(`dragon-adventure-profile:${userId}`)) || null; }
+        catch { return null; }
+      }
       const slots = new Map([...document.querySelectorAll("[data-slot]")].map((element) => [element.dataset.slot, element]));
       let state = null;
+      function returnPageForResult() {
+        if (fromAdventure) {
+          const dragon = state ? unitById(state, "dragon") : null;
+          const encounter = state?.status === "victory" && adventureNode ? `&node=${encodeURIComponent(adventureNode)}&result=victory` : "";
+          const health = dragon ? `&battleStatus=${encodeURIComponent(state.status)}&hp=${encodeURIComponent(dragon.hp)}&maxHp=${encodeURIComponent(dragon.maxHp)}` : "";
+          return `chapter.html?chapter=${encodeURIComponent(adventureRun || "meadow-1")}${encounter}${health}`;
+        }
+        return fromPractice ? "practice-battles.html" : "home.html";
+      }
       let targeting = null;
       let skillOne = null;
       let busy = true;
       let completedTurns = 0;
       let impactImagePath = "";
       let activeDragonRef = null;
+      let adventureDragon = null;
+      let adventureProgression = null;
       const spellTextures = new Map();
 
       async function loadJson(path) {
@@ -401,12 +435,57 @@
           $("#replayMatch").textContent = t("practice.replay");
           $("#backToArenas").textContent = t("practice.backToArenas");
           $("#resultActions").hidden = false;
+        } else if (fromAdventure) {
+          if (state.status === "victory") {
+            $("#resultSummary").textContent = t("chapter.battleVictorySummary");
+            showAdventureProgression();
+          } else if (state.status === "fled") {
+            $("#resultTitle").textContent = t("chapter.battleFledTitle");
+            $("#resultSummary").textContent = t("chapter.battleFledSummary");
+          }
+          $("#resultReturning").textContent = state.status === "victory" ? t("chapter.returnAfterVictory")
+            : state.status === "fled" ? t("chapter.returnAfterFlee") : t("chapter.moveHint");
+          $("#replayMatch").hidden = true;
+          $("#backToArenas").href = returnPageForResult();
+          $("#backToArenas").textContent = t("chapter.returnMap");
+          $("#resultActions").hidden = false;
         } else {
           $("#resultReturning").textContent = t("battle.resultReturning");
-          setTimeout(() => location.assign(returnPage), 3000);
+          setTimeout(() => location.assign(returnPageForResult()), 3000);
         }
         result.classList.remove("hidden");
         playCue(state.status === "victory" ? "battle-win" : state.status === "defeat" ? "battle-lose" : "battle-flee");
+      }
+
+      function showAdventureProgression() {
+        if (!adventureDragon || !adventureProgression) return;
+        const before = progressForXp(adventureDragon.xp, adventureProgression);
+        const after = addDragonXp(adventureDragon, adventureRewardXp, adventureProgression);
+        const progress = $("#adventureProgress");
+        progress.hidden = false;
+        $("#adventureLevel").textContent = t("chapter.resultLevel", { level: after.level });
+        $("#adventureXpText").textContent = after.isMaxLevel ? t("chapter.resultMaxLevel") : t("chapter.resultXp", { current: after.xpIntoLevel, need: after.xpForNextLevel });
+        $("#adventureXpGain").textContent = t("chapter.resultXpGain", { value: adventureRewardXp });
+        const fill = $("#adventureXpFill");
+        const beforeWidth = before.isMaxLevel ? 100 : before.xpIntoLevel / before.xpForNextLevel * 100;
+        const afterWidth = after.isMaxLevel ? 100 : after.xpIntoLevel / after.xpForNextLevel * 100;
+        fill.style.transition = "none"; fill.style.width = `${beforeWidth}%`;
+        if (after.levelsGained > 0) {
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            fill.style.transition = ""; fill.style.width = "100%";
+            setTimeout(() => { fill.style.transition = "none"; fill.style.width = "0%"; requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.transition = ""; fill.style.width = `${afterWidth}%`; })); }, 700);
+          }));
+        } else {
+          requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.transition = ""; fill.style.width = `${afterWidth}%`; }));
+        }
+        if (after.levelsGained > 0) {
+          const panel = $("#levelUpPanel");
+          setTimeout(() => {
+            $("#levelUpTitle").textContent = t("chapter.levelUp", { level: after.level });
+            $("#levelUpStats").textContent = t("chapter.levelUpStats", { levels: after.levelsGained, attack: after.levelsGained * 2, defense: after.levelsGained * 2, speed: after.levelsGained * 2, stamina: after.levelsGained * 20 });
+            panel.hidden = false;
+          }, 1450);
+        }
       }
 
       async function playAttackAnimation(attacker, target, damage) {
@@ -934,7 +1013,7 @@
           render();
           showBattleResult();
         });
-        $("#returnHome").addEventListener("click", () => location.assign(returnPage));
+        $("#returnHome").addEventListener("click", () => location.assign(returnPageForResult()));
       }
 
       await loadUI();
@@ -945,9 +1024,10 @@
         if (!user) { location.replace("index.html"); return; }
         try {
           activeDragonRef = doc(db, "users", user.uid, "dragon", "current");
-          const [dragonSnapshot, progressSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData, companionLibrary, enemyBehaviors] = await Promise.all([
+          const [dragonSnapshot, progressSnapshot, adventureProfileSnapshot, library, battleLibrary, battleContent, battleAssets, balance, skillData, companionLibrary, enemyBehaviors, progression] = await Promise.all([
             getDoc(activeDragonRef),
             getDoc(doc(db, "users", user.uid, "progress", "summary")),
+            getDoc(doc(db, "users", user.uid, "adventure", "profile")).catch(() => null),
             loadJson("assets/dragons/dragon-library.json"),
             loadJson("data/battle-library.json"),
             loadJson("content/battle.zh-CN.json"),
@@ -955,10 +1035,13 @@
             loadJson("data/battle-balance.json"),
             loadJson("data/skills.json"),
             loadJson("data/companions.json"),
-            loadJson("data/enemy-behaviors.json")
+            loadJson("data/enemy-behaviors.json"),
+            loadJson("data/dragon-progression.json")
           ]);
           if (!dragonSnapshot.exists()) { location.replace("journey.html"); return; }
           const dragonData = dragonSnapshot.data();
+          adventureDragon = dragonData;
+          adventureProgression = progression;
           const initialEnergy = await changeStoredEnergy(0);
           const species = library.find((item) => item.id === dragonData.speciesId);
           const battle = battleLibrary.battles.find((item) => item.id === requestedBattleId);
@@ -996,7 +1079,8 @@
             skillOneId: skillData.skillOneBySpecies?.[species.id],
             initialEnergy,
             enemyBehaviors,
-            companions: deployedCompanions(companionLibrary, user, dragonData).map((entry) => ({ ...entry, name: t(entry.nameKey) }))
+            startingHp: fromAdventure && query.has("hp") && Number.isFinite(Number(query.get("hp"))) && Number(query.get("hp")) > 0 ? Number(query.get("hp")) : null,
+            companions: deployedCompanions(companionLibrary, user, dragonData, adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : localAdventureProfile(user.uid)).map((entry) => ({ ...entry, name: t(entry.nameKey) }))
           });
           skillOne = state.skills[state.skillOneId];
           if (skillOne) {

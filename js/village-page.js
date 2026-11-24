@@ -9,6 +9,10 @@ import { SLOT_PROTECTION } from "./battle-engine.js?v=20261118-companions";
 import { companionsForAccount, deployedCompanions } from "./companions.js";
 
 const $ = (id) => document.getElementById(id);
+function localAdventureProfile(userId) {
+  try { return JSON.parse(localStorage.getItem(`dragon-adventure-profile:${userId}`)) || null; }
+  catch { return null; }
+}
 let dragonName = "";
 let dragonImage = "";
 let selectedSlot = DEFAULT_BATTLE_SLOT;
@@ -203,8 +207,9 @@ function skillCard(name, description, badge, locked = false, iconPath = "", icon
 async function showDragon(user) {
   $("villageContent").hidden = true;
   $("status").textContent = t("village.loading");
-  const [snapshot, libraryResponse, skillResponse, companionResponse, assetsResponse] = await Promise.all([
+  const [snapshot, adventureProfileSnapshot, libraryResponse, skillResponse, companionResponse, assetsResponse] = await Promise.all([
     getDoc(doc(db, "users", user.uid, "dragon", "current")),
+    getDoc(doc(db, "users", user.uid, "adventure", "profile")).catch(() => null),
     fetch("assets/dragons/dragon-library.json", { cache: "no-store" }),
     fetch("data/skills.json", { cache: "no-store" }),
     fetch("data/companions.json", { cache: "no-store" }),
@@ -214,8 +219,9 @@ async function showDragon(user) {
   if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok || !assetsResponse.ok) throw new Error("Village data unavailable");
   const [library, skills, companionLibrary, battleAssets] = await Promise.all([libraryResponse.json(), skillResponse.json(), companionResponse.json(), assetsResponse.json()]);
   const dragon = snapshot.data();
-  availableCompanions = companionsForAccount(companionLibrary, user);
-  companionSlots = Object.fromEntries(deployedCompanions(companionLibrary, user, dragon).map((entry) => [entry.id, entry.slot]));
+  const adventureProfile = adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : localAdventureProfile(user.uid);
+  availableCompanions = companionsForAccount(companionLibrary, user, adventureProfile);
+  companionSlots = Object.fromEntries(deployedCompanions(companionLibrary, user, dragon, adventureProfile).map((entry) => [entry.id, entry.slot]));
   savedCompanionSlots = { ...companionSlots };
   activeMember = "dragon";
   activeUserId = user.uid;
