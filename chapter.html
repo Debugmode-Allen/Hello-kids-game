@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="stylesheet" href="css/chapter.css?v=full-adventure-v5" />
+    <link rel="stylesheet" href="css/chapter.css?v=20261124-navigation" />
   </head>
   <body>
     <main class="chapter-page" aria-live="polite">
@@ -17,7 +17,7 @@
         <div id="mazeGrid" class="maze-grid" role="grid"></div>
         <aside class="chapter-panel">
           <p id="chapterMessage"></p>
-          <button type="button" id="encounterAction" hidden></button>
+          <button type="button" id="stopWalking" hidden></button><button type="button" id="encounterAction" hidden></button>
           <button type="button" id="restartAction" hidden></button>
         </aside>
       </section>
@@ -27,8 +27,11 @@
           <div><button id="resumeRun" type="button"></button><button id="newRun" type="button"></button></div>
         </div>
       </section>
+      <dialog id="encounterDialog" aria-labelledby="encounterTitle">
+        <section class="encounter-card"><h2 id="encounterTitle"></h2><p id="encounterHealth"></p><div id="encounterEnemies" class="encounter-enemies"></div><p id="encounterHint"></p><div class="encounter-actions"><button id="cancelEncounter" type="button"></button><button id="confirmEncounter" type="button"></button></div></section>
+      </dialog>
       <p id="status" class="status" role="status"></p>
     </main>
-    <script type="module" src="js/chapter-page.js?v=full-adventure-v7"></script>
+    <script type="module" src="js/chapter-page.js?v=20261124-navigation"></script>
   </body>
 </html>

@@ -4,7 +4,7 @@
 
 ## 当前版本
 
-v1.4.0：十只小龙均已拥有技能一，包含战斗逻辑、技能展示和首批三个技能图标。技能加点、物品使用和冒险关卡仍待开发，详见 CONTINUATION.md。
+v1.6.1：第一章草原迷宫支持已探索区域自动寻路、怪物单击确认/双击挑战；首次获得木桩提供奖励教学及飞入布阵动画。战斗支持双击敌人快捷爪击，十种小龙技能一图标与专属演出素材已齐全。成长暂封顶10级；技能加点和物品使用尚待开发。当前状态见 [CONTINUATION.md](CONTINUATION.md)。
 
 回归检查：`node --test tests/*.test.mjs`。
 
@@ -37,6 +37,9 @@ py -m http.server 8000
 - 当前及上一版摘要：`VERSION.md`；更早版本历史：`docs/archive/VERSION-history-before-v1.3.0.md`
 - 当前工作树状态、当前任务、下一步：`CONTINUATION.md`
 - 日常开发和发布流程：`docs/DEVELOPMENT_WORKFLOW.md`
+- 技能图标生成提示词：`docs/SKILL-ICON-PROMPTS.md`
+- 战斗特效生成提示词：`docs/SKILL-EFFECT-PROMPTS.md`
+- 本次发布前交接归档：`docs/archive/CONTINUATION-before-v1.6.1-2026-11-24.md`
 - 音效开发蓝图：`SOUND_DESIGN_PLAN.md`
 - 旧交接历史归档：`docs/archive/`（只作背景参考，不代表当前状态）
 

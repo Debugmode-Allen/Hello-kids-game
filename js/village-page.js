@@ -8,6 +8,7 @@ import { SLOT_PROTECTION } from "./battle-engine.js?v=20261118-companions";
 
 import { companionsForAccount, deployedCompanions } from "./companions.js";
 
+import { mergeCompanionProfiles, pendingCompanionIntro } from "./companion-rewards.js";
 const $ = (id) => document.getElementById(id);
 function localAdventureProfile(userId) {
   try { return JSON.parse(localStorage.getItem(`dragon-adventure-profile:${userId}`)) || null; }
@@ -68,6 +69,8 @@ function renderRoster() {
     });
     roster.append(button);
   }
+  $("companionCount").textContent = t("village.companionCount", { count: availableCompanions.length });
+  $("emptyCompanions").hidden = availableCompanions.length > 0;
   $("removeCompanion").hidden = activeMember === "dragon";
   $("removeCompanion").disabled = savingFormation || !companionSlots[activeMember];
 }
@@ -219,7 +222,7 @@ async function showDragon(user) {
   if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok || !assetsResponse.ok) throw new Error("Village data unavailable");
   const [library, skills, companionLibrary, battleAssets] = await Promise.all([libraryResponse.json(), skillResponse.json(), companionResponse.json(), assetsResponse.json()]);
   const dragon = snapshot.data();
-  const adventureProfile = adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : localAdventureProfile(user.uid);
+  const adventureProfile = mergeCompanionProfiles(adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : null, localAdventureProfile(user.uid));
   availableCompanions = companionsForAccount(companionLibrary, user, adventureProfile);
   companionSlots = Object.fromEntries(deployedCompanions(companionLibrary, user, dragon, adventureProfile).map((entry) => [entry.id, entry.slot]));
   savedCompanionSlots = { ...companionSlots };
@@ -268,6 +271,61 @@ async function showDragon(user) {
   renderFormation();
   $("villageContent").hidden = false;
   $("status").textContent = "";
+  if (new URLSearchParams(location.search).get("tab") === "formation") selectTab("formation");
+  const pending = pendingCompanionIntro(adventureProfile, availableCompanions);
+  if (pending) showCompanionReward(pending, adventureProfile, user.uid);
+}
+
+function showCompanionReward(companion, profile, userId) {
+  const screen = $("companionReward");
+  const image = $("rewardImage"); image.src = companion.image; image.alt = t(companion.nameKey);
+  $("rewardName").textContent = t(companion.nameKey);
+  $("rewardDescription").textContent = t(companion.descriptionKey);
+  $("rewardStats").replaceChildren();
+  for (const [key, value] of Object.entries(companion.stats)) {
+    const cell = document.createElement("div");
+    const label = document.createElement("dt"); label.textContent = t("home." + key);
+    const number = document.createElement("dd"); number.textContent = value;
+    cell.append(label, number); $("rewardStats").append(cell);
+  }
+  screen.hidden = false;
+  document.body.classList.add("reward-open");
+  document.querySelector("main").inert = true;
+  $("rewardContinue").focus({ preventScroll: true });
+  screen.scrollTop = 0;
+  screen.onkeydown = (event) => { if (event.key === "Tab") { event.preventDefault(); $("rewardContinue").focus({ preventScroll: true }); } };
+  $("rewardContinue").onclick = async () => {
+    $("rewardContinue").disabled = true;
+    image.scrollIntoView({ block: "center", behavior: "instant" });
+    const source = image.getBoundingClientRect();
+    const flying = image.cloneNode(); flying.removeAttribute("id"); flying.className = "companion-flight";
+    Object.assign(flying.style, { left: source.left + "px", top: source.top + "px", width: source.width + "px", height: source.height + "px" });
+    screen.hidden = true; document.body.classList.remove("reward-open"); document.querySelector("main").inert = false;
+    selectTab("formation"); activeMember = companion.id; renderFormation();
+    const target = [...$("companionRoster").children].find((entry) => entry.dataset.member === companion.id);
+    target.scrollIntoView({ block: "center", behavior: "instant" });
+    document.body.append(flying);
+    const destination = target.querySelector("img").getBoundingClientRect();
+    try {
+      await flying.animate([
+        { transform: "translate(0, 0) scale(1)" },
+        { transform: `translate(${destination.left - source.left}px, ${destination.top - source.top}px) scale(${destination.width / source.width})` }
+      ], { duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 850, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" }).finished;
+    } finally { flying.remove(); }
+    target.classList.add("roster-member--arrived"); target.focus();
+    $("formationSaveStatus").textContent = t("companionReward.arrived");
+    profile.introducedCompanionIds = [...new Set([...profile.introducedCompanionIds, companion.id])];
+    localStorage.setItem(`dragon-adventure-profile:${userId}`, JSON.stringify(profile));
+    try {
+      const ref = doc(db, "users", userId, "adventure", "profile");
+      await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(ref);
+        const next = mergeCompanionProfiles(snapshot.exists() ? snapshot.data() : {}, profile);
+        transaction.set(ref, { ...next, updatedAt: Date.now() }, { merge: true });
+      });
+    } catch (error) { console.warn("Companion introduction remembered in this browser", error); }
+    history.replaceState({}, "", "village.html?tab=formation");
+  };
 }
 
 async function init() {

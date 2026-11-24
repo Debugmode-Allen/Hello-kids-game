@@ -4,6 +4,9 @@ import { completeEncounter, generateRun, movePlayer, refreshVision, restorePlaye
 import { addDragonXp } from "./dragon-progression.js";
 import { playCue } from "./audio-manager.js";
 
+import { companionsForAccount } from "./companions.js";
+import { mergeCompanionProfiles, grantCompanion } from "./companion-rewards.js";
+import { exploredRoute, supplyNeeded, encounterClicks } from "./adventure-navigation.js";
 const $ = (selector) => document.querySelector(selector);
 const query = new URLSearchParams(location.search);
 const chapterId = query.get("chapter") || "meadow-1";
@@ -15,7 +18,18 @@ let playerAvatar = "";
 let selectedEncounterId = null;
 let localOnly = false;
 let lastEvent = null;
+let currentEnergy = 0;
+let startingMaxHp = 100;
+let battleLibrary;
+let battleAssets;
+let walkGeneration = 0;
+let routePreview = [];
+let walking = false;
+let departing = false;
+let movementTask = Promise.resolve();
+const encounterInput = encounterClicks((id) => navigateTo(id), (id) => navigateTo(id, true));
 
+function freshRun() { return updatePlayerHealth(generateRun(chapter), startingMaxHp, startingMaxHp); }
 async function loadJson(path) { const response = await fetch(path, { cache: "no-store" }); if (!response.ok) throw new Error(path); return response.json(); }
 function runRef() { return doc(db, "users", userId, "adventureRuns", chapterId); }
 function profileRef() { return doc(db, "users", userId, "adventure", "profile"); }
@@ -48,30 +62,134 @@ async function awardDragonExperience(experience) {
   });
 }
 async function applyBossRewards() {
-  if (!run.rewardsClaimed) {
-    const companionId = chapter.rewards?.companionId;
-    if (localOnly) {
-      const profile = readLocal(localProfileKey(), { companionIds: [] });
-      const companionIds = [...new Set([...(profile.companionIds || []), ...(companionId ? [companionId] : [])])];
-      writeLocal(localProfileKey(), { ...profile, companionIds });
-      run.rewardsClaimed = true; await persist(); return;
-    }
-    const current = await getDoc(profileRef());
-    const profile = current.exists() ? current.data() : {};
-    const companionIds = [...new Set([...(profile.companionIds || []), ...(companionId ? [companionId] : [])])];
-    await setDoc(profileRef(), { companionIds, updatedAt: Date.now() }, { merge: true });
-    run.rewardsClaimed = true;
-    await persist();
+  const id = chapter.rewards?.companionId;
+  if (!id) return;
+  const library = await loadJson("data/companions.json");
+  const granted = companionsForAccount(library, auth.currentUser).some((entry) => entry.id === id);
+  const local = readLocal(localProfileKey(), {});
+  const reward = (current) => {
+    const next = grantCompanion(current, id, granted).profile;
+    if (granted && !next.introducedCompanionIds.includes(id)) next.introducedCompanionIds.push(id);
+    return next;
+  };
+  let profile;
+  try {
+    profile = await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(profileRef());
+      const next = reward(mergeCompanionProfiles(snapshot.exists() ? snapshot.data() : {}, local));
+      transaction.set(profileRef(), { ...next, updatedAt: Date.now() }, { merge: true });
+      return next;
+    });
+  } catch (error) {
+    if (!["permission-denied", "unavailable"].includes(error.code)) throw error;
+    console.warn("Companion reward saved in this browser", error);
+    profile = reward(local);
+    localOnly = true;
   }
+  writeLocal(localProfileKey(), profile);
+  run.rewardsClaimed = true;
+  await persist();
+  if (profile.pendingCompanionIds.includes(id) && !profile.introducedCompanionIds.includes(id)) location.replace("village.html?tab=formation&reward=" + encodeURIComponent(id));
 }
 async function applyRestEnergy() {
   const dragonRef = doc(db, "users", userId, "dragon", "current");
-  try {
-    const dragon = await getDoc(dragonRef);
-    if (!dragon.exists()) return;
+  // Read inside the transaction so a concurrent skill use cannot be overwritten blindly.
+  return runTransaction(db, async (transaction) => {
+    const dragon = await transaction.get(dragonRef);
+    if (!dragon.exists()) throw new Error("Missing dragon");
     const energy = Math.max(0, Math.min(10, Math.floor(Number(dragon.data().energy) || 0)));
-    if (energy < 10) await setDoc(dragonRef, { energy: 10 }, { merge: true });
-  } catch (error) { console.warn("Rest energy could not be saved", error); }
+    if (energy < 10) transaction.set(dragonRef, { energy: 10 }, { merge: true });
+    return energy < 10;
+  });
+}
+function battleUrl(tile) {
+  const battleId = tile.kind === "boss" ? chapter.bossBattleId : tile.battleId;
+  const hp = run.playerMaxHp ? `&hp=${encodeURIComponent(run.playerHp ?? run.playerMaxHp)}&maxHp=${encodeURIComponent(run.playerMaxHp)}` : "";
+  const experience = tile.kind === "boss" ? Number(chapter.bossExperience || 0) : Number(tile.experience || 0);
+  return `battle.html?battle=${encodeURIComponent(battleId)}&from=adventure&run=${encodeURIComponent(chapterId)}&node=${encodeURIComponent(tile.id)}&xp=${encodeURIComponent(experience)}${hp}`;
+}
+async function startEncounter(tile) {
+  const player = run.tiles.find((entry) => entry.id === tileId(run.player.row, run.player.column));
+  if (departing || !tile || tile.state === "cleared" || !isNeighbor(player, tile)) return;
+  if (run.playerHp <= 0) { $("#status").textContent = t("chapter.noHealth"); return; }
+  departing = true;
+  $("#confirmEncounter").disabled = true;
+  await persist();
+  location.assign(battleUrl(tile));
+}
+function showEncounter(tile) {
+  selectedEncounterId = tile.id;
+  const config = battleLibrary.battles.find((battle) => battle.id === (tile.kind === "boss" ? chapter.bossBattleId : tile.battleId));
+  $("#encounterTitle").textContent = t(tile.kind === "boss" ? "chapter.bossReady" : "chapter.monsterReady");
+  $("#encounterHealth").textContent = t("chapter.health", { current: run.playerHp, max: run.playerMaxHp });
+  $("#encounterHint").textContent = t(tile.kind === "boss" ? "chapter.bossConfirmHint" : "chapter.doubleHint");
+  $("#encounterEnemies").replaceChildren();
+  for (const enemy of config?.enemies || []) {
+    const asset = battleAssets.enemies.find((entry) => entry.id === enemy.speciesId);
+    const card = document.createElement("div");
+    const image = document.createElement("img"); image.src = asset?.path || ""; image.alt = "";
+    const label = document.createElement("span"); label.textContent = asset?.name || enemy.speciesId;
+    const row = document.createElement("small"); row.textContent = t(["R4", "R5"].includes(enemy.slot) ? "village.frontRow" : "village.backRow");
+    card.append(image, label, row); $("#encounterEnemies").append(card);
+  }
+  $("#confirmEncounter").textContent = t(tile.kind === "boss" ? "chapter.challengeBoss" : "chapter.challengeMonster");
+  $("#confirmEncounter").disabled = run.playerHp <= 0;
+  $("#confirmEncounter").onclick = () => startEncounter(tile);
+  $("#encounterDialog").showModal();
+}
+function stopWalking() {
+  walkGeneration += 1; walking = false; routePreview = []; encounterInput.clear();
+}
+function navigateTo(id, direct = false) {
+  const generation = ++walkGeneration;
+  movementTask = movementTask.catch(() => {}).then(() => walkTo(id, direct, generation)).catch((error) => {
+    console.error(error); walking = false; routePreview = []; render(); $("#status").textContent = t("chapter.moveError");
+  });
+}
+async function walkTo(id, direct, generation) {
+  if (generation !== walkGeneration || departing) return;
+  const route = exploredRoute(run, id);
+  if (!route) { walking = false; routePreview = []; render(); $("#status").textContent = t("chapter.routeBlocked"); return; }
+
+  walking = route.length > 0; routePreview = [...route]; selectedEncounterId = null;
+  $("#status").textContent = ""; render();
+  for (const step of route) {
+    if (generation !== walkGeneration) return;
+    const tile = run.tiles.find((entry) => entry.id === step);
+    if (run.mode !== "pathfinding" && ["monster", "boss"].includes(tile.kind) && tile.state !== "cleared") {
+      walking = false; routePreview = []; render();
+      if (direct && tile.kind !== "boss") await startEncounter(tile); else showEncounter(tile);
+      return;
+    }
+    const unusedSupply = ["rest", "treasure"].includes(tile.kind) && tile.state !== "cleared";
+    let useSupply = unusedSupply && supplyNeeded(tile, run, currentEnergy);
+    if (unusedSupply && tile.kind === "treasure") {
+      // Refresh even at full energy; another tab may have spent it since page load.
+      const current = await getDoc(doc(db, "users", userId, "dragon", "current"));
+      if (generation !== walkGeneration) return;
+      if (!current.exists()) throw new Error("Missing dragon");
+      currentEnergy = Number(current.data().energy) || 0;
+      useSupply = supplyNeeded(tile, run, currentEnergy);
+      if (useSupply) { useSupply = await applyRestEnergy(); currentEnergy = 10; }
+    }
+    if (unusedSupply && !useSupply) {
+      lastEvent = tile.kind === "rest" ? "healthFull" : "energyFull";
+      break;
+    }
+    const result = movePlayer(run, step);
+    if (!result.changed) break;
+    run = result.run; lastEvent = result.message;
+    if (result.message === "rest") {
+      const restored = restorePlayerHealth(run, chapter.restHealRatio);
+      run = restored.run; lastEvent = `rest:${restored.healed}`; playCue("answer-correct");
+    } else if (result.message === "treasure") playCue("energy-gain");
+    routePreview = routePreview.slice(1);
+    await persist();
+    if (generation !== walkGeneration) return;
+    render();
+    await new Promise((resolve) => setTimeout(resolve, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 140));
+  }
+  if (generation === walkGeneration) { walking = false; routePreview = []; render(); }
 }
 function tileGlyph(tile) {
   if (tile.state === "cleared" && tile.kind !== "start") return "✓";
@@ -97,7 +215,9 @@ function render() {
     if (fogLandmark) button.classList.add("is-fog-landmark");
     if (tile.id === player.id) button.classList.add("is-current");
     const isEncounter = run.mode !== "pathfinding" && ["monster", "boss"].includes(tile.kind) && tile.state !== "cleared";
-    const movable = visible && isNeighbor(player, tile);
+    const movable = visible;
+    button.dataset.tile = tile.id;
+    if (routePreview.includes(tile.id)) button.classList.add("is-route");
     if (movable) button.classList.add("is-movable");
     if (visible && ["monster", "boss"].includes(tile.kind) && tile.state !== "cleared") button.classList.add("is-encounter");
     button.disabled = !movable;
@@ -113,30 +233,26 @@ function render() {
       marker.textContent = visible || fogLandmark ? tileGlyph(tile) : "";
     }
     button.append(marker);
-    button.addEventListener("click", async () => {
-      if (isEncounter) { selectedEncounterId = tile.id; render(); return; }
-      const result = movePlayer(run, tile.id);
-      if (!result.changed) return;
-      selectedEncounterId = null;
-      lastEvent = result.message;
-      run = result.run;
-      if (result.message === "rest") {
-        const restored = restorePlayerHealth(run, chapter.restHealRatio);
-        run = restored.run;
-        lastEvent = restored.healed ? `rest:${restored.healed}` : "rest";
+    button.addEventListener("pointerdown", (event) => {
+      if (walking && tile.id === tileId(run.player.row, run.player.column)) {
+        event.preventDefault(); stopWalking(); render();
       }
-      await persist();
-      if (result.message === "treasure") { await applyRestEnergy(); playCue("energy-gain"); }
-      if (result.message === "rest") playCue("answer-correct");
-      render();
+    });
+    button.addEventListener("click", () => {
+      if (departing) return;
+      if (tile.id === tileId(run.player.row, run.player.column)) { stopWalking(); render(); return; }
+      if (isEncounter) { walkGeneration += 1; walking = false; encounterInput.click(tile.id, tile.kind === "boss"); return; }
+      encounterInput.clear(); navigateTo(tile.id);
     });
     grid.append(button);
   }
   $("#experienceValue").textContent = t("chapter.experience", { value: run.loot.experience || 0 });
   $("#hpValue").textContent = run.playerMaxHp ? t("chapter.health", { current: run.playerHp ?? run.playerMaxHp, max: run.playerMaxHp }) : t("chapter.healthReady");
+  $("#stopWalking").hidden = !walking;
   const action = $("#encounterAction"); const restart = $("#restartAction"); action.hidden = true; restart.hidden = true;
   restart.onclick = async () => {
-    run = generateRun(chapter);
+    stopWalking();
+    run = freshRun();
     selectedEncounterId = null;
     lastEvent = null;
     await persist();
@@ -148,19 +264,11 @@ function render() {
     return;
   }
   if (run.status === "cleared") { $("#chapterMessage").textContent = t("chapter.cleared"); restart.hidden = false; restart.textContent = t("chapter.newRun"); return; }
-  const selected = run.tiles.find((tile) => tile.id === selectedEncounterId);
-  if (selected && ["monster", "boss"].includes(selected.kind) && selected.state !== "cleared") {
-    $("#chapterMessage").textContent = t(selected.kind === "boss" ? "chapter.bossReady" : "chapter.monsterReady");
-    action.hidden = false; action.textContent = t(selected.kind === "boss" ? "chapter.challengeBoss" : "chapter.challengeMonster");
-    const battleId = selected.kind === "boss" ? chapter.bossBattleId : selected.battleId;
-    const hp = run.playerMaxHp ? `&hp=${encodeURIComponent(run.playerHp ?? run.playerMaxHp)}&maxHp=${encodeURIComponent(run.playerMaxHp)}` : "";
-    const experience = selected.kind === "boss" ? Number(chapter.bossExperience || 0) : Number(selected.experience || 0);
-    action.onclick = () => location.assign(`battle.html?battle=${encodeURIComponent(battleId)}&from=adventure&run=${encodeURIComponent(chapterId)}&node=${encodeURIComponent(selected.id)}&xp=${encodeURIComponent(experience)}${hp}`);
-  } else {
-    $("#chapterMessage").textContent = lastEvent === "treasure" ? t("chapter.treasureEnergy")
+  $("#chapterMessage").textContent = walking ? t("chapter.walking")
+    : lastEvent === "treasure" ? t("chapter.treasureEnergy")
       : String(lastEvent).startsWith("rest:") ? t("chapter.restoredHealth", { amount: String(lastEvent).split(":")[1] })
-        : lastEvent === "rest" ? t("chapter.restNoNeed") : t("chapter.moveHint");
-  }
+        : lastEvent === "healthFull" ? t("chapter.healthFull")
+          : lastEvent === "energyFull" ? t("chapter.energyFull") : t("chapter.moveHint");
 }
 async function applyBattleReturn() {
   if (run.mode === "pathfinding") {
@@ -179,6 +287,7 @@ async function applyBattleReturn() {
   }
   const completed = completeEncounter(run, query.get("node"), chapter);
   if (!completed.changed) {
+    if (run.status === "cleared") await applyBossRewards();
     history.replaceState({}, "", `chapter.html?chapter=${encodeURIComponent(chapterId)}`);
     return;
   }
@@ -196,7 +305,8 @@ function showResumeDialog() {
   $("#newRun").textContent = t("chapter.regenerate");
   $("#resumeRun").onclick = () => { dialog.hidden = true; };
   $("#newRun").onclick = async () => {
-    run = generateRun(chapter);
+    stopWalking();
+    run = freshRun();
     selectedEncounterId = null;
     lastEvent = null;
     await persist();
@@ -207,7 +317,14 @@ function showResumeDialog() {
 }
 async function init() {
   await loadUI();
-  const [library, progressionData] = await Promise.all([loadJson("data/adventure-chapters.json"), loadJson("data/dragon-progression.json")]);
+  const [library, progressionData, battles, assets] = await Promise.all([loadJson("data/adventure-chapters.json"), loadJson("data/dragon-progression.json"), loadJson("data/battle-library.json"), loadJson("assets/battle/battle-assets.json")]);
+  battleLibrary = battles; battleAssets = assets;
+  $("#stopWalking").textContent = t("chapter.stopWalking");
+  $("#stopWalking").onclick = () => { stopWalking(); render(); };
+  $("#cancelEncounter").textContent = t("chapter.cancelEncounter");
+  $("#cancelEncounter").onclick = () => $("#encounterDialog").close();
+  $("#encounterDialog").addEventListener("click", (event) => { if (event.target === $("#encounterDialog")) $("#encounterDialog").close(); });
+  $("#encounterDialog").addEventListener("close", () => { selectedEncounterId = null; });
   chapter = library.chapters.find((entry) => entry.id === chapterId) || library.chapters[0];
   progression = progressionData;
   document.title = t(chapter.titleKey); $("#backLink").textContent = t("chapter.back"); $("#chapterEyebrow").textContent = t(chapter.subtitleKey); $("#chapterTitle").textContent = t(chapter.titleKey); $("#status").textContent = t("chapter.loading");
@@ -222,28 +339,34 @@ async function init() {
       if (dragonSnapshot.exists()) {
         const species = dragonLibrary.find((entry) => entry.id === dragonSnapshot.data().speciesId);
         playerAvatar = species?.image || "";
+        currentEnergy = Number(dragonSnapshot.data().energy) || 0;
+        const { effectiveStamina, loadCheckins } = await import("./checkin-client.js");
+        startingMaxHp = effectiveStamina(dragonSnapshot.data(), await loadCheckins(userId));
       }
       let snapshot = null;
       try { snapshot = await getDoc(runRef()); }
       catch (error) { console.warn("Adventure cloud save unavailable; using this browser", error); localOnly = true; }
       const savedRun = snapshot?.exists() ? snapshot.data() : readLocal(localRunKey(), null);
       const hasSavedRun = Boolean(savedRun);
-      run = savedRun || generateRun(chapter);
+      run = savedRun || freshRun();
       // Migrate an in-progress local/cloud run into the current temporary test mode.
       // This prevents an older fog-of-war save from continuing to block a monster tile.
       const versionChanged = run.version !== 3;
-      if (versionChanged) run = generateRun(chapter);
+      if (versionChanged) run = freshRun();
       const modeChanged = run.mode !== (chapter.mode || "adventure");
       const needsFullReveal = Boolean(chapter.revealAll) && run.revealed.length !== run.tiles.length;
       run.mode = chapter.mode || "adventure";
       if (chapter.revealAll) run.revealed = run.tiles.map((tile) => tile.id);
       else run = refreshVision(run);
       if (!snapshot?.exists() || versionChanged || modeChanged || needsFullReveal) await persist();
+      if (!run.playerMaxHp) run = updatePlayerHealth(run, startingMaxHp, startingMaxHp);
       const fromBattle = query.has("result") || query.has("battleStatus") || query.has("hp");
       await applyBattleReturn();
       let startedNewRun = false;
       if (run.status === "cleared" && !fromBattle) {
-        run = generateRun(chapter);
+        await applyBossRewards();
+        stopWalking();
+    run = freshRun();
         await persist();
         startedNewRun = true;
       }

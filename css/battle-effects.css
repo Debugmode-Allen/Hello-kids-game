@@ -183,3 +183,31 @@
   .vine-wrap { animation: none; }
   .vine-leaves { display: none; }
 }
+
+/* Skill-specific transparent overlays; never intercept target clicks. */
+.skill-fx { position:absolute; pointer-events:none; background:var(--skill-fx-texture) center / 100% 100% no-repeat; }
+.skill-fx--arrival, .skill-fx--status { inset:-8% -24% -5%; z-index:4; }
+.skill-fx--arrival { animation: fx-ring-gather .78s ease-out both; }
+.skill-fx--status { opacity:.42; animation: fx-status-breathe 2.7s ease-in-out infinite; }
+.skill-fx[data-skill-id="tidal-healing"] { inset:10% -25% -7%; animation-name:fx-water-gather; }
+.skill-fx[data-skill-id="sunlight-encouragement"] { inset:-20% -20% -2%; animation-name:fx-sun-descend; }
+.skill-fx[data-skill-id="crystal-freeze"] { inset:-5% -20%; animation-name:fx-ice-close; }
+.skill-fx[data-skill-id="petal-regrowth"] { inset:9% -25% -8%; animation-name:fx-petal-orbit; }
+.skill-fx[data-skill-id="stone-armor"] { inset:-6% -48% -5%; animation-name:fx-rock-build; }
+.skill-fx--status[data-skill-id] { animation-name:fx-status-breathe; }
+.skill-fx--status[data-skill-id="petal-regrowth"] { animation-name:fx-petal-sustain; }
+.skill-fx--status[data-skill-id="stone-armor"] { opacity:.3; }
+.skill-fx--sand { z-index:10; height:clamp(40px,8vw,100px); translate:0 -50%; transform-origin:left center; animation:fx-sand-pierce .43s ease-out both; }
+.skill-fx--star { z-index:10; width:clamp(70px,13vw,155px); height:clamp(35px,6.5vw,78px); }
+.skill-fx--arrival[data-skill-id="piercing-sand"], .skill-fx--arrival[data-skill-id="star-chain"] { animation:fx-impact-spark .78s ease-out both; inset:0 -12%; }
+@keyframes fx-ring-gather { 0%{opacity:0;transform:scale(.45)} 40%{opacity:.9;transform:scale(1.08)} 100%{opacity:0;transform:scale(1.2)} }
+@keyframes fx-water-gather { 0%{opacity:0;transform:scale(1.45) translateY(10%)} 45%{opacity:.85;transform:scale(.96)} 100%{opacity:0;transform:scale(.7) translateY(-20%)} }
+@keyframes fx-sun-descend { 0%{opacity:0;transform:translateY(-35%) scale(.8)} 45%{opacity:.75;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(8%) scale(1.08)} }
+@keyframes fx-ice-close { 0%{opacity:0;transform:scale(1.4) rotate(-12deg)} 45%{opacity:.85;transform:scale(.98) rotate(0)} 75%{opacity:.7} 100%{opacity:0;transform:scale(1.05)} }
+@keyframes fx-petal-orbit { 0%{opacity:0;transform:scale(.6) rotate(-22deg)} 45%{opacity:.7;transform:scale(1) rotate(0)} 100%{opacity:0;transform:scale(1.12) rotate(22deg)} }
+@keyframes fx-rock-build { 0%{opacity:0;transform:scale(.6,.3) translateY(25%)} 45%{opacity:.7;transform:scale(1.06)} 80%{opacity:.6;transform:scale(1)} 100%{opacity:0;transform:scale(1.04)} }
+@keyframes fx-sand-pierce { 0%{opacity:0;clip-path:inset(0 100% 0 0)} 35%{opacity:1;clip-path:inset(0)} 75%{opacity:.9} 100%{opacity:0;clip-path:inset(0 0 0 88%)} }
+@keyframes fx-impact-spark { 0%{opacity:0;transform:scale(.3)} 25%{opacity:.95;transform:scale(1)} 100%{opacity:0;transform:scale(1.4)} }
+@keyframes fx-status-breathe { 0%,100%{opacity:.24;transform:scale(.97)} 50%{opacity:.45;transform:scale(1.03)} }
+@keyframes fx-petal-sustain { 0%,100%{opacity:.24;transform:rotate(-7deg) scale(.95)} 50%{opacity:.5;transform:rotate(7deg) scale(1.03)} }
+@media(prefers-reduced-motion:reduce) { .skill-fx { animation:none!important; } .skill-fx--arrival { opacity:.55; } .skill-fx--status { opacity:.28; } }

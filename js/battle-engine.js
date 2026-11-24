@@ -356,8 +356,8 @@ export function consumeControlledTurn(state, unitId) {
 export function skipTurn(state, unitId) {
   const unit = unitById(state, unitId);
   if (state.status !== "playing" || state.activeUnitId !== unitId || !unit?.alive) throw new Error("Invalid skip");
-  finishTurn(state, unit);
-  return { unit, outcome: state.status };
+  const turnEffects = finishTurn(state, unit);
+  return { unit, turnEffects, outcome: state.status };
 }
 
 export function fleeBattle(state) {

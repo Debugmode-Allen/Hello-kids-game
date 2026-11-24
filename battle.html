@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title></title>
-    <link rel="stylesheet" href="css/battle-effects.css?v=seven-dragon-skills" />
+    <link rel="stylesheet" href="css/battle-effects.css?v=20261124-skill-effects" />
     <link rel="stylesheet" href="css/energy-meter.css?v=rainbow-energy-20261118" />
     <link rel="stylesheet" href="css/learning-quiz.css?v=answer-crystal-20261118" />
     <style>
@@ -42,6 +42,7 @@
       .actor.highlight { z-index: 4; transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 12px #fde68a); }
       .actor::after { border: 2px solid rgba(254,240,138,.95); background: rgba(253,230,138,.12); opacity: 0; transition: opacity .16s; }
       .actor.highlight::after { opacity: 1; }
+      .unit-button { touch-action: manipulation; }
       .actor.targetable { cursor: pointer; filter: drop-shadow(0 0 5px #fef08a); }
       .actor.targetable::after { border-color: #fef08a; background: rgba(254,240,138,.25); opacity: 1; }
       .actor:not(.enemy).targetable { filter: drop-shadow(0 0 6px #86efac); }
@@ -114,6 +115,11 @@
         .enemy-rear-1 { --size: 104px; top: 70%; left: 86%; } .enemy-rear-2 { --size: 54px; top: 41%; left: 75%; } .enemy-rear-3 { --size: 68px; top: 49%; left: 86%; }
         .enemy-front-1 { --size: 80px; top: 50%; left: 65%; } .enemy-front-2 { --size: 90px; top: 67%; left: 70%; }
         .controls { bottom: 10px; gap: 6px; } .player-controls { left: 9px; } .enemy-controls { right: 9px; } .round-action { width: 55px; height: 55px; } #claw, #skillOne, .skill-locked { width: 66px; height: 66px; } .skill-button-fallback { font-size: 1.6rem; }
+      }
+      @media (max-width: 600px) {
+        .player-controls { right: 76px; gap: 4px; }
+        .player-controls > .round-action { flex-shrink: 0; }
+        .player-controls > .skill-locked { flex: 1; min-width: 0; width: 0; }
       }
     </style>
   </head>
@@ -190,6 +196,9 @@
       import { auth, db, onAuthStateChanged, doc, getDoc, runTransaction } from "./js/firebase.js";
       import { effectiveStamina, loadCheckins } from "./js/checkin-client.js?v=20261117-spark";
       import { loadUI, t } from "./js/i18n.js";
+      import { createDoubleClick } from "./js/double-click.js";
+      import { createSkillEffects, NEW_SKILL_EFFECTS } from "./js/battle-skill-effects.js";
+      import { canQuickClaw } from "./js/battle-input.js";
       import { deployedCompanions } from "./js/companions.js";
       import { addDragonXp, progressForXp } from "./js/dragon-progression.js";
       import { beginNextTurn, calculateDamage, consumeControlledTurn, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDamageSkill, useSkill, validTargets } from "./js/battle-engine.js?v=seven-dragon-skills";
@@ -206,6 +215,7 @@
       const adventureNode = query.get("node");
       const adventureRewardXp = Math.max(0, Math.floor(Number(query.get("xp")) || 0));
       const requestedBattleId = query.get("battle") || "practice-meadow";
+      import { mergeCompanionProfiles } from "./js/companion-rewards.js";
       function localAdventureProfile(userId) {
         try { return JSON.parse(localStorage.getItem(`dragon-adventure-profile:${userId}`)) || null; }
         catch { return null; }
@@ -230,6 +240,7 @@
       let adventureDragon = null;
       let adventureProgression = null;
       const spellTextures = new Map();
+      const skillEffects = createSkillEffects({ field: $(".battlefield"), slots, textures: spellTextures });
 
       async function loadJson(path) {
         const response = await fetch(path, { cache: "no-store" });
@@ -618,9 +629,12 @@
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (result.skill.id === "dark-magic") playCue("moon-darkness-cast");
         if (result.hits?.length) {
-          for (const hit of result.hits) {
+          for (const [hitIndex, hit] of result.hits.entries()) {
             if (result.skill.id === "entangling-vines") await playVineAnimation(hit.target, hit.hpDamage);
-            else await playSpellAnimation(result.attacker, hit.target, result.skill.id, hit.hpDamage);
+            else if (["piercing-sand", "star-chain"].includes(result.skill.id)) {
+              const origin = result.skill.id === "star-chain" && hitIndex > 0 ? result.hits[hitIndex - 1].target : result.attacker;
+              await skillEffects.hit(origin, hit.target, result.skill.id, hitIndex);
+            } else await playSpellAnimation(result.attacker, hit.target, result.skill.id, hit.hpDamage);
             if (hit.hpDamage && !["fire-breath", "entangling-vines"].includes(result.skill.id)) {
               showFloatingLabel(hit.target, `-${hit.hpDamage}`, "skill-damage");
             }
@@ -628,14 +642,15 @@
           }
         }
         if (result.applied?.length) {
-          for (const effect of result.applied) {
-            const slot = slots.get(effect.target.slot);
-            const overlay = spellEffect("support-arrival", result.skill.id, slot);
+          await Promise.all(result.applied.map(async (effect) => {
             if (effect.healed) showFloatingLabel(effect.target, `+${effect.healed}`, "heal-number");
             if (effect.shieldHp) showFloatingLabel(effect.target, `🛡 ${effect.shieldHp}`, "shield-number");
-            await wait(reducedMotion ? 90 : 410);
-            overlay.remove();
-          }
+            if (NEW_SKILL_EFFECTS.has(result.skill.id)) await skillEffects.support(effect.target, result.skill.id);
+            else {
+              const overlay = spellEffect("support-arrival", result.skill.id, slots.get(effect.target.slot));
+              try { await wait(reducedMotion ? 90 : 410); } finally { overlay.remove(); }
+            }
+          }));
         }
       }
 
@@ -732,6 +747,34 @@
         renderTurnIndicator();
       }
 
+      // Defer enemy single clicks so a selected spell cannot fire on the first half of a double click.
+      let clickContext = null;
+      const enemyClicks = createDoubleClick((id) => {
+        if (!clickContext || clickContext.actor !== state?.activeUnitId || clickContext.turn !== completedTurns
+            || clickContext.skill !== targeting || busy || !isPlayerTurn()) return;
+        const unit = unitById(state, id);
+        if (unit?.alive) onUnitClick(unit);
+      }, (id) => {
+        if (!clickContext || clickContext.actor !== state?.activeUnitId || clickContext.turn !== completedTurns) return;
+        if (!canQuickClaw(state, id, busy)) {
+          if (!busy && isPlayerTurn() && isProtected(state, unitById(state, id))) setNotice("battle.protected");
+          return;
+        }
+        targeting = "claw";
+        showSkillEnergyPreview($("#skillOne"), false);
+        onUnitClick(unitById(state, id));
+      });
+      function handleUnitClick(unit, event) {
+        if (unit.side !== "enemy") { enemyClicks.clear(); onUnitClick(unit); return; }
+        if (busy || !isPlayerTurn()) { enemyClicks.clear(); return; }
+        const context = { actor: state.activeUnitId, turn: completedTurns, skill: targeting };
+        if (clickContext && (clickContext.actor !== context.actor || clickContext.turn !== context.turn || clickContext.skill !== context.skill)) enemyClicks.clear();
+        clickContext = context;
+        // Keyboard activation retains immediate single-click skill targeting.
+        if (event.detail === 0 && !event.pointerType) { enemyClicks.clear(); onUnitClick(unit); return; }
+        enemyClicks.click(unit.id);
+      }
+
       function renderUnits() {
         const validIds = targeting && isPlayerTurn()
           ? new Set(validTargets(state, currentUnit().id, targeting).map((unit) => unit.id))
@@ -791,8 +834,10 @@
           }
           button.addEventListener("mouseenter", () => setHighlight(unit.id, true));
           button.addEventListener("mouseleave", () => setHighlight(unit.id, false));
-          button.addEventListener("click", () => onUnitClick(unit));
+          button.addEventListener("click", (event) => handleUnitClick(unit, event));
+          if (unit.side === "enemy") button.title = t("battle.quickClawHint");
           slot.append(button);
+          skillEffects.status(unit);
           if (status) {
             image.classList.add("darkened-sprite");
             const badge = document.createElement("span");
@@ -832,6 +877,7 @@
       }
 
       async function finishDisplayedTurn() {
+        enemyClicks.clear();
         completedTurns += 1;
         render({ updateQueue: false });
         await advanceTurnQueue();
@@ -853,9 +899,7 @@
           if (active.controlTurns > 0) {
             consumeControlledTurn(state, active.id);
             setNotice("battle.controlSkipped", { name: active.name });
-            const overlay = spellEffect("support-arrival", "crystal-freeze", slots.get(active.slot));
-            await wait(matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 440);
-            overlay.remove();
+            await skillEffects.support(active, "crystal-freeze");
             await finishDisplayedTurn();
             if (state.status !== "playing") showBattleResult();
             continue;
@@ -866,7 +910,7 @@
           const damage = calculateDamage(state, active, target, active.skillId, () => roll);
           await playAttackAnimation(active, target, damage);
           const result = useDamageSkill(state, active.id, target.id, active.skillId, () => roll);
-          if (result.turnEffects?.healed) showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number");
+          if (result.turnEffects?.healed) { showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number"); await skillEffects.support(active, "petal-regrowth"); }
           setNotice(result.missed ? "battle.darkMagicMiss" : "battle.enemyTurn", {
             name: active.name, skill: t(result.skill.nameKey), damage: result.damage
           });
@@ -908,7 +952,7 @@
           result = useSkill(state, active.id, unit.id, skillId, () => roll);
           await playSkillResult(result);
         }
-        if (result.turnEffects?.healed) showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number");
+        if (result.turnEffects?.healed) { showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number"); await skillEffects.support(active, "petal-regrowth"); }
         targeting = null;
         if (result.skill.type === "heal") {
           setNotice("battle.skillHealNotice", {
@@ -955,11 +999,13 @@
         $("#returnHome").textContent = t(fromPractice ? "practice.backToArenas" : "battle.returnHome");
         $("#claw").addEventListener("click", () => {
           if (busy || !isPlayerTurn()) return;
+          enemyClicks.clear();
           targeting = "claw";
           setNotice("battle.chooseTarget");
           render();
         });
         $("#skillOne").addEventListener("click", async () => {
+          enemyClicks.clear();
           if (!skillOne || busy || !isPlayerTurn() || currentUnit()?.id !== "dragon" || remainingSkillCharges(state) < Math.max(1, Number(skillOne.energyCost) || 1)) return;
           if (skillOne.target === "singleEnemy" || skillOne.target === "singleAlly") {
             targeting = skillOne.id;
@@ -988,6 +1034,7 @@
           }
           const result = useSkill(state, active.id, null, skillOne.id);
           await playSkillResult(result);
+          if (result.turnEffects?.healed) { showFloatingLabel(active, `+${result.turnEffects.healed}`, "heal-number"); await skillEffects.support(active, "petal-regrowth"); }
           setNotice(result.skill.target === "allEnemies" ? "battle.skillEnemyNotice" : "battle.skillTeamNotice", {
             name: active.name, skill: t(result.skill.nameKey)
           });
@@ -995,16 +1042,19 @@
           await runEnemyTurns();
         });
         $("#skip").addEventListener("click", async () => {
+          enemyClicks.clear();
           if (busy || !isPlayerTurn()) return;
           busy = true;
           const active = currentUnit();
-          skipTurn(state, active.id);
+          const skipped = skipTurn(state, active.id);
+          if (skipped.turnEffects?.healed) { showFloatingLabel(active, `+${skipped.turnEffects.healed}`, "heal-number"); await skillEffects.support(active, "petal-regrowth"); }
           targeting = null;
           setNotice("battle.skipNotice", { name: active.name });
           await finishDisplayedTurn();
           await runEnemyTurns();
         });
         $("#flee").addEventListener("click", () => {
+          enemyClicks.clear();
           if (busy) return;
           busy = true;
           fleeBattle(state);
@@ -1080,7 +1130,7 @@
             initialEnergy,
             enemyBehaviors,
             startingHp: fromAdventure && query.has("hp") && Number.isFinite(Number(query.get("hp"))) && Number(query.get("hp")) > 0 ? Number(query.get("hp")) : null,
-            companions: deployedCompanions(companionLibrary, user, dragonData, adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : localAdventureProfile(user.uid)).map((entry) => ({ ...entry, name: t(entry.nameKey) }))
+            companions: deployedCompanions(companionLibrary, user, dragonData, mergeCompanionProfiles(adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : null, localAdventureProfile(user.uid))).map((entry) => ({ ...entry, name: t(entry.nameKey) }))
           });
           skillOne = state.skills[state.skillOneId];
           if (skillOne) {
