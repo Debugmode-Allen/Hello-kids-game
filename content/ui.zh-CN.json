@@ -13,7 +13,7 @@
   "account.allen": "Allen",
   "account.amy": "Amy",
   "account.shirlyn": "Shirlyn",
-  "account.kelly": "Kelly",
+  "account.kelly": "Kaylee",
   "account.angelina": "Angelina",
   "account.test": "test",
   "account.sarah": "Sarah",
@@ -516,13 +516,16 @@
   "companionReward.arrived": "木桩已加入伙伴选择槽！选一个空阵位让它上阵，再点击「确认布阵」。",
   "chapter.routeBlocked": "没有安全的已探索路线。请先探索通路，或清除挡路的怪物和事件。",
   "chapter.walking": "正在沿亮点路线前进，点击其他目标可改道，点击小龙可停止。",
-  "chapter.healthFull": "体力满满！治疗水晶留在这里，下次需要时再来。",
-  "chapter.energyFull": "能量已满！宝箱留在这里，下次需要时再来。",
+  "chapter.healthFull": "体力已满，治疗水晶为你保留，可以继续向前探索。",
+  "chapter.energyFull": "能量已满，宝箱为你保留，可以继续向前探索。",
   "chapter.doubleHint": "准备好了吗？下次也可以快速双击地图上的怪物，直接挑战。",
   "chapter.bossConfirmHint": "这是本章 Boss。确认体力和阵容后再挑战吧！",
   "chapter.cancelEncounter": "先不挑战",
   "chapter.noHealth": "体力已耗尽，请先寻找治疗水晶或重新挑战。",
   "chapter.moveError": "移动未完成，补给仍会保留。请稍后重试。",
   "chapter.stopWalking": "停止移动",
-  "battle.quickClawHint": "快速双击可用爪击攻击；受前排保护的目标需先击败保护者。"
+  "battle.quickClawHint": "快速双击可用爪击攻击；受前排保护的目标需先击败保护者。",
+  "account.jin": "Jin",
+  "chapter.supplyPassed": "已经过补给，未领取；需要时可以回来点击使用。",
+  "chapter.supplyUnavailable": "暂时无法领取宝箱，已为你保留；仍可继续探索，稍后回来重试。"
 }

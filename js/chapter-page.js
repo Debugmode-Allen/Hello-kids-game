@@ -152,6 +152,8 @@ async function walkTo(id, direct, generation) {
   const route = exploredRoute(run, id);
   if (!route) { walking = false; routePreview = []; render(); $("#status").textContent = t("chapter.routeBlocked"); return; }
 
+  const target = run.tiles.find((tile) => tile.id === id);
+  if (!route.length && ["treasure", "rest"].includes(target?.kind) && target.state !== "cleared") route.push(id);
   walking = route.length > 0; routePreview = [...route]; selectedEncounterId = null;
   $("#status").textContent = ""; render();
   for (const step of route) {
@@ -163,23 +165,28 @@ async function walkTo(id, direct, generation) {
       return;
     }
     const unusedSupply = ["rest", "treasure"].includes(tile.kind) && tile.state !== "cleared";
-    let useSupply = unusedSupply && supplyNeeded(tile, run, currentEnergy);
-    if (unusedSupply && tile.kind === "treasure") {
-      // Refresh even at full energy; another tab may have spent it since page load.
-      const current = await getDoc(doc(db, "users", userId, "dragon", "current"));
-      if (generation !== walkGeneration) return;
-      if (!current.exists()) throw new Error("Missing dragon");
-      currentEnergy = Number(current.data().energy) || 0;
-      useSupply = supplyNeeded(tile, run, currentEnergy);
-      if (useSupply) { useSupply = await applyRestEnergy(); currentEnergy = 10; }
+    // Passing a supply never spends it; only explicitly choosing it may claim it.
+    let useSupply = unusedSupply && step === id && supplyNeeded(tile, run, currentEnergy);
+    let supplyMessage = null;
+    if (unusedSupply && step === id && tile.kind === "treasure") {
+      try {
+        const current = await getDoc(doc(db, "users", userId, "dragon", "current"));
+        if (generation !== walkGeneration) return;
+        if (!current.exists()) throw new Error("Missing dragon");
+        currentEnergy = Number(current.data().energy) || 0;
+        useSupply = supplyNeeded(tile, run, currentEnergy);
+        if (useSupply) { useSupply = await applyRestEnergy(); currentEnergy = 10; }
+      } catch (error) {
+        console.warn("Supply could not be claimed; leave it available and allow passage", error);
+        useSupply = false; supplyMessage = "supplyUnavailable";
+      }
     }
-    if (unusedSupply && !useSupply) {
-      lastEvent = tile.kind === "rest" ? "healthFull" : "energyFull";
-      break;
+    if (unusedSupply && !useSupply && !supplyMessage) {
+      supplyMessage = step !== id ? "supplyPassed" : tile.kind === "rest" ? "healthFull" : "energyFull";
     }
-    const result = movePlayer(run, step);
+    const result = movePlayer(run, step, { collectSupplies: useSupply });
     if (!result.changed) break;
-    run = result.run; lastEvent = result.message;
+    run = result.run; lastEvent = supplyMessage || result.message;
     if (result.message === "rest") {
       const restored = restorePlayerHealth(run, chapter.restHealRatio);
       run = restored.run; lastEvent = `rest:${restored.healed}`; playCue("answer-correct");
@@ -241,7 +248,7 @@ function render() {
     });
     button.addEventListener("click", () => {
       if (departing) return;
-      if (tile.id === tileId(run.player.row, run.player.column)) { stopWalking(); render(); return; }
+      if (tile.id === tileId(run.player.row, run.player.column) && (walking || !["treasure", "rest"].includes(tile.kind) || tile.state === "cleared")) { stopWalking(); render(); return; }
       if (isEncounter) { walkGeneration += 1; walking = false; encounterInput.click(tile.id, tile.kind === "boss"); return; }
       encounterInput.clear(); navigateTo(tile.id);
     });
@@ -268,6 +275,8 @@ function render() {
   $("#chapterMessage").textContent = walking ? t("chapter.walking")
     : lastEvent === "treasure" ? t("chapter.treasureEnergy")
       : String(lastEvent).startsWith("rest:") ? t("chapter.restoredHealth", { amount: String(lastEvent).split(":")[1] })
+        : lastEvent === "supplyUnavailable" ? t("chapter.supplyUnavailable")
+        : lastEvent === "supplyPassed" ? t("chapter.supplyPassed")
         : lastEvent === "healthFull" ? t("chapter.healthFull")
           : lastEvent === "energyFull" ? t("chapter.energyFull") : t("chapter.moveHint");
 }

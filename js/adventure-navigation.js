@@ -1,9 +1,9 @@
 import { tileId } from "./adventure-run.js";
 
 const directions = { north: [-1, 0], east: [0, 1], south: [1, 0], west: [0, -1] };
-export const isUnclearedEvent = (tile) => tile.state !== "cleared" && ["monster", "boss", "treasure", "rest"].includes(tile.kind);
+export const isBlockingEncounter = (tile) => tile.state !== "cleared" && ["monster", "boss"].includes(tile.kind);
 
-// The target may be an event, but intermediate events and unknown cells are barriers.
+// Supplies are walkable; only uncleared encounters and unknown cells block routes.
 export function exploredRoute(run, targetId) {
   const start = tileId(run.player.row, run.player.column);
   const known = new Set(run.mode === "pathfinding" ? run.tiles.map((tile) => tile.id) : run.revealed);
@@ -19,7 +19,7 @@ export function exploredRoute(run, targetId) {
       return route;
     }
     const tile = tiles.get(id);
-    if (id !== start && isUnclearedEvent(tile) && run.mode !== "pathfinding") continue;
+    if (id !== start && isBlockingEncounter(tile) && run.mode !== "pathfinding") continue;
     for (const [direction, [row, column]] of Object.entries(directions)) {
       const nextId = tileId(tile.row + row, tile.column + column);
       if (!tile.exits[direction] || !tiles.has(nextId) || !known.has(nextId) || previous.has(nextId)) continue;

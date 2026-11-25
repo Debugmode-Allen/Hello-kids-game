@@ -99,3 +99,24 @@ test("a newly generated exploration run resets cleared state, adventure HP, and 
   assert.equal(fresh.loot.experience, undefined);
   assert.equal(fresh.tiles.filter((tile) => tile.kind === "boss")[0].state, "idle");
 });
+
+test("preserved supplies allow movement and reveal the path behind them in existing saves", () => {
+  for (const kind of ["treasure","rest"]) {
+    const run={mode:"adventure",visionRange:3,player:{row:0,column:0},revealed:["0-0","0-1"],tiles:[
+      {id:"0-0",row:0,column:0,kind:"start",state:"cleared",exits:{east:true}},
+      {id:"0-1",row:0,column:1,kind,state:"idle",exits:{west:true,east:true}},
+      {id:"0-2",row:0,column:2,kind:"empty",state:"idle",exits:{west:true,east:true}},
+      {id:"0-3",row:0,column:3,kind:"monster",state:"idle",exits:{west:true,east:true}},
+      {id:"0-4",row:0,column:4,kind:"empty",state:"idle",exits:{west:true}}
+    ]};
+    const moved=movePlayer(run,"0-1",{collectSupplies:false});
+    assert.equal(moved.changed,true);assert.equal(moved.run.tiles[1].state,"idle");
+    assert(moved.run.revealed.includes("0-2"));assert(!moved.run.revealed.includes("0-4"));
+    assert.equal(movePlayer(moved.run,"0-2",{collectSupplies:false}).changed,true);
+    const saved=JSON.parse(JSON.stringify(moved.run));
+    const claimed=movePlayer(saved,"0-1",{collectSupplies:true});
+    assert.equal(claimed.changed,true);assert.equal(claimed.message,kind);assert.equal(claimed.run.tiles[1].state,"cleared");
+    assert.equal(movePlayer(claimed.run,"0-1").message,null);
+    assert.equal(run.tiles[1].state,"idle");
+  }
+});

@@ -15,8 +15,8 @@ test("fog and walls block navigation, including fog landmarks", () => {
   run.revealed.push("0-2"); run.tiles[1].exits.east = false;
   assert.equal(exploredRoute(run, "0-3"), null);
 });
-test("uncleared monsters, bosses and supplies cannot be intermediate steps", () => {
-  for (const kind of ["monster", "boss", "rest", "treasure"]) {
+test("uncleared monsters and bosses cannot be intermediate steps", () => {
+  for (const kind of ["monster", "boss"]) {
     const run = corridor(["start", kind, "empty", "treasure"]);
     assert.equal(exploredRoute(run, "0-3"), null);
     assert.deepEqual(exploredRoute(run, "0-1"), ["0-1"]);
@@ -45,4 +45,12 @@ test("Boss double taps still confirm; another target or stopping cancels stale t
   const boss = taps(); boss.input.click("boss", true); boss.input.click("boss", true); boss.flush(); assert.deepEqual(boss.events, [["confirm", "boss"]]);
   const other = taps(); other.input.click("a"); other.input.click("b"); other.flush(); assert.deepEqual(other.events, [["confirm", "b"]]);
   const stopped = taps(); stopped.input.click("a"); stopped.input.clear(); stopped.flush(); assert.deepEqual(stopped.events, []);
+});
+
+test("unclaimed supplies are safe intermediate steps, even at full HP and energy", () => {
+  for (const kind of ["rest", "treasure"]) {
+    const run=corridor(["start",kind,"empty","empty"]); run.playerHp=run.playerMaxHp;
+    assert.equal(supplyNeeded(run.tiles[1],run,10),false);
+    assert.deepEqual(exploredRoute(run,"0-3"),["0-1","0-2","0-3"]);
+  }
 });
