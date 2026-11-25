@@ -200,7 +200,7 @@
       import { createSkillEffects, NEW_SKILL_EFFECTS } from "./js/battle-skill-effects.js";
       import { canQuickClaw } from "./js/battle-input.js";
       import { deployedCompanions } from "./js/companions.js";
-      import { addDragonXp, progressForXp } from "./js/dragon-progression.js";
+      import { addDragonXp, progressForDragon } from "./js/dragon-progression.js";
       import { beginNextTurn, calculateDamage, consumeControlledTurn, createBattle, fleeBattle, isProtected, remainingSkillCharges, selectEnemyTarget, skipTurn, unitById, upcomingTurns, useDamageSkill, useSkill, validTargets } from "./js/battle-engine.js?v=seven-dragon-skills";
       import { createChargeQuestions } from "./js/assessment.js";
       import { renderQuestionOptions } from "./js/question-options.js?v=confirm-choice";
@@ -470,7 +470,7 @@
 
       function showAdventureProgression() {
         if (!adventureDragon || !adventureProgression) return;
-        const before = progressForXp(adventureDragon.xp, adventureProgression);
+        const before = progressForDragon(adventureDragon, adventureProgression);
         const after = addDragonXp(adventureDragon, adventureRewardXp, adventureProgression);
         const progress = $("#adventureProgress");
         progress.hidden = false;

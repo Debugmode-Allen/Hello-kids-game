@@ -53,6 +53,7 @@ async function awardDragonExperience(experience) {
     const growth = Math.max(0, next.levelsGained);
     transaction.set(dragonRef, {
       xp: next.xp,
+      xpCurveVersion: 2,
       level: next.level,
       attack: Number(current.attack ?? 10) + growth * 2,
       defense: Number(current.defense ?? 10) + growth * 2,

@@ -44,11 +44,22 @@ export function progressForXp(totalXp, progression) {
 }
 
 export function addDragonXp(dragon, amount, progression) {
-  const previous = progressForXp(dragon?.xp, progression);
+  const previous = progressForDragon(dragon, progression);
   const progress = progressForXp(previous.xp + integer(amount), progression);
   return {
     ...progress,
     gainedXp: progress.xp - previous.xp,
     levelsGained: progress.level - previous.level
   };
+}
+
+// 未标记的存档使用原曲线；保留原本级经验，按新曲线换算累计值。
+export function progressForDragon(dragon, progression) {
+  if (dragon?.xpCurveVersion === 2) return progressForXp(dragon.xp, progression);
+  const levels = validateProgression(progression);
+  const level = Math.max(1, Math.min(Number(dragon?.level) || 1, progression.maxLevel || levels.length));
+  const oldThresholds = [0, 30, 70, 122, 190, 276, 384, 516, 676, 866, 1090, 1350, 1650, 1992, 2380, 2816, 3304, 3846, 4446, 5106, 5830, 6620, 7480, 8412, 9420, 10506, 11674, 12926, 14266, 15696];
+  const oldThreshold = oldThresholds[level - 1];
+  const oldProgress = Math.max(0, integer(dragon?.xp) - oldThreshold);
+  return progressForXp(levels[level - 1].totalXp + oldProgress, progression);
 }

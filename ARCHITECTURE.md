@@ -38,7 +38,7 @@ GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。用
 - `assets/battle/battle-assets.json`：可替换的战斗背景、敌人精灵图、技能和资源图标清单；通用能量槽与新生成的彩虹能量点已登记并接入战斗 UI。
 - `data/adventure-library.json`：地图入口贴图位置、比例、文字键与生物装饰组配置。`js/adventure-worlds.js` 读取并渲染，目前在村庄右侧两河之间展示第 1 世界「龙岛草原」；入口图片及毛毛虫/飞蛾 4×2 八帧贴图位于 `assets/adventure/meadow/`，两类各复用两组。整体缩放60%，坐标由配置控制；草原入口具备鼠标/触摸/键盘高亮，点击进入第一章，其余后续世界仍使用待开放预览。
 - `data/adventure-chapters.json`：章节的格子尺寸、战斗配置、随机怪物组、`visionRange`、恢复比例与首领奖励。`js/adventure-run.js` 用带约束的深度优先迷宫生成，确保起点到 Boss 连通；第一章将五组随机怪物放在唯一主路径上，并保存探索过的三格视线范围。
-- `data/dragon-progression.json`：小龙等级与累计经验矩阵。每行的 `totalXp` 是达到该等级的累计经验，`xpToNext` 是升到下一等级所需经验；当前 `maxLevel` 为 10，达到其门槛后经验封顶。后续等级行保留在数据表中，未来只需提高 `maxLevel` 即可启用。`js/dragon-progression.js` 负责校验矩阵、由总经验反查等级，以及结算经验时保留跨级余量。
+- `data/dragon-progression.json`：小龙等级与累计经验矩阵。每行的 `totalXp` 是达到该等级的累计经验，`xpToNext` 是升到下一等级所需经验；当前 `maxLevel` 为 10，达到其门槛后经验封顶。旧曲线存档在首次获得经验时按原等级和本级经验换算，并写入 `xpCurveVersion: 2`，避免重复迁移；显示与战斗预览也使用同一换算。后续等级行保留在数据表中。`js/dragon-progression.js` 负责校验矩阵、换算与结算。
 - `assets/adventure/backgrounds/dragon-island-adventure-map-v6.png`：冒险总览使用的裁切后龙岛地图背景；仅承载视觉地形，不保存区域、关卡或奖励规则。
 - `data/battle-library.json`：每场战斗的背景、敌人和内容键配置。
 - `content/battle.zh-CN.json`：场景名、战斗名称和战斗描述；更换战斗时由配置调用。

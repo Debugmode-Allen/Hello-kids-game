@@ -146,7 +146,7 @@
       import { staminaBreakdown, loadCheckins } from "./js/checkin-client.js?v=20261118-stamina-breakdown";
       import { loadUI, t } from "./js/i18n.js";
       import { renderEnergyMeter } from "./js/energy-meter.js?v=rainbow-energy-20261118";
-      import { progressForXp } from "./js/dragon-progression.js?v=progress-display";
+      import { progressForDragon } from "./js/dragon-progression.js?v=progress-display";
 
       const $ = (selector) => document.querySelector(selector);
       const CAPACITY = 10;
@@ -206,7 +206,7 @@
       }
 
       function showDragon(dragon, species, practiceBonuses, stamina, skillsData, battleAssets, balance, progression) {
-        const levelProgress = progressForXp(dragon.xp, progression);
+        const levelProgress = progressForDragon(dragon, progression);
         $("#dragonImage").src = species.image;
         $("#dragonControl").setAttribute("aria-label", t("home.dragonProgressSummary", {
           level: levelProgress.level,
