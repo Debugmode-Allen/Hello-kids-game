@@ -13,7 +13,7 @@
   "account.allen": "Allen",
   "account.amy": "Amy",
   "account.shirlyn": "Shirlyn",
-  "account.kelly": "Kelly",
+  "account.kelly": "Kaylee",
   "account.angelina": "Angelina",
   "account.test": "test",
   "account.sarah": "Sarah",
@@ -524,5 +524,6 @@
   "chapter.noHealth": "体力已耗尽，请先寻找治疗水晶或重新挑战。",
   "chapter.moveError": "移动未完成，补给仍会保留。请稍后重试。",
   "chapter.stopWalking": "停止移动",
-  "battle.quickClawHint": "快速双击可用爪击攻击；受前排保护的目标需先击败保护者。"
+  "battle.quickClawHint": "快速双击可用爪击攻击；受前排保护的目标需先击败保护者。",
+  "account.jin": "Jin"
 }

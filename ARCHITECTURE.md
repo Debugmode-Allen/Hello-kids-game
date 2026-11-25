@@ -1,11 +1,11 @@
 # 小小学习家：开发结构
 
-当前版本：`v1.6.1`（冒险交互、伙伴奖励与技能演出），发布分支 main，存档标签 v1.6.1。
+当前版本：`v1.6.2`（Kaylee与Jin登录账户），发布分支main，存档标签v1.6.2。
 GitHub Pages 地址：`https://debugmode-allen.github.io/Hello-kids-game/`。用户已反馈迷宫与战斗双击操作可用；助手完成隔离模拟账户的桌面/390px窄屏检查和39项自动测试。真实登录的Boss首胜奖励及七种技能逐账号验收尚未完成。
 
 ## 页面与路由
 
-- `index.html`：唯一登录入口。Allen 登录后进入 `admin.html`；孩子第一次登录进入 `journey.html`；已经有小龙的孩子进入 `home.html`。
+- `index.html`：唯一登录入口。登录选择项与邮箱映射在该页，姓名标签在UI文案；Kelly显示为Kaylee但保留原kelly邮箱/UID，Jin使用既有格式的jin邮箱别名入口，家长身份由users/{uid}.role确定。Allen 登录后进入 `admin.html`；孩子第一次登录进入 `journey.html`；已经有小龙的孩子进入 `home.html`。
 - `journey.html`：龙岛故事、选蛋、分级起始测验、孵化、命名。
 - `home.html`：孩子的小龙主页，读取当前龙的能量和技能配置；上方展示龙与两侧战斗技能/能量环，在名字下方按成长矩阵显示当前等级与「本级经验/升下级所需经验」进度条，下方展示四个功能入口。
 - 冒险视口以 `.map-scroll` 承载放大的 `.map-world`，进入时定位南部；三块顶层悬浮 UI 不随地图滚动。`assets/adventure/village/` 提供透明村庄与 4×2 八帧龙影，CSS 帧动画和漂移营造远景飞行；布阵数据字段见下文。

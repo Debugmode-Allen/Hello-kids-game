@@ -2,9 +2,16 @@
 
 ## 当前版本与发布
 
-- v1.6.1（2026-11-24）：冒险交互、伙伴奖励与技能演出。发布分支 main，版本存档标签 v1.6.1；对应提交以该标签为准。
+- v1.6.2（2026-11-25）：Kaylee与Jin登录账户。发布分支main，版本存档标签v1.6.2；对应提交以该标签为准。
 - 页面：<https://debugmode-allen.github.io/Hello-kids-game/>。GitHub Pages 在推送后自动部署，部署完成状态以 GitHub Actions 为准。
-- 本次没有修改或部署 Firestore Rules。此前仓库规则已有冒险/布阵权限，线上实际部署状态仍未确认；GitHub 推送不等于 Firebase Rules 发布。
+- 本次没有修改或部署 Firestore Rules。2026-11-24已从Firebase Console读取完整已发布规则，与当前仓库统一换行后逐字一致；GitHub 推送不等于 Firebase Rules 发布。
+
+## 账户调整与待确认事项（2026-11-25）
+
+- Firebase Authentication已核对Kelly与Angelina各自UID；Firestore原Kelly资料的name已更新为Kaylee，原UID、邮箱及child角色不变。Angelina不改姓名。
+- index.html与content/ui.zh-CN.json将登录显示改为Kaylee，并新增Jin选项，邮箱按既有格式为wang.yilun.allen+jin@gmail.com，纳入v1.6.2发布。
+- Jin的Authentication账户已由用户创建并在控制台核对；对应users/{uid}已创建并确认name=Jin、role=parent。尚未做真实登录验收或关联孩子。Kaylee/Angelina密码修改仍待用户确认；密码不写入仓库或交接。
+- 浏览器控制策略要求密码修改由用户接管，Firebase Console现有用户仅提供重置邮件入口。Jin的UID/parent资料已核验；用户已明确要求发布登录菜单，已做桌面/390px窄屏选项核对；未做新密码登录验收。
 
 ## 已完成与验证
 
@@ -19,7 +26,7 @@
 ## 尚未完成与下一步
 
 1. 真实登录：用未拥有木桩的账户通关Boss，核对云端伙伴档案、刷新恢复、布阵保存及下一场战斗。若线上规则未部署，本地伙伴可见不等于云端允许其上阵。
-2. 在 Firebase Console 单独确认/部署仓库规则；助手尚未取得线上部署状态。
+2. Firestore Rules 已于2026-11-24核对云端与仓库一致，无需重复部署；后续只有实际修改规则时再单独发布。
 3. 七种技能在真实账号及实际手机上逐一视听复核；本次已做模拟页面检查，未做全部真实账号验收。
 4. 技能加点、物品库存/使用界面与消费规则尚待定义；后续章节未开放。金币、技能点、草原水晶的展示和消耗仍需接入。
 
