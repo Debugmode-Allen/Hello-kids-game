@@ -115,7 +115,7 @@ export function generateRun(chapter, seed = Math.floor(Math.random() * 2 ** 31))
 }
 
 function blocksSight(tile) {
-  return ["monster", "boss", "treasure", "rest"].includes(tile.kind) && tile.state !== "cleared";
+  return ["monster", "boss"].includes(tile.kind) && tile.state !== "cleared";
 }
 
 export function visibleWithinSight(origin, tiles, range = 3) {
@@ -149,7 +149,7 @@ export function refreshVision(run) {
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
-export function movePlayer(run, targetId) {
+export function movePlayer(run, targetId, { collectSupplies = true } = {}) {
   const next = clone(run);
   const byId = Object.fromEntries(next.tiles.map((tile) => [tile.id, tile]));
   const current = byId[tileId(next.player.row, next.player.column)];
@@ -157,7 +157,8 @@ export function movePlayer(run, targetId) {
   if (!current || !target) return { run, changed: false, reason: "missing" };
   const direction = directions.find((entry) => current.row + entry.row === target.row && current.column + entry.column === target.column);
   const isEncounter = target.kind === "monster" || target.kind === "boss";
-  if (!direction || !current.exits[direction.key] || (run.mode !== "pathfinding" && isEncounter && target.state !== "cleared")) {
+  const sameSupply = current.id === target.id && ["treasure", "rest"].includes(target.kind);
+  if ((!sameSupply && (!direction || !current.exits[direction.key])) || (run.mode !== "pathfinding" && isEncounter && target.state !== "cleared")) {
     return { run, changed: false, reason: "blocked" };
   }
   next.player = { row: target.row, column: target.column };
@@ -166,11 +167,11 @@ export function movePlayer(run, targetId) {
     target.state = "cleared";
     message = target.kind === "boss" ? "boss" : "monster";
   }
-  if (target.kind === "treasure" && target.state !== "cleared") {
+  if (collectSupplies && target.kind === "treasure" && target.state !== "cleared") {
     target.state = "cleared";
     message = "treasure";
   }
-  if (target.kind === "rest" && target.state !== "cleared") {
+  if (collectSupplies && target.kind === "rest" && target.state !== "cleared") {
     target.state = "cleared";
     message = "rest";
   }
