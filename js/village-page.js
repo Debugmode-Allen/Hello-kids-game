@@ -1,5 +1,6 @@
 import { auth, db, onAuthStateChanged, doc, getDoc, runTransaction } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
+import { progressForDragon } from "./dragon-progression.js?v=curve-2";
 import { effectiveStamina, loadCheckins } from "./checkin-client.js?v=20261118-stamina-breakdown";
 
 import { PLAYER_SLOTS, DEFAULT_BATTLE_SLOT, normalizeBattleSlot, validBattleSlot } from "./formation.js";
@@ -210,18 +211,20 @@ function skillCard(name, description, badge, locked = false, iconPath = "", icon
 async function showDragon(user) {
   $("villageContent").hidden = true;
   $("status").textContent = t("village.loading");
-  const [snapshot, adventureProfileSnapshot, libraryResponse, skillResponse, companionResponse, assetsResponse] = await Promise.all([
+  const [snapshot, adventureProfileSnapshot, libraryResponse, skillResponse, companionResponse, assetsResponse, progressionResponse] = await Promise.all([
     getDoc(doc(db, "users", user.uid, "dragon", "current")),
     getDoc(doc(db, "users", user.uid, "adventure", "profile")).catch(() => null),
     fetch("assets/dragons/dragon-library.json", { cache: "no-store" }),
     fetch("data/skills.json", { cache: "no-store" }),
     fetch("data/companions.json", { cache: "no-store" }),
-    fetch("assets/battle/battle-assets.json", { cache: "no-store" })
+    fetch("assets/battle/battle-assets.json", { cache: "no-store" }),
+    fetch("data/dragon-progression.json", { cache: "no-store" })
   ]);
   if (!snapshot.exists()) { location.replace("journey.html"); return; }
-  if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok || !assetsResponse.ok) throw new Error("Village data unavailable");
+  if (!libraryResponse.ok || !skillResponse.ok || !companionResponse.ok || !assetsResponse.ok || !progressionResponse.ok) throw new Error("Village data unavailable");
   const [library, skills, companionLibrary, battleAssets] = await Promise.all([libraryResponse.json(), skillResponse.json(), companionResponse.json(), assetsResponse.json()]);
   const dragon = snapshot.data();
+  const progress = progressForDragon(dragon, await progressionResponse.json());
   const adventureProfile = mergeCompanionProfiles(adventureProfileSnapshot?.exists() ? adventureProfileSnapshot.data() : null, localAdventureProfile(user.uid));
   availableCompanions = companionsForAccount(companionLibrary, user, adventureProfile);
   companionSlots = Object.fromEntries(deployedCompanions(companionLibrary, user, dragon, adventureProfile).map((entry) => [entry.id, entry.slot]));
@@ -240,7 +243,7 @@ async function showDragon(user) {
   $("dragonImage").src = dragonImage;
   $("dragonImage").alt = dragonName;
   $("dragonIdentity").textContent = species.element + " · " + species.profession;
-  $("dragonLevel").textContent = t("village.level", { level: dragon.level ?? 1, xp: dragon.xp ?? 0 });
+  $("dragonLevel").textContent = t("village.level", { level: progress.level, xp: progress.xpIntoLevel });
   $("dragonEnergy").textContent = t("village.energy", { energy: dragon.energy ?? 0 });
   $("staminaNotice").hidden = true;
   let stamina;

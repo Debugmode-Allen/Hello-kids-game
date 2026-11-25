@@ -1,7 +1,7 @@
 import { auth, db, onAuthStateChanged, doc, getDoc, runTransaction, setDoc } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
 import { completeEncounter, generateRun, movePlayer, refreshVision, restorePlayerHealth, tileId, updatePlayerHealth } from "./adventure-run.js";
-import { addDragonXp } from "./dragon-progression.js";
+import { addDragonXp } from "./dragon-progression.js?v=curve-2";
 import { playCue } from "./audio-manager.js";
 
 import { companionsForAccount } from "./companions.js";

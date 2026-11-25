@@ -1,5 +1,6 @@
 import { auth, db, onAuthStateChanged, doc, getDoc } from "./firebase.js";
 import { loadUI, t } from "./i18n.js";
+import { progressForDragon } from "./dragon-progression.js?v=curve-2";
 
 import { mountWorldLandmarks } from "./adventure-worlds.js?v=meadow-chapter";
 
@@ -44,20 +45,22 @@ function renderNodes() {
 }
 
 async function showDragon(user) {
-  const [dragonSnapshot, libraryResponse] = await Promise.all([
+  const [dragonSnapshot, libraryResponse, progressionResponse] = await Promise.all([
     getDoc(doc(db, "users", user.uid, "dragon", "current")),
-    fetch("assets/dragons/dragon-library.json", { cache: "no-store" })
+    fetch("assets/dragons/dragon-library.json", { cache: "no-store" }),
+    fetch("data/dragon-progression.json", { cache: "no-store" })
   ]);
-  if (!dragonSnapshot.exists() || !libraryResponse.ok) {
+  if (!dragonSnapshot.exists() || !libraryResponse.ok || !progressionResponse.ok) {
     location.assign("journey.html");
     return;
   }
   const dragon = dragonSnapshot.data();
+  const progress = progressForDragon(dragon, await progressionResponse.json());
   const library = await libraryResponse.json();
   const species = library.find((item) => item.id === dragon.speciesId) ?? {};
   $("#dragonName").textContent = dragon.customName || species.name || t("adventure.defaultDragonName");
   $("#dragonLevel").textContent = t("adventure.dragonLevel", { level: dragon.level ?? 1 });
-  $("#dragonXp").textContent = t("adventure.dragonXp", { xp: dragon.xp ?? 0 });
+  $("#dragonXp").textContent = t("adventure.dragonXp", { xp: progress.xpIntoLevel });
   if (species.image) {
     $("#dragonAvatar").src = species.image;
     $("#dragonAvatar").hidden = false;
